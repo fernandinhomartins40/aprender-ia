@@ -89,12 +89,18 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
 echo "==> Semeando conteúdo..."
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE"   run --rm --entrypoint sh web -c '
     cd /app
+    # O tsx tem layout de arquivos variável entre versões; procuramos o
+    # entrypoint real em vez de fixar um caminho que quebra a cada bump.
+    # O bin declarado pelo tsx é dist/cli.mjs. Resolvemos pelo glob do
+    # store do pnpm, com fallback para .cjs em versões mais antigas.
     TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.mjs 2>/dev/null | head -1)
-    if [ -n "$TSX" ]; then
-      node "$TSX" packages/db/prisma/seed.ts
-    else
-      echo "    tsx indisponível na imagem; seed ignorado nesta release."
+    [ -z "$TSX" ] && TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.cjs 2>/dev/null | head -1)
+    if [ -z "$TSX" ]; then
+      echo "    tsx não encontrado; seed ignorado nesta release." >&2
+      exit 0
     fi
+    echo "    usando $TSX"
+    node "$TSX" packages/db/prisma/seed.ts
   ' || echo "AVISO: seed não concluiu; a aplicação segue no ar." >&2
 
 # ------------------------------------------------------------
