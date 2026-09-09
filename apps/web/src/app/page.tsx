@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 const LADROES = [
   { icone: "📝", titulo: "Pareceres descritivos", texto: "30 a 40 textos individuais, todo fim de bimestre." },
@@ -59,9 +60,7 @@ export default function Home() {
       {/* ---------- Cabeçalho ---------- */}
       <header className="sticky top-0 z-50 border-b border-borda bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <span className="font-titulo text-xl font-extrabold text-tinta">
-            Aprender<span className="text-laranja">IA</span>
-          </span>
+          <Logo largura={132} prioridade />
           <nav className="flex items-center gap-3">
             <Link href="/entrar" className="btn-fantasma hidden sm:inline-flex">
               Entrar
@@ -228,12 +227,26 @@ export default function Home() {
       {/* ---------- Rodapé ---------- */}
       <footer className="border-t border-borda bg-white py-8">
         <div className="mx-auto max-w-6xl px-5 text-center text-sm text-cinza">
-          <p className="font-titulo font-bold text-tinta">
-            Aprender<span className="text-laranja">IA</span>
-          </p>
-          <p className="mt-2">
+          <div className="flex justify-center">
+            <Logo largura={120} />
+          </div>
+          <p className="mt-3">
             Formação em Inteligência Artificial para professores da rede pública.
           </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link href="/entrar" className="hover:text-indigo hover:underline">
+              Entrar
+            </Link>
+            <Link href="/cadastro" className="hover:text-indigo hover:underline">
+              Criar conta
+            </Link>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 hover:text-indigo hover:underline"
+            >
+              <span aria-hidden="true">🔐</span> Painel administrativo
+            </Link>
+          </div>
         </div>
       </footer>
     </main>

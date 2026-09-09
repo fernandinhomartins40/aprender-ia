@@ -83,6 +83,21 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
   ' || { echo "ERRO: falha ao aplicar migrations." >&2; exit 1; }
 
 # ------------------------------------------------------------
+# Seed — idempotente: cria o curso, as lições e o primeiro admin
+# sem duplicar nada em execuções repetidas.
+# ------------------------------------------------------------
+echo "==> Semeando conteúdo..."
+docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE"   run --rm --entrypoint sh web -c '
+    cd /app
+    TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.mjs 2>/dev/null | head -1)
+    if [ -n "$TSX" ]; then
+      node "$TSX" packages/db/prisma/seed.ts
+    else
+      echo "    tsx indisponível na imagem; seed ignorado nesta release."
+    fi
+  ' || echo "AVISO: seed não concluiu; a aplicação segue no ar." >&2
+
+# ------------------------------------------------------------
 # Aponta 'current' para esta release
 # ------------------------------------------------------------
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
