@@ -1,0 +1,48 @@
+{
+  "name": "Aprender IA — Formação para professores",
+  "short_name": "Aprender IA",
+  "description": "Trilha prática para professores da rede pública usarem Inteligência Artificial na rotina escolar.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FCFCFE",
+  "theme_color": "#4F46E5",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icones/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icones/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icones/icone-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Minha trilha",
+      "short_name": "Trilha",
+      "description": "Continuar de onde parei",
+      "url": "/app"
+    },
+    {
+      "name": "Banco de prompts",
+      "short_name": "Prompts",
+      "description": "Buscar um prompt pronto",
+      "url": "/app/prompts"
+    }
+  ]
+}

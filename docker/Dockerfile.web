@@ -35,7 +35,9 @@ RUN pnpm --filter @aprender/db exec prisma generate
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN pnpm --filter @aprender/web build
+# Garante que public/ exista: o git não versiona diretório vazio e o
+# COPY do estágio runner falharia se o repo não a trouxesse.
+RUN mkdir -p apps/web/public && pnpm --filter @aprender/web build
 
 # ------------------------------------------------------------
 # 3) Runtime — só o necessário para servir
@@ -51,16 +53,18 @@ ENV HOSTNAME=0.0.0.0
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=builder /app/apps/web/.next ./apps/web/.next
-COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/
-COPY --from=builder /app/apps/web/next.config.mjs ./apps/web/
-COPY --from=builder /app/package.json ./
+# Copiamos já com o dono correto. Um `chown -R` depois percorreria
+# dezenas de milhares de arquivos de node_modules — é lento e falha
+# com I/O error em alguns storage drivers do Docker.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/package.json ./apps/web/
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/next.config.mjs ./apps/web/
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 
-RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 EXPOSE 3000
