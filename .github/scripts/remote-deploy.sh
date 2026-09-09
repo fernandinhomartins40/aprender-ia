@@ -65,10 +65,22 @@ for i in $(seq 1 30); do
 done
 
 echo "==> Aplicando migrations..."
+# O binário do prisma não existe em node_modules/.bin no estágio runner:
+# ele é devDependency e o pnpm não cria o symlink na imagem final. Por
+# isso localizamos o pacote no store do pnpm e chamamos o build/index.js
+# diretamente com node.
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
-  run --rm --entrypoint sh web \
-  -c "cd /app && node_modules/.bin/prisma migrate deploy --schema packages/db/prisma/schema.prisma" \
-  || { echo "ERRO: falha ao aplicar migrations." >&2; exit 1; }
+  run --rm --entrypoint sh web -c '
+    set -e
+    cd /app
+    PRISMA_CLI=$(ls -d node_modules/.pnpm/prisma@*/node_modules/prisma/build/index.js 2>/dev/null | head -1)
+    if [ -z "$PRISMA_CLI" ]; then
+      echo "ERRO: CLI do Prisma não encontrado na imagem." >&2
+      exit 1
+    fi
+    echo "    usando $PRISMA_CLI"
+    node "$PRISMA_CLI" migrate deploy --schema packages/db/prisma/schema.prisma
+  ' || { echo "ERRO: falha ao aplicar migrations." >&2; exit 1; }
 
 # ------------------------------------------------------------
 # Aponta 'current' para esta release
