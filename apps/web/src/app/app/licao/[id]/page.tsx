@@ -1,0 +1,80 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { exigirAluno, carregarLicao } from "@/server/trilha";
+import { concluirLicao, registrarPrompt } from "@/server/acoes";
+import { LicaoCliente } from "@/components/licao-cliente";
+
+export const dynamic = "force-dynamic";
+
+export default async function Licao({ params }: { params: Promise<{ id: string }> }) {
+  const user = await exigirAluno();
+  const { id } = await params;
+  const dados = await carregarLicao(user.id, id);
+
+  if (!dados) notFound();
+
+  if (dados.bloqueada) {
+    return (
+      <div className="card text-center">
+        <div className="py-10">
+          <p className="text-4xl" aria-hidden="true">🔒</p>
+          <h1 className="mt-3 font-titulo text-xl font-bold">Lição bloqueada</h1>
+          <p className="mt-2 text-tinta-clara">
+            Conclua as lições anteriores para liberar esta.
+          </p>
+          <Link href="/app/trilha" className="btn-primario mt-6">
+            Voltar para a trilha
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const { licao, resumo, proxima, posicao, totalLicoes } = dados;
+  const template = licao.promptTemplates[0];
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-6">
+        <Link href="/app/trilha" className="text-sm font-bold text-indigo hover:underline">
+          ← Voltar para a trilha
+        </Link>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span
+            className="rounded-full px-3 py-1 font-titulo text-xs font-bold text-white"
+            style={{ background: resumo.moduloCor }}
+          >
+            {resumo.moduloTitulo}
+          </span>
+          <span className="text-sm text-cinza">
+            Lição {posicao} de {totalLicoes} · {resumo.xp} XP
+          </span>
+        </div>
+        <h1 className="mt-3 font-titulo text-3xl font-extrabold">{licao.titulo}</h1>
+        {licao.capituloRef && (
+          <p className="mt-1 text-sm text-cinza">Apostila · {licao.capituloRef}</p>
+        )}
+      </div>
+
+      <LicaoCliente
+        tipo={licao.tipo}
+        conteudo={licao.conteudo}
+        lessonId={licao.id}
+        proximaId={proxima?.id ?? null}
+        template={
+          template
+            ? {
+                id: template.id,
+                corpo: template.corpo,
+                variaveis: (template.variaveis as any) ?? [],
+                ferramentasSugeridas: template.ferramentasSugeridas,
+                dica: template.dica,
+              }
+            : null
+        }
+        concluir={concluirLicao}
+        registrar={registrarPrompt}
+      />
+    </div>
+  );
+}
