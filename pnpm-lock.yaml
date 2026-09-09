@@ -23,6 +23,9 @@ importers:
       '@aprender/ai-launcher':
         specifier: workspace:*
         version: link:../../packages/ai-launcher
+      '@aprender/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@aprender/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -52,7 +55,7 @@ importers:
         version: 15.5.25(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next-auth:
         specifier: ^5.0.0-beta.25
-        version: 5.0.0-beta.32(next@15.5.25(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        version: 5.0.0-beta.32(next@15.5.25(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -93,6 +96,28 @@ importers:
 
   packages/ai-launcher:
     devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/auth:
+    dependencies:
+      '@aprender/db':
+        specifier: workspace:*
+        version: link:../db
+      '@auth/prisma-adapter':
+        specifier: ^2.7.4
+        version: 2.11.3(@prisma/client@6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3))
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
+      next-auth:
+        specifier: ^5.0.0-beta.25
+        version: 5.0.0-beta.32(next@15.5.25(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+    devDependencies:
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -1834,7 +1859,7 @@ snapshots:
 
   nanoid@3.3.18: {}
 
-  next-auth@5.0.0-beta.32(next@15.5.25(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8):
+  next-auth@5.0.0-beta.32(next@15.5.25(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8):
     dependencies:
       '@auth/core': 0.41.3
       next: 15.5.25(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

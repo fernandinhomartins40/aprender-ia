@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Provedores } from "@/components/provedores";
 
 export const metadata: Metadata = {
   title: "Aprender IA — Formação prática para professores",
@@ -19,7 +20,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <Provedores>{children}</Provedores>
+      </body>
     </html>
   );
 }

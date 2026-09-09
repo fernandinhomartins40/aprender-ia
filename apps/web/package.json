@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@aprender/ai-launcher": "workspace:*",
+    "@aprender/auth": "workspace:*",
     "@aprender/db": "workspace:*",
     "@aprender/types": "workspace:*",
     "@aprender/ui": "workspace:*",
