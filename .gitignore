@@ -43,3 +43,6 @@ npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Credenciais locais — nunca versionar
+CREDENCIAIS-*.txt
