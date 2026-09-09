@@ -27,10 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
-    environment:
-      name: production
-      url: https://aprenderia.site
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
