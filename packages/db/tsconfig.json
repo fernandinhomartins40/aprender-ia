@@ -1,0 +1,4 @@
+{
+  "extends": "@aprender/config/tsconfig/base.json",
+  "include": ["src/**/*.ts", "prisma/**/*.ts"]
+}

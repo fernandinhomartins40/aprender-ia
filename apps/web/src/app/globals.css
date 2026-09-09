@@ -1,0 +1,49 @@
+@import "@aprender/ui/tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: var(--fonte-corpo);
+    font-size: 16px;          /* nunca menor: acessibilidade */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { font-family: var(--fonte-titulo); font-weight: 800; color: var(--tinta); }
+  ::selection { background: var(--indigo-soft); color: var(--indigo-dark); }
+  :focus-visible {
+    outline: 3px solid var(--indigo);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md font-titulo font-bold
+           transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none;
+    min-height: 44px;          /* alvo de toque acessível */
+    padding: 0 20px;
+  }
+  .btn-primario { @apply btn bg-indigo text-white hover:bg-indigo-dark shadow-cor; }
+  .btn-secundario { @apply btn bg-white text-indigo border-2 border-indigo-line hover:border-indigo; }
+  .btn-energia { @apply btn bg-laranja text-white hover:bg-laranja-dark; }
+  .btn-fantasma { @apply btn text-tinta-clara hover:bg-indigo-soft; }
+
+  .card { @apply bg-superficie rounded-lg border border-borda shadow-md p-6; }
+
+  .campo {
+    @apply w-full rounded-md border-2 border-borda bg-white px-4 py-3 text-base
+           transition-colors focus:border-indigo focus:outline-none;
+    min-height: 44px;
+  }
+
+  .selo { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-titulo font-bold; }
+  .selo-verde { @apply selo bg-verde-soft text-verde-dark; }
+  .selo-amarelo { @apply selo bg-amarelo-soft text-amarelo-dark; }
+  .selo-vermelho { @apply selo bg-vermelho-soft text-vermelho-dark; }
+}

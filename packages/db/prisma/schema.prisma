@@ -1,0 +1,413 @@
+// Aprender IA — schema do banco
+// PostgreSQL 16
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USUÁRIOS E AUTENTICAÇÃO
+// ============================================================
+
+enum Papel {
+  ALUNO
+  INSTRUTOR
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String?
+  avatar    String?
+  papel     Papel    @default(ALUNO)
+
+  // perfil docente
+  disciplina String?
+  anoEscolar String?
+  escola     String?
+  iaFavorita String?
+
+  emailVerificado DateTime?
+  criadoEm        DateTime  @default(now())
+  atualizadoEm    DateTime  @updatedAt
+
+  contas           Account[]
+  sessoes          Session[]
+  matriculas       Enrollment[]
+  execucoesPrompt  PromptRun[]
+  ofensiva         Streak?
+  conquistas       UserAchievement[]
+  membroTurmas     CohortMember[]
+  registrosDiario  DiaryEntry[]
+
+  @@index([papel])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================
+// CURSO E TRILHA
+// ============================================================
+
+model Course {
+  id           String  @id @default(cuid())
+  slug         String  @unique
+  titulo       String
+  subtitulo    String?
+  descricao    String  @db.Text
+  capa         String?
+  cargaHoraria Int     @default(40)
+  publicado    Boolean @default(false)
+  ordem        Int     @default(0)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  modulos    Module[]
+  matriculas Enrollment[]
+  turmas     Cohort[]
+
+  @@map("courses")
+}
+
+model Module {
+  id        String  @id @default(cuid())
+  courseId  String
+  titulo    String
+  subtitulo String?
+  descricao String? @db.Text
+  ordem     Int
+  icone     String?
+  cor       String? // cor do encontro (#6366F1, #0EA5E9, ...)
+
+  course Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  licoes Lesson[]
+
+  @@unique([courseId, ordem])
+  @@map("modules")
+}
+
+enum TipoLicao {
+  TEORIA
+  PROMPT
+  DUELO
+  CACA_ERRO
+  CASO
+  DESAFIO
+  QUIZ
+  CHECKPOINT
+}
+
+model Lesson {
+  id             String    @id @default(cuid())
+  moduleId       String
+  titulo         String
+  subtitulo      String?
+  tipo           TipoLicao
+  conteudo       Json // estrutura varia conforme o tipo
+  ordem          Int
+  xpRecompensa   Int       @default(10)
+  tempoEstimado  Int       @default(5) // minutos
+  capituloRef    String? // "Cap. 2.2" — liga à apostila
+
+  module          Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  promptTemplates PromptTemplate[]
+  exercicios      Exercise[]
+  progressos      LessonProgress[]
+
+  @@unique([moduleId, ordem])
+  @@index([tipo])
+  @@map("lessons")
+}
+
+// ============================================================
+// PROMPTS — o diferencial da aplicação
+// ============================================================
+
+model PromptTemplate {
+  id       String  @id @default(cuid())
+  lessonId String?
+
+  titulo    String
+  corpo     String  @db.Text
+  variaveis Json // [{ chave: "ANO", rotulo: "Ano escolar", exemplo: "6º ano" }]
+  categoria String // "planejamento" | "avaliacao" | "inclusao" | ...
+  disciplina String?
+  dica      String? @db.Text
+
+  ferramentasSugeridas String[] // ["gemini", "deepseek", "chatgpt"]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  lesson    Lesson?     @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  execucoes PromptRun[]
+
+  @@index([categoria])
+  @@index([disciplina])
+  @@map("prompt_templates")
+}
+
+model PromptRun {
+  id               String @id @default(cuid())
+  userId           String
+  promptTemplateId String
+
+  ferramenta           String // "gemini" | "deepseek" | ...
+  variaveisPreenchidas Json
+  promptFinal          String  @db.Text
+  reflexao             String? @db.Text
+  minutosEconomizados  Int?
+
+  executadoEm DateTime @default(now())
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt PromptTemplate @relation(fields: [promptTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([promptTemplateId])
+  @@index([ferramenta])
+  @@map("prompt_runs")
+}
+
+// ============================================================
+// EXERCÍCIOS
+// ============================================================
+
+enum TipoExercicio {
+  MULTIPLA_ESCOLHA
+  VERDADEIRO_FALSO
+  RESPOSTA_LIVRE
+  REESCRITA_PROMPT
+  ENCONTRAR_ERRO
+}
+
+model Exercise {
+  id       String        @id @default(cuid())
+  lessonId String
+  tipo     TipoExercicio
+  enunciado String       @db.Text
+  opcoes    Json? // [{ id, texto, correta }]
+  respostaCorreta String? @db.Text
+  explicacao      String  @db.Text
+  ordem           Int
+
+  lesson    Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  respostas ExerciseResponse[]
+
+  @@unique([lessonId, ordem])
+  @@map("exercises")
+}
+
+model ExerciseResponse {
+  id         String  @id @default(cuid())
+  exerciseId String
+  progressId String
+
+  resposta String  @db.Text
+  correta  Boolean
+  tentativa Int    @default(1)
+
+  respondidoEm DateTime @default(now())
+
+  exercise Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  progress LessonProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+  @@index([progressId])
+  @@map("exercise_responses")
+}
+
+// ============================================================
+// MATRÍCULA E PROGRESSO
+// ============================================================
+
+model Enrollment {
+  id       String @id @default(cuid())
+  userId   String
+  courseId String
+
+  iniciadoEm   DateTime  @default(now())
+  concluidoEm  DateTime?
+  progressoPct Int       @default(0)
+  xpTotal      Int       @default(0)
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progressos LessonProgress[]
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+enum StatusLicao {
+  BLOQUEADA
+  DISPONIVEL
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+model LessonProgress {
+  id           String      @id @default(cuid())
+  enrollmentId String
+  lessonId     String
+  status       StatusLicao @default(BLOQUEADA)
+  xpGanho      Int         @default(0)
+  tentativas   Int         @default(0)
+  anotacoes    String?     @db.Text
+
+  iniciadoEm  DateTime?
+  concluidoEm DateTime?
+
+  enrollment Enrollment         @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  respostas  ExerciseResponse[]
+
+  @@unique([enrollmentId, lessonId])
+  @@index([status])
+  @@map("lesson_progress")
+}
+
+// ============================================================
+// GAMIFICAÇÃO
+// ============================================================
+
+model Streak {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  diasSeguidos Int      @default(0)
+  recorde      Int      @default(0)
+  ultimoAcesso DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+model Achievement {
+  id        String @id @default(cuid())
+  chave     String @unique
+  titulo    String
+  descricao String
+  icone     String
+  criterio  Json // { tipo: "licoes_concluidas", valor: 10 }
+  ordem     Int    @default(0)
+
+  usuarios UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  conquistadoEm DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ============================================================
+// DIÁRIO DE BORDO
+// ============================================================
+
+model DiaryEntry {
+  id     String @id @default(cuid())
+  userId String
+
+  oQueFez             String  @db.Text
+  ferramentaUsada     String
+  minutosAntes        Int?
+  minutosAgora        Int?
+  valeuAPena          Boolean @default(true)
+  observacao          String? @db.Text
+
+  registradoEm DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("diary_entries")
+}
+
+// ============================================================
+// TURMAS
+// ============================================================
+
+model Cohort {
+  id       String    @id @default(cuid())
+  courseId String
+  nome     String
+  descricao String?
+  inicioEm DateTime?
+  fimEm    DateTime?
+  codigo   String    @unique // código de matrícula
+
+  criadoEm DateTime @default(now())
+
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  membros CohortMember[]
+
+  @@map("cohorts")
+}
+
+model CohortMember {
+  id       String   @id @default(cuid())
+  cohortId String
+  userId   String
+  entrouEm DateTime @default(now())
+
+  cohort Cohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, userId])
+  @@map("cohort_members")
+}

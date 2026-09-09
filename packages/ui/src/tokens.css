@@ -1,0 +1,114 @@
+/* =========================================================
+   APRENDER IA — Design Tokens
+   Herda a identidade da apostila e expande para o digital.
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ---- Cores-âncora (do curso) ---- */
+  --indigo: #4F46E5;
+  --indigo-dark: #4338CA;
+  --indigo-soft: #EEF0FE;
+  --indigo-line: #DDE1FB;
+
+  --laranja: #F97316;
+  --laranja-dark: #C2410C;
+  --laranja-soft: #FFF3E8;
+
+  /* ---- Funcionais ---- */
+  --verde: #10B981;
+  --verde-dark: #047857;
+  --verde-soft: #ECFDF5;
+
+  --vermelho: #EF4444;
+  --vermelho-dark: #B91C1C;
+  --vermelho-soft: #FEF2F2;
+
+  --amarelo: #EAB308;
+  --amarelo-dark: #A16207;
+  --amarelo-soft: #FEFCE8;
+
+  --azul: #2563EB;
+  --azul-soft: #EFF6FF;
+
+  /* ---- Cores de trilha (uma por encontro) ---- */
+  --enc-1: #6366F1;
+  --enc-1-soft: #EEF2FF;
+  --enc-2: #0EA5E9;
+  --enc-2-soft: #E0F2FE;
+  --enc-3: #10B981;
+  --enc-3-soft: #ECFDF5;
+  --enc-4: #F59E0B;
+  --enc-4-soft: #FEF3C7;
+
+  /* ---- Gamificação ---- */
+  --xp: #F97316;
+  --streak: #EF4444;
+  --conquista: #EAB308;
+  --bloqueado: #94A3B8;
+
+  /* ---- Neutros ---- */
+  --tinta: #1E293B;
+  --tinta-clara: #475569;
+  --cinza: #64748B;
+  --cinza-claro: #94A3B8;
+  --borda: #E2E8F0;
+  --fundo: #FCFCFE;
+  --superficie: #FFFFFF;
+
+  /* ---- Prompt (idêntico à apostila) ---- */
+  --prompt-bg: #151F38;
+  --prompt-bg2: #1B2745;
+  --prompt-txt: #E8EDF7;
+
+  /* ---- Gradientes ---- */
+  --grad-marca: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%);
+  --grad-energia: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  --grad-sucesso: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  --grad-capa: linear-gradient(150deg, #EEF0FE 0%, #F6F4FF 45%, #FFF8F0 100%);
+
+  /* ---- Tipografia ---- */
+  --fonte-titulo: 'Montserrat', system-ui, sans-serif;
+  --fonte-corpo: 'Nunito Sans', system-ui, sans-serif;
+  --fonte-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  /* ---- Raios ---- */
+  --raio-sm: 8px;
+  --raio-md: 12px;
+  --raio-lg: 16px;
+  --raio-xl: 24px;
+  --raio-full: 999px;
+
+  /* ---- Sombras ---- */
+  --sombra-sm: 0 1px 3px rgba(15, 23, 42, .06);
+  --sombra-md: 0 5px 18px rgba(15, 23, 42, .05);
+  --sombra-lg: 0 12px 32px rgba(15, 23, 42, .09);
+  --sombra-cor: 0 8px 24px rgba(79, 70, 229, .22);
+
+  /* ---- Espaçamento ---- */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+  --esp-12: 48px;
+  --esp-16: 64px;
+
+  /* ---- Transições ---- */
+  --t-rapida: 150ms ease-out;
+  --t-media: 250ms ease-in-out;
+}
+
+/* Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

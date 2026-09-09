@@ -1,0 +1,24 @@
+{
+  "name": "aprender-ia",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:up": "docker compose -f docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f docker/docker-compose.yml down",
+    "db:migrate": "pnpm --filter @aprender/db migrate",
+    "db:seed": "pnpm --filter @aprender/db seed",
+    "db:studio": "pnpm --filter @aprender/db studio",
+    "db:reset": "pnpm --filter @aprender/db reset"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "prettier": "^3.4.2"
+  }
+}

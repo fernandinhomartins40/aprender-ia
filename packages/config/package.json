@@ -1,0 +1,9 @@
+{
+  "name": "@aprender/config",
+  "version": "0.0.0",
+  "private": true,
+  "files": ["tsconfig", "tailwind"],
+  "exports": {
+    "./tailwind": "./tailwind/index.js"
+  }
+}
