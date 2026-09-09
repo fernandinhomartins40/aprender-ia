@@ -5,7 +5,13 @@
 # O nginx interno roteia para:
 #   web:3000  → aplicação Next.js (páginas e API routes)
 #   api:3001  → serviço de API dedicado (reservado)
+#
+# O nome do projeto é fixo de propósito: sem ele o Compose usa o nome
+# do diretório, que muda a cada release, e cada deploy tentaria criar
+# containers novos com nomes já em uso.
 # ============================================================
+
+name: aprenderia
 
 services:
   postgres:
