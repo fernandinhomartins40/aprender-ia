@@ -8,6 +8,7 @@ const MENU = [
   { href: "/admin/alunos", rotulo: "Alunos", icone: "👩‍🏫" },
   { href: "/admin/cursos", rotulo: "Cursos", icone: "📚" },
   { href: "/admin/turmas", rotulo: "Turmas", icone: "🎓" },
+  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "👤" },
 ];
 
 export default async function LayoutAdmin({
@@ -29,9 +30,12 @@ export default async function LayoutAdmin({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-tinta-clara md:inline">
+            <Link
+              href="/admin/perfil"
+              className="hidden text-sm font-bold text-tinta-clara hover:text-indigo md:inline"
+            >
               {admin.nome}
-            </span>
+            </Link>
             <Link href="/app" className="btn-fantasma text-sm">
               Ver como aluno
             </Link>
