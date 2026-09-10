@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import { listarCursos, exigirAdmin } from "@/server/admin";
+import { reais } from "@/lib/dinheiro";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,33 @@ async function alternarPublicacao(dados: FormData) {
   if (!id) return;
   await prisma.course.update({ where: { id }, data: { publicado: publicar } });
   revalidatePath("/admin/cursos");
+}
+
+/**
+ * Define se o curso é pago e por quanto.
+ *
+ * Marcar como pago é o que ativa o bloqueio: alunos FREE deixam de
+ * enxergar o curso na trilha. O preço é só informativo — o pagamento
+ * em si é controlado manualmente no painel financeiro.
+ */
+async function definirCobranca(dados: FormData) {
+  "use server";
+  await exigirAdmin();
+
+  const id = String(dados.get("id") ?? "");
+  const pago = dados.get("pago") === "1";
+  const preco = Number(String(dados.get("preco") ?? "0").replace(",", "."));
+  if (!id) return;
+
+  await prisma.course.update({
+    where: { id },
+    data: {
+      pago,
+      precoCentavos: pago && Number.isFinite(preco) ? Math.round(preco * 100) : 0,
+    },
+  });
+  revalidatePath("/admin/cursos");
+  revalidatePath("/admin/financeiro");
 }
 
 export default async function Cursos() {
@@ -50,6 +78,15 @@ export default async function Cursos() {
                     <span className={c.publicado ? "selo-verde" : "selo-amarelo"}>
                       {c.publicado ? "Publicado" : "Rascunho"}
                     </span>
+                    <span
+                      className={
+                        c.pago
+                          ? "selo bg-indigo-soft text-indigo-dark"
+                          : "selo bg-verde-soft text-verde-dark"
+                      }
+                    >
+                      {c.pago ? `Pago · ${reais(c.precoCentavos)}` : "Gratuito"}
+                    </span>
                   </div>
                   {c.subtitulo && (
                     <p className="mt-1 text-tinta-clara">{c.subtitulo}</p>
@@ -60,16 +97,50 @@ export default async function Cursos() {
                   </p>
                 </div>
 
-                <form action={alternarPublicacao}>
-                  <input type="hidden" name="id" value={c.id} />
-                  <input type="hidden" name="publicar" value={c.publicado ? "0" : "1"} />
-                  <button
-                    type="submit"
-                    className={c.publicado ? "btn-secundario" : "btn-primario"}
+                <div className="flex flex-wrap items-center gap-3">
+                  <form
+                    action={definirCobranca}
+                    className="flex items-center gap-2 rounded-md border-2 border-borda p-2"
                   >
-                    {c.publicado ? "Despublicar" : "Publicar"}
-                  </button>
-                </form>
+                    <input type="hidden" name="id" value={c.id} />
+                    <select
+                      name="pago"
+                      defaultValue={c.pago ? "1" : "0"}
+                      aria-label={`Cobrança de ${c.titulo}`}
+                      className="rounded-md border-2 border-borda px-2 py-1.5 text-sm"
+                    >
+                      <option value="0">Gratuito</option>
+                      <option value="1">Pago</option>
+                    </select>
+                    <input
+                      name="preco"
+                      inputMode="decimal"
+                      placeholder="97,00"
+                      defaultValue={
+                        c.precoCentavos ? (c.precoCentavos / 100).toFixed(2).replace(".", ",") : ""
+                      }
+                      aria-label={`Preço de ${c.titulo}`}
+                      className="w-24 rounded-md border-2 border-borda px-2 py-1.5 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md border-2 border-indigo-line px-3 py-1.5 text-sm font-bold text-indigo hover:border-indigo"
+                    >
+                      Salvar
+                    </button>
+                  </form>
+
+                  <form action={alternarPublicacao}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <input type="hidden" name="publicar" value={c.publicado ? "0" : "1"} />
+                    <button
+                      type="submit"
+                      className={c.publicado ? "btn-secundario" : "btn-primario"}
+                    >
+                      {c.publicado ? "Despublicar" : "Publicar"}
+                    </button>
+                  </form>
+                </div>
               </div>
 
               {c.modulos.length > 0 && (

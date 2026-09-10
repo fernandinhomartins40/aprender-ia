@@ -20,13 +20,38 @@ enum Papel {
   ADMIN
 }
 
+/// Plano de acesso do aluno. FREE só alcança cursos gratuitos.
+enum Plano {
+  FREE
+  PREMIUM
+}
+
+/// Situação da conta. SUSPENSO bloqueia o acesso a curso pago,
+/// mas preserva todo o progresso já feito.
+enum SituacaoConta {
+  ATIVO
+  SUSPENSO
+}
+
 model User {
   id        String   @id @default(cuid())
   nome      String
   email     String   @unique
+  telefone  String?  @unique
   senhaHash String?
   avatar    String?
   papel     Papel    @default(ALUNO)
+
+  // Contas criadas em lote nascem com senha provisória; o aluno é
+  // obrigado a definir a sua no primeiro acesso.
+  precisaTrocarSenha Boolean @default(false)
+
+  // ---- Acesso e cobrança ----
+  plano       Plano         @default(FREE)
+  situacao    SituacaoConta @default(ATIVO)
+  /// Até quando o acesso premium vale. Nulo = sem prazo definido.
+  premiumAte  DateTime?
+  observacoes String?       @db.Text
 
   // perfil docente
   disciplina String?
@@ -46,8 +71,12 @@ model User {
   conquistas       UserAchievement[]
   membroTurmas     CohortMember[]
   registrosDiario  DiaryEntry[]
+  pagamentos       Payment[]
 
   @@index([papel])
+  @@index([telefone])
+  @@index([plano])
+  @@index([situacao])
   @@map("users")
 }
 
@@ -104,6 +133,11 @@ model Course {
   cargaHoraria Int     @default(40)
   publicado    Boolean @default(false)
   ordem        Int     @default(0)
+
+  /// Curso pago exige plano PREMIUM e conta ativa.
+  pago         Boolean @default(false)
+  /// Valor de referência para o controle financeiro, em centavos.
+  precoCentavos Int    @default(0)
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -376,6 +410,54 @@ model DiaryEntry {
 
   @@index([userId])
   @@map("diary_entries")
+}
+
+// ============================================================
+// FINANCEIRO
+// ============================================================
+
+enum TipoPagamento {
+  UNICO
+  RECORRENTE
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+/// Lançamento financeiro de um aluno.
+///
+/// O controle é manual: não há integração com meio de pagamento.
+/// Cada linha registra uma cobrança e, quando quitada, a data e a forma.
+model Payment {
+  id     String @id @default(cuid())
+  userId String
+
+  descricao     String
+  valorCentavos Int
+  tipo          TipoPagamento   @default(UNICO)
+  status        StatusPagamento @default(PENDENTE)
+
+  vencimentoEm DateTime
+  pagoEm       DateTime?
+  formaPagamento String?
+  observacao     String?  @db.Text
+
+  /// Para cobranças recorrentes: a competência (ex.: "2026-09").
+  competencia String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([vencimentoEm])
+  @@map("payments")
 }
 
 // ============================================================

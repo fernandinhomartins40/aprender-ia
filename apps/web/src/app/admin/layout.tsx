@@ -9,6 +9,7 @@ const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
   { href: "/admin/alunos", rotulo: "Alunos", icone: "heart" },
   { href: "/admin/cursos", rotulo: "Cursos", icone: "notebook" },
   { href: "/admin/turmas", rotulo: "Turmas", icone: "crown" },
+  { href: "/admin/financeiro", rotulo: "Financeiro", icone: "gift" },
   { href: "/admin/perfil", rotulo: "Meu perfil", icone: "setting" },
 ];
 

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { signOut } from "@aprender/auth";
 import { Logo } from "@/components/logo";
+import { redirect } from "next/navigation";
+import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
@@ -14,6 +16,15 @@ const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
 
 export default async function LayoutAluno({ children }: { children: React.ReactNode }) {
   const user = await exigirAluno();
+
+  // Contas criadas em lote entram com senha provisória. Barramos o acesso
+  // à trilha até que o aluno defina a sua — a provisória é adivinhável
+  // por quem tem a lista de chamada.
+  const conta = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { precisaTrocarSenha: true },
+  });
+  if (conta?.precisaTrocarSenha) redirect("/trocar-senha");
 
   return (
     <div className="min-h-screen bg-fundo pb-20 md:pb-0">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { exigirAluno, carregarTrilha, resumoAluno } from "@/server/trilha";
+import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,17 @@ export default async function PainelAluno() {
   ]);
 
   const primeiroNome = user.nome?.split(" ")[0] ?? "professor(a)";
+
+  if (trilha?.bloqueado) {
+    return (
+      <div>
+        <h1 className="mb-6 font-titulo text-3xl font-extrabold">
+          Olá, {primeiroNome}
+        </h1>
+        <AcessoBloqueado veredito={trilha.veredito} cursoTitulo={trilha.curso.titulo} />
+      </div>
+    );
+  }
 
   const proxima = trilha?.modulos
     .flatMap((m) => m.licoes.map((l) => ({ ...l, cor: m.cor })))

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { exigirAluno, carregarLicao } from "@/server/trilha";
 import { concluirLicao, registrarPrompt } from "@/server/acoes";
 import { LicaoCliente } from "@/components/licao-cliente";
+import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,12 @@ export default async function Licao({ params }: { params: Promise<{ id: string }
   const dados = await carregarLicao(user.id, id);
 
   if (!dados) notFound();
+
+  // Sem acesso ao curso (plano/suspensão) vem antes do bloqueio
+  // sequencial: é um impedimento de outra natureza.
+  if (dados.semAcesso) {
+    return <AcessoBloqueado veredito={dados.veredito} />;
+  }
 
   if (dados.bloqueada) {
     return (

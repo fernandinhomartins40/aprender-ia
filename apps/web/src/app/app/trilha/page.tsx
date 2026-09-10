@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { exigirAluno, carregarTrilha } from "@/server/trilha";
 import { Icone3D, ICONE_POR_TIPO, ICONE_POR_ENCONTRO } from "@/components/icone-3d";
+import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,12 @@ export default async function Trilha() {
           Nenhum curso publicado ainda. Volte em breve.
         </p>
       </div>
+    );
+  }
+
+  if (trilha.bloqueado) {
+    return (
+      <AcessoBloqueado veredito={trilha.veredito} cursoTitulo={trilha.curso.titulo} />
     );
   }
 

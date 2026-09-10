@@ -42,6 +42,29 @@
     min-height: 44px;
   }
 
+
+  /* Tabela que vira lista de cartões no celular.
+     Uma tabela de 6 colunas com formulários dentro é ilegível em 390px
+     mesmo com scroll horizontal: o polegar arrasta a tabela quando
+     tenta tocar num botão. Abaixo de md cada linha vira um cartão e
+     cada célula ganha o rótulo da coluna via data-rotulo. */
+  .tabela-responsiva { @apply w-full text-left; }
+
+  @media (max-width: 767px) {
+    .tabela-responsiva thead { @apply hidden; }
+    .tabela-responsiva tbody tr {
+      @apply block border-b-4 border-borda p-1 last:border-0;
+    }
+    .tabela-responsiva tbody td {
+      @apply flex flex-wrap items-start justify-between gap-2 border-0 px-3 py-2;
+    }
+    .tabela-responsiva tbody td::before {
+      content: attr(data-rotulo);
+      @apply font-titulo text-xs font-bold uppercase tracking-wide text-cinza;
+    }
+    .tabela-responsiva tbody td[data-rotulo=""]::before { @apply hidden; }
+  }
+
   .selo { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-titulo font-bold; }
   .selo-verde { @apply selo bg-verde-soft text-verde-dark; }
   .selo-amarelo { @apply selo bg-amarelo-soft text-amarelo-dark; }

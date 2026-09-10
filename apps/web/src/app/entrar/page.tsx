@@ -25,7 +25,7 @@ function FormularioEntrar() {
     if (r?.error) {
       // Mensagem genérica de propósito: dizer "e-mail não existe" ajudaria
       // alguém a descobrir quem tem conta na plataforma.
-      setErro("E-mail ou senha incorretos. Se você entrou com o Google antes, use o botão do Google.");
+      setErro("E-mail/telefone ou senha incorretos. Se você entrou com o Google antes, use o botão do Google.");
       setCarregando(false);
       return;
     }
@@ -58,17 +58,18 @@ function FormularioEntrar() {
           <form onSubmit={entrar} className="space-y-4">
             <div>
               <label htmlFor="email" className="mb-1.5 block font-titulo text-sm font-bold">
-                E-mail
+                E-mail ou telefone
               </label>
               <input
                 id="email"
-                type="email"
-                autoComplete="email"
+                type="text"
+                inputMode="text"
+                autoComplete="username"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="campo"
-                placeholder="voce@escola.com"
+                placeholder="seu@email.com ou 11987654321"
               />
             </div>
 

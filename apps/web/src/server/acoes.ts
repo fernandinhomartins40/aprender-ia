@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import { exigirAluno, garantirMatricula } from "./trilha";
+import { verificarAcessoCurso } from "./acesso";
 
 /* ============================================================
    OFENSIVA (streak)
@@ -125,6 +126,22 @@ async function conferirConquistas(userId: string) {
   return novas;
 }
 
+/**
+ * Matrícula do aluno, mas só se ele ainda pode cursar.
+ *
+ * A matrícula sobrevive à suspensão (é assim que o progresso fica
+ * guardado), então checar só a existência dela deixaria um aluno
+ * suspenso continuar ganhando XP por POST direto — server action é
+ * endpoint público, esconder a tela não basta.
+ */
+async function matriculaComAcesso(userId: string) {
+  const matricula = await garantirMatricula(userId);
+  if (!matricula) return null;
+
+  const veredito = await verificarAcessoCurso(userId, matricula.courseId);
+  return veredito.permitido ? matricula : null;
+}
+
 /* ============================================================
    CONCLUIR LIÇÃO
    ============================================================ */
@@ -135,7 +152,7 @@ export async function concluirLicao(dados: FormData) {
   const anotacoes = String(dados.get("anotacoes") ?? "").trim() || null;
   if (!lessonId) return;
 
-  const matricula = await garantirMatricula(user.id);
+  const matricula = await matriculaComAcesso(user.id);
   if (!matricula) return;
 
   const licao = await prisma.lesson.findUnique({

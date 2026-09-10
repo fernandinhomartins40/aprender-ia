@@ -47,15 +47,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: "credenciais",
       credentials: {
-        email: { label: "E-mail", type: "email" },
+        email: { label: "E-mail ou telefone", type: "text" },
         senha: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        const email = String(credentials?.email ?? "").toLowerCase().trim();
+        const identificador = String(credentials?.email ?? "").toLowerCase().trim();
         const senha = String(credentials?.senha ?? "");
-        if (!email || !senha) return null;
+        if (!identificador || !senha) return null;
 
-        const usuario = await prisma.user.findUnique({ where: { email } });
+        // O campo aceita e-mail ou telefone. Alunos cadastrados em lote
+        // entram pelo telefone; quem se cadastrou sozinho usa o e-mail.
+        const apenasDigitos = identificador.replace(/\D/g, "");
+        const pareceTelefone =
+          apenasDigitos.length >= 10 && apenasDigitos.length <= 13 &&
+          !identificador.includes("@");
+
+        const usuario = pareceTelefone
+          ? await prisma.user.findFirst({
+              where: {
+                OR: [
+                  { telefone: apenasDigitos },
+                  { email: `${apenasDigitos}@aluno.aprenderia.site` },
+                ],
+              },
+            })
+          : await prisma.user.findUnique({ where: { email: identificador } });
 
         // Conta criada por Google não tem senha: não deixamos passar
         // com senha vazia, e a mensagem na tela orienta a entrar pelo Google.

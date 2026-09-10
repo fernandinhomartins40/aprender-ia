@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma, type Papel } from "@aprender/db";
 import { listarAlunos, exigirAdmin } from "@/server/admin";
+import { importarAlunos } from "@/server/importar-alunos";
+import { ImportarAlunos } from "@/components/importar-alunos";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +40,17 @@ export default async function Alunos({
   const busca = params.busca?.trim() || undefined;
   const pagina = Math.max(1, Number(params.pagina ?? 1) || 1);
 
-  const { usuarios, total, paginas } = await listarAlunos(busca, pagina);
+  const [{ usuarios, total, paginas }, cursos, turmas] = await Promise.all([
+    listarAlunos(busca, pagina),
+    prisma.course.findMany({
+      select: { id: true, titulo: true },
+      orderBy: { ordem: "asc" },
+    }),
+    prisma.cohort.findMany({
+      select: { id: true, nome: true, courseId: true, course: { select: { titulo: true } } },
+      orderBy: { criadoEm: "desc" },
+    }),
+  ]);
 
   return (
     <div>
@@ -64,6 +76,17 @@ export default async function Alunos({
         </form>
       </div>
 
+      <ImportarAlunos
+        acao={importarAlunos}
+        cursos={cursos}
+        turmas={turmas.map((t) => ({
+          id: t.id,
+          nome: t.nome,
+          courseId: t.courseId,
+          curso: t.course.titulo,
+        }))}
+      />
+
       {usuarios.length === 0 ? (
         <div className="card text-center">
           <p className="py-8 text-cinza">
@@ -74,7 +97,7 @@ export default async function Alunos({
         </div>
       ) : (
         <div className="card overflow-x-auto p-0">
-          <table className="w-full text-left">
+          <table className="tabela-responsiva">
             <thead className="border-b border-borda bg-indigo-soft">
               <tr className="font-titulo text-sm text-indigo-dark">
                 <th className="p-4">Professor(a)</th>
@@ -91,7 +114,7 @@ export default async function Alunos({
                 const ehVoce = u.id === admin.id;
                 return (
                   <tr key={u.id} className="border-b border-borda last:border-0">
-                    <td className="p-4">
+                    <td data-rotulo="Professor(a)" className="p-4">
                       <div className="font-bold">
                         {u.nome}
                         {ehVoce && (
@@ -102,13 +125,13 @@ export default async function Alunos({
                       </div>
                       <div className="text-sm text-cinza">{u.email}</div>
                     </td>
-                    <td className="p-4 text-sm text-tinta-clara">
+                    <td data-rotulo="Escola" className="p-4 text-sm text-tinta-clara">
                       {u.escola || "—"}
                       {u.disciplina && (
                         <div className="text-cinza">{u.disciplina}</div>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td data-rotulo="Progresso" className="p-4">
                       <div className="mx-auto w-28">
                         <div className="h-2 overflow-hidden rounded-full bg-borda">
                           <div
@@ -121,7 +144,7 @@ export default async function Alunos({
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-center">
+                    <td data-rotulo="Ofensiva" className="p-4 text-center">
                       {u.ofensiva?.diasSeguidos ? (
                         <span className="font-titulo font-bold text-streak">
                           🔥 {u.ofensiva.diasSeguidos}
@@ -130,10 +153,10 @@ export default async function Alunos({
                         <span className="text-cinza">—</span>
                       )}
                     </td>
-                    <td className="p-4 text-center text-tinta-clara">
+                    <td data-rotulo="Prompts" className="p-4 text-center text-tinta-clara">
                       {u._count.execucoesPrompt}
                     </td>
-                    <td className="p-4">
+                    <td data-rotulo="Permissão" className="p-4">
                       {ehVoce ? (
                         <span className={`selo ${CORES_PAPEL[u.papel]}`}>
                           {u.papel}

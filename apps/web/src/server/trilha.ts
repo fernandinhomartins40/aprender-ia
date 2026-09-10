@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@aprender/auth";
 import { prisma, type StatusLicao } from "@aprender/db";
+import { avaliarAcesso, type Veredito } from "./acesso";
 
 /** Garante sessão e devolve o usuário. */
 export async function exigirAluno() {
@@ -14,11 +15,20 @@ export async function exigirAluno() {
  * Cria na primeira visita — o professor não deveria precisar "se matricular".
  */
 export async function garantirMatricula(userId: string) {
-  const curso = await prisma.course.findFirst({
+  const aluno = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plano: true, situacao: true, premiumAte: true, papel: true },
+  });
+  if (!aluno) return null;
+
+  // Matricula no primeiro curso publicado que este aluno pode cursar —
+  // um aluno FREE não deve cair automaticamente num curso pago.
+  const publicados = await prisma.course.findMany({
     where: { publicado: true },
     orderBy: { ordem: "asc" },
-    select: { id: true },
+    select: { id: true, pago: true },
   });
+  const curso = publicados.find((c) => avaliarAcesso(aluno, c).permitido);
   if (!curso) return null;
 
   const existente = await prisma.enrollment.findUnique({
@@ -52,6 +62,20 @@ export async function carregarTrilha(userId: string) {
     },
   });
   if (!curso) return null;
+
+  // O acesso é reavaliado a cada carregamento: um aluno matriculado
+  // pode ter sido suspenso ou ter o prazo vencido depois da matrícula.
+  const dono = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plano: true, situacao: true, premiumAte: true, papel: true },
+  });
+  const veredito = dono
+    ? avaliarAcesso(dono, curso)
+    : ({ permitido: false, motivo: "conta-suspensa", mensagem: "Conta indisponível." } as Veredito);
+
+  if (!veredito.permitido) {
+    return { bloqueado: true as const, veredito, curso: { titulo: curso.titulo } };
+  }
 
   const progressos = await prisma.lessonProgress.findMany({
     where: { enrollmentId: matricula.id },
@@ -103,6 +127,7 @@ export async function carregarTrilha(userId: string) {
   const xpTotal = progressos.reduce((s, p) => s + p.xpGanho, 0);
 
   return {
+    bloqueado: false as const,
     curso: { id: curso.id, titulo: curso.titulo, slug: curso.slug },
     matriculaId: matricula.id,
     modulos,
@@ -117,6 +142,9 @@ export async function carregarTrilha(userId: string) {
 export async function carregarLicao(userId: string, lessonId: string) {
   const trilha = await carregarTrilha(userId);
   if (!trilha) return null;
+  if (trilha.bloqueado) {
+    return { semAcesso: true as const, bloqueada: false as const, veredito: trilha.veredito };
+  }
 
   const todas = trilha.modulos.flatMap((m) =>
     m.licoes.map((l) => ({ ...l, moduloCor: m.cor, moduloTitulo: m.titulo })),
@@ -125,7 +153,9 @@ export async function carregarLicao(userId: string, lessonId: string) {
   if (indice === -1) return null;
 
   const resumo = todas[indice]!;
-  if (resumo.status === "BLOQUEADA") return { bloqueada: true as const };
+  if (resumo.status === "BLOQUEADA") {
+    return { semAcesso: false as const, bloqueada: true as const };
+  }
 
   const licao = await prisma.lesson.findUnique({
     where: { id: lessonId },
@@ -134,6 +164,7 @@ export async function carregarLicao(userId: string, lessonId: string) {
   if (!licao) return null;
 
   return {
+    semAcesso: false as const,
     bloqueada: false as const,
     licao,
     resumo,
