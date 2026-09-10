@@ -34,12 +34,59 @@ declare module "next-auth" {
       avatar?: string | null;
     } & DefaultSession["user"];
   }
+
+  /** Devolvido por `authorize` e lido no callback `jwt`. */
+  interface User {
+    manterConectado?: boolean;
+  }
 }
+
+/**
+ * O prazo da sessão viaja no próprio token: `session.maxAge` é um valor
+ * único para toda a aplicação e não sabe distinguir quem marcou a caixa
+ * "manter conectado" de quem não marcou.
+ *
+ * Não augmentamos a interface JWT por módulo: ela é declarada em
+ * `@auth/core/jwt` (não em `next-auth/jwt`, que só a re-exporta) e o
+ * caminho muda entre betas do next-auth. Como `JWT` já estende
+ * `Record<string, unknown>`, gravar e ler estes campos é válido — a
+ * leitura usa uma conversão pontual, como o resto do arquivo já faz.
+ */
+
+/** Duração da sessão quando o usuário marca "manter conectado". */
+export const SESSAO_LONGA_SEGUNDOS = 30 * 24 * 60 * 60;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  session: { strategy: "jwt", maxAge: SESSAO_LONGA_SEGUNDOS },
   trustHost: true,
+
+  /**
+   * "Manter conectado" de verdade.
+   *
+   * O cookie é declarado SEM `maxAge`, o que o torna um cookie de sessão:
+   * o navegador o descarta ao fechar. Quem marca a caixa recebe, no
+   * callback `jwt`, um prazo gravado no próprio token — e a sessão passa
+   * a valer por 30 dias.
+   *
+   * A distinção importa: muitos professores acessam do computador
+   * compartilhado da sala dos professores, onde deixar a sessão aberta
+   * por 30 dias entrega a conta a quem sentar depois.
+   */
+  cookies: {
+    sessionToken: {
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Secure-authjs.session-token"
+          : "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
 
   pages: {
     signIn: "/entrar",
@@ -52,6 +99,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "E-mail ou telefone", type: "text" },
         senha: { label: "Senha", type: "password" },
+        manterConectado: { label: "Manter conectado", type: "text" },
       },
       async authorize(credentials) {
         const identificador = String(credentials?.email ?? "").toLowerCase().trim();
@@ -88,7 +136,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: usuario.nome,
           email: usuario.email,
           image: usuario.avatar,
-        };
+          // Lido pelo callback `jwt` para definir o prazo da sessão.
+          manterConectado: String(credentials?.manterConectado ?? "") === "true",
+        } as { id: string; name: string; email: string; image: string | null; manterConectado: boolean };
       },
     }),
   ],
@@ -97,6 +147,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger }) {
       // No login, e a cada atualização de perfil, relemos o papel do banco.
       if (user?.id) token.sub = user.id;
+
+      // No login gravamos o prazo escolhido no próprio token. Sem a caixa
+      // marcada, o cookie já morre ao fechar o navegador; o prazo curto
+      // aqui garante que um token copiado também não sobreviva.
+      if (user) {
+        const manter = (user as { manterConectado?: boolean }).manterConectado === true;
+        token.manterConectado = manter;
+        token.expiraEm = manter
+          ? Date.now() + SESSAO_LONGA_SEGUNDOS * 1000
+          : Date.now() + 12 * 60 * 60 * 1000;
+      }
+
+      // Token além do prazo: devolvemos vazio para forçar novo login.
+      if (typeof token.expiraEm === "number" && Date.now() > token.expiraEm) {
+        return null;
+      }
 
       if (token.sub && (user || trigger === "update" || !token.papel)) {
         const atual = await prisma.user.findUnique({

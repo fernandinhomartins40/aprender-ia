@@ -161,6 +161,17 @@ jobs:
             upsert_env "NEXTAUTH_URL" "$CANONICAL_URL"
             upsert_env "PUBLIC_APP_URL" "$CANONICAL_URL"
 
+            # SMTP da recuperação de senha. Usamos ensure_env (e não
+            # upsert_env) de propósito: as credenciais são preenchidas à mão
+            # no .env da VPS e não podem ser sobrescritas a cada deploy.
+            # Enquanto estiverem vazias, o link de recuperação sai no log
+            # do container em vez de ser enviado por e-mail.
+            ensure_env "SMTP_HOST" ""
+            ensure_env "SMTP_PORT" "587"
+            ensure_env "SMTP_USER" ""
+            ensure_env "SMTP_PASS" ""
+            ensure_env "SMTP_FROM" "Aprender IA <nao-responda@aprenderia.site>"
+
             PG_USER="$(get_env "POSTGRES_USER" | tr -d '\r')"
             PG_PASS="$(get_env "POSTGRES_PASSWORD" | tr -d '\r')"
             PG_DB="$(get_env "POSTGRES_DB" | tr -d '\r')"

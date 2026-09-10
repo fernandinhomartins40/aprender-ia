@@ -65,6 +65,7 @@ model User {
 
   contas           Account[]
   sessoes          Session[]
+  tokensSenha      PasswordResetToken[]
   matriculas       Enrollment[]
   execucoesPrompt  PromptRun[]
   ofensiva         Streak?
@@ -117,6 +118,31 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+/// Token de recuperação de senha.
+///
+/// Não reaproveitamos VerificationToken: aquele pertence ao Auth.js, que
+/// o apaga em seus próprios fluxos, e não tem como registrar que um token
+/// já foi usado. Aqui guardamos apenas o HASH do token — vazamento do
+/// banco não permite redefinir a senha de ninguém.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  /// Guardados para auditoria de pedidos suspeitos.
+  ip        String?
+  userAgent String?   @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiraEm])
+  @@map("password_reset_tokens")
 }
 
 // ============================================================
