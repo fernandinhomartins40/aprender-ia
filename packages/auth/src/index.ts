@@ -131,6 +131,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const confere = await bcrypt.compare(senha, usuario.senhaHash);
         if (!confere) return null;
 
+        // Carimbo do acesso. É a única fonte para "aluno ativo" e
+        // "inativo" no painel: a ofensiva só se move quando o aluno
+        // conclui lição, e entrar sem estudar também conta como acesso.
+        // Falhar aqui não pode impedir o login.
+        try {
+          await prisma.user.update({
+            where: { id: usuario.id },
+            data: { ultimoAcessoEm: new Date() },
+          });
+        } catch {
+          /* o login segue mesmo sem o carimbo */
+        }
+
         return {
           id: usuario.id,
           name: usuario.nome,

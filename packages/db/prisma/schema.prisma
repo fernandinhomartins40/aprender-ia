@@ -63,6 +63,11 @@ model User {
   criadoEm        DateTime  @default(now())
   atualizadoEm    DateTime  @updatedAt
 
+  /// Carimbado a cada login. Sem ele não existe "aluno ativo" nem
+  /// "inativo": `Streak.ultimoAcesso` só se move quando o aluno conclui
+  /// uma lição, e entrar sem estudar também é acesso.
+  ultimoAcessoEm DateTime?
+
   contas           Account[]
   sessoes          Session[]
   tokensSenha      PasswordResetToken[]
@@ -76,11 +81,86 @@ model User {
   registrosDiario  DiaryEntry[]
   pagamentos       Payment[]
 
+  acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
+
   @@index([papel])
   @@index([telefone])
   @@index([plano])
   @@index([situacao])
+  @@index([ultimoAcessoEm])
   @@map("users")
+}
+
+// ============================================================
+// CONFIGURAÇÕES DA PLATAFORMA
+// ============================================================
+
+/// Tipo do valor guardado, para o painel renderizar o campo certo e
+/// converter na leitura sem adivinhar.
+enum TipoConfiguracao {
+  TEXTO
+  NUMERO
+  BOOLEANO
+  JSON
+}
+
+/// Configuração da plataforma, editável pelo painel.
+///
+/// Chave/valor em vez de colunas: cada fase nova (regras do Free, planos,
+/// notificações) acrescenta chaves sem migration. O valor é sempre texto
+/// e `tipo` diz como convertê-lo — assim uma chave nova não exige tocar
+/// no schema, que é justamente o objetivo de não depender do banco.
+model PlatformSetting {
+  chave     String           @id
+  valor     String           @db.Text
+  tipo      TipoConfiguracao @default(TEXTO)
+  /// Agrupa as chaves em seções na tela de configurações.
+  grupo     String           @default("geral")
+  rotulo    String
+  descricao String?          @db.Text
+
+  atualizadoEm  DateTime @updatedAt
+  atualizadoPor String?
+
+  @@index([grupo])
+  @@map("platform_settings")
+}
+
+// ============================================================
+// AUDITORIA ADMINISTRATIVA
+// ============================================================
+
+/// Registro de ação administrativa.
+///
+/// Guarda o nome do ator junto do id: se a conta for apagada depois, o
+/// log continua dizendo quem fez — um histórico que se apaga sozinho não
+/// serve como histórico.
+model AdminAuditLog {
+  id        String @id @default(cuid())
+  atorId    String?
+  atorNome  String
+  /// Verbo curto e estável, ex.: "aluno.plano.alterado".
+  acao      String
+  /// Que tipo de registro foi afetado ("User", "Cohort", "Payment").
+  entidade  String
+  entidadeId String?
+  /// Descrição legível, para a tela não precisar interpretar `dados`.
+  resumo    String
+  /// Antes/depois e o que mais ajudar a entender a ação.
+  dados     Json?
+
+  ip        String?
+  userAgent String? @db.Text
+
+  criadoEm DateTime @default(now())
+
+  ator User? @relation("AtorDaAcao", fields: [atorId], references: [id], onDelete: SetNull)
+
+  @@index([atorId])
+  @@index([entidade, entidadeId])
+  @@index([criadoEm])
+  @@index([acao])
+  @@map("admin_audit_logs")
 }
 
 model Account {

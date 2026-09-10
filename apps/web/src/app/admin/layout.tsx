@@ -12,7 +12,9 @@ const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
   { href: "/admin/turmas", rotulo: "Cronogramas", icone: "crown" },
   { href: "/admin/cursos", rotulo: "Cursos", icone: "notebook" },
   { href: "/admin/financeiro", rotulo: "Financeiro", icone: "gift" },
-  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "setting" },
+  { href: "/admin/configuracoes", rotulo: "Configurações", icone: "setting" },
+  { href: "/admin/auditoria", rotulo: "Histórico", icone: "shield" },
+  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "lock" },
 ];
 
 export default async function LayoutAdmin({
