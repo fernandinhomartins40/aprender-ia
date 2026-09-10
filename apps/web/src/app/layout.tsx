@@ -8,6 +8,18 @@ export const metadata: Metadata = {
     "Trilha guiada para professores da rede pública usarem Inteligência Artificial na rotina escolar. Menos burocracia, aulas melhores, seu fim de semana de volta.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Aprender IA" },
+  // Declarados explicitamente, e não só por convenção de arquivo: assim o
+  // navegador recebe o PNG nítido quando quer um ícone grande, em vez de
+  // ampliar o .ico de 48px.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-96.png", type: "image/png", sizes: "96x96" },
+      { url: "/icones/icone-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/icones/apple-touch-icon.png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {
