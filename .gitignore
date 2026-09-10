@@ -46,3 +46,7 @@ npm-debug.log*
 
 # Credenciais locais — nunca versionar
 CREDENCIAIS-*.txt
+
+# Acervo completo do 3dicons (fonte local, 31MB)
+# A aplicação usa apenas os selecionados em apps/web/public/icones-3d
+assets-3dicons/

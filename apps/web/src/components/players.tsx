@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CardPrompt } from "./card-prompt";
+import { Icone3D } from "./icone-3d";
 
 /* ============================================================
    TEORIA — mesma linguagem visual dos quadros da apostila
@@ -17,21 +18,21 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
           case "traduzindo":
             return (
               <div key={i} className="rounded-lg border-l-4 border-verde bg-verde-soft p-5">
-                <p className="font-titulo font-bold text-verde-dark">📖 Traduzindo: {b.titulo}</p>
+                <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark"><Icone3D nome="file-text" tamanho={22} />Traduzindo: {b.titulo}</p>
                 <p className="mt-2 text-verde-dark">{b.texto}</p>
               </div>
             );
           case "atencao":
             return (
               <div key={i} className="rounded-lg border-l-4 border-vermelho bg-vermelho-soft p-5">
-                <p className="font-titulo font-bold text-vermelho-dark">⚠️ {b.titulo}</p>
+                <p className="flex items-center gap-2 font-titulo font-bold text-vermelho-dark"><Icone3D nome="shield" tamanho={22} />{b.titulo}</p>
                 <p className="mt-2 text-vermelho-dark">{b.texto}</p>
               </div>
             );
           case "dica":
             return (
               <div key={i} className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
-                <p className="font-titulo font-bold text-amarelo-dark">💡 {b.titulo}</p>
+                <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><Icone3D nome="bulb" tamanho={22} />{b.titulo}</p>
                 <p className="mt-2 text-amarelo-dark">{b.texto}</p>
               </div>
             );
@@ -207,7 +208,7 @@ export function PlayerDuelo({
       </div>
 
       <div className="rounded-lg border-2 border-dashed border-laranja bg-laranja-soft p-5">
-        <p className="font-titulo font-bold text-laranja-dark">✍️ {conteudo.desafio}</p>
+        <p className="flex items-center gap-2 font-titulo font-bold text-laranja-dark"><Icone3D nome="pencil" tamanho={22} />{conteudo.desafio}</p>
         <pre className="mt-3 whitespace-pre-wrap rounded-md bg-prompt-bg p-3 font-mono text-sm text-prompt-txt">
           {conteudo.promptParaReescrever}
         </pre>
@@ -274,7 +275,7 @@ export function PlayerCacaErro({
       </div>
 
       <div>
-        <p className="font-titulo text-lg font-bold">🔍 {conteudo.pergunta}</p>
+        <p className="flex items-center gap-2 font-titulo text-lg font-bold"><Icone3D nome="magic-trick" tamanho={26} />{conteudo.pergunta}</p>
         <div className="mt-4 space-y-3">
           {conteudo.opcoes.map((o) => {
             const escolhida = escolha === o.id;
@@ -303,12 +304,12 @@ export function PlayerCacaErro({
         <>
           <div className="rounded-lg border-l-4 border-vermelho bg-vermelho-soft p-5">
             <p className="font-titulo font-bold text-vermelho-dark">
-              🎯 {acertou ? "Você encontrou." : "Repare bem:"}
+              {acertou ? "Você encontrou." : "Repare bem:"}
             </p>
             <p className="mt-2 text-vermelho-dark">{conteudo.gabarito}</p>
           </div>
           <div className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
-            <p className="font-titulo font-bold text-amarelo-dark">💡 A lição</p>
+            <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><Icone3D nome="bulb" tamanho={22} />A lição</p>
             <p className="mt-2 text-amarelo-dark">{conteudo.licao}</p>
           </div>
         </>
@@ -500,8 +501,9 @@ export function PlayerCaso({
         </button>
       ) : (
         <div className="rounded-lg border-l-4 border-verde bg-verde-soft p-5">
-          <p className="font-titulo font-bold text-verde-dark">
-            💡 Uma solução possível (existem várias)
+          <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark">
+            <Icone3D nome="bulb" tamanho={22} />
+            Uma solução possível (existem várias)
           </p>
           <p className="mt-2 whitespace-pre-wrap text-verde-dark">{conteudo.solucao}</p>
           {conteudo.promptExemplo && (
@@ -547,7 +549,7 @@ export function PlayerCheckpoint({
   return (
     <div className="space-y-5">
       <div className="rounded-xl bg-grad-marca p-6 text-center text-white">
-        <p className="text-4xl" aria-hidden="true">🎉</p>
+        <Icone3D nome="trophy" tamanho={64} />
         <h3 className="mt-2 font-titulo text-2xl font-extrabold">{conteudo.titulo}</h3>
       </div>
 
@@ -578,7 +580,7 @@ export function PlayerCheckpoint({
 
       {conteudo.tarefa && (
         <div className="rounded-lg border-l-4 border-laranja bg-laranja-soft p-5">
-          <p className="font-titulo font-bold text-laranja-dark">📌 Tarefa da semana</p>
+          <p className="flex items-center gap-2 font-titulo font-bold text-laranja-dark"><Icone3D nome="flag" tamanho={22} />Tarefa da semana</p>
           <p className="mt-1 text-laranja-dark">{conteudo.tarefa}</p>
         </div>
       )}

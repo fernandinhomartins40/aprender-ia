@@ -2,13 +2,14 @@ import Link from "next/link";
 import { signOut } from "@aprender/auth";
 import { Logo } from "@/components/logo";
 import { exigirAluno } from "@/server/trilha";
+import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
-const MENU = [
-  { href: "/app", rotulo: "Início", icone: "🏠" },
-  { href: "/app/trilha", rotulo: "Trilha", icone: "🗺️" },
-  { href: "/app/prompts", rotulo: "Prompts", icone: "⚡" },
-  { href: "/app/diario", rotulo: "Diário", icone: "📔" },
-  { href: "/app/conquistas", rotulo: "Conquistas", icone: "🏅" },
+const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
+  { href: "/app", rotulo: "Início", icone: "star" },
+  { href: "/app/trilha", rotulo: "Trilha", icone: "flag" },
+  { href: "/app/prompts", rotulo: "Prompts", icone: "bulb" },
+  { href: "/app/diario", rotulo: "Diário", icone: "notebook" },
+  { href: "/app/conquistas", rotulo: "Conquistas", icone: "medal" },
 ];
 
 export default async function LayoutAluno({ children }: { children: React.ReactNode }) {
@@ -48,7 +49,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
                   href={m.href}
                   className="inline-flex items-center gap-2 rounded-t-md px-4 py-2.5 font-titulo text-sm font-bold text-tinta-clara transition-colors hover:bg-indigo-soft hover:text-indigo-dark"
                 >
-                  <span aria-hidden="true">{m.icone}</span>
+                  <Icone3D nome={m.icone} tamanho={22} />
                   {m.rotulo}
                 </Link>
               </li>
@@ -68,7 +69,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
                 href={m.href}
                 className="flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-cinza transition-colors hover:text-indigo"
               >
-                <span className="text-xl" aria-hidden="true">{m.icone}</span>
+                <Icone3D nome={m.icone} tamanho={26} />
                 <span className="font-titulo text-[11px] font-bold">{m.rotulo}</span>
               </Link>
             </li>

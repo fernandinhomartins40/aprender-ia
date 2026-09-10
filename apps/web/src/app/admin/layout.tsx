@@ -2,13 +2,14 @@ import Link from "next/link";
 import { signOut } from "@aprender/auth";
 import { Logo } from "@/components/logo";
 import { exigirAdmin } from "@/server/admin";
+import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
-const MENU = [
-  { href: "/admin", rotulo: "Visão geral", icone: "📊" },
-  { href: "/admin/alunos", rotulo: "Alunos", icone: "👩‍🏫" },
-  { href: "/admin/cursos", rotulo: "Cursos", icone: "📚" },
-  { href: "/admin/turmas", rotulo: "Turmas", icone: "🎓" },
-  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "👤" },
+const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
+  { href: "/admin", rotulo: "Visão geral", icone: "chart" },
+  { href: "/admin/alunos", rotulo: "Alunos", icone: "heart" },
+  { href: "/admin/cursos", rotulo: "Cursos", icone: "notebook" },
+  { href: "/admin/turmas", rotulo: "Turmas", icone: "crown" },
+  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "setting" },
 ];
 
 export default async function LayoutAdmin({
@@ -60,7 +61,7 @@ export default async function LayoutAdmin({
                   href={m.href}
                   className="inline-flex items-center gap-2 whitespace-nowrap rounded-t-md px-4 py-2.5 font-titulo text-sm font-bold text-tinta-clara transition-colors hover:bg-indigo-soft hover:text-indigo-dark"
                 >
-                  <span aria-hidden="true">{m.icone}</span>
+                  <Icone3D nome={m.icone} tamanho={22} />
                   {m.rotulo}
                 </Link>
               </li>

@@ -1,5 +1,6 @@
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
+import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +35,8 @@ export default async function Conquistas() {
               key={c.id}
               className={`card text-center ${tem ? "border-conquista" : "opacity-60"}`}
             >
-              <div className={`text-5xl ${tem ? "" : "grayscale"}`} aria-hidden="true">
-                {c.icone}
+              <div className={`flex justify-center ${tem ? "" : "grayscale"}`}>
+                <Icone3D nome={(c.icone as NomeIcone) ?? "medal"} tamanho={72} />
               </div>
               <p className="mt-3 font-titulo font-bold">{c.titulo}</p>
               <p className="mt-1 text-sm text-tinta-clara">{c.descricao}</p>

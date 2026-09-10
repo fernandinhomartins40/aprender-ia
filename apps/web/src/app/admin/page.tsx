@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { metricasGerais, ferramentasMaisUsadas } from "@/server/admin";
+import { Icone3D } from "@/components/icone-3d";
 
 export const dynamic = "force-dynamic";
 
@@ -108,21 +109,21 @@ export default async function VisaoGeral() {
         <h2 className="font-titulo text-xl font-extrabold">Gerenciar</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <Link href="/admin/alunos" className="card transition-shadow hover:shadow-lg">
-            <div className="text-3xl">👩‍🏫</div>
+            <Icone3D nome="heart" tamanho={44} />
             <h3 className="mt-2 font-titulo font-bold">Alunos</h3>
             <p className="mt-1 text-sm text-tinta-clara">
               Ver progresso, buscar e definir permissões
             </p>
           </Link>
           <Link href="/admin/cursos" className="card transition-shadow hover:shadow-lg">
-            <div className="text-3xl">📚</div>
+            <Icone3D nome="notebook" tamanho={44} />
             <h3 className="mt-2 font-titulo font-bold">Cursos</h3>
             <p className="mt-1 text-sm text-tinta-clara">
               Módulos, lições e publicação
             </p>
           </Link>
           <Link href="/admin/turmas" className="card transition-shadow hover:shadow-lg">
-            <div className="text-3xl">🎓</div>
+            <Icone3D nome="crown" tamanho={44} />
             <h3 className="mt-2 font-titulo font-bold">Turmas</h3>
             <p className="mt-1 text-sm text-tinta-clara">
               Grupos com código de matrícula

@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { exigirAluno, carregarTrilha } from "@/server/trilha";
+import { Icone3D, ICONE_POR_TIPO, ICONE_POR_ENCONTRO } from "@/components/icone-3d";
 
 export const dynamic = "force-dynamic";
-
-const ICONE_TIPO: Record<string, string> = {
-  TEORIA: "📖", QUIZ: "❓", DUELO: "⚔️", CACA_ERRO: "🔍",
-  PROMPT: "⚡", DESAFIO: "⏱️", CASO: "🎭", CHECKPOINT: "🏁",
-};
 
 const NOME_TIPO: Record<string, string> = {
   TEORIA: "Leitura", QUIZ: "Quiz", DUELO: "Duelo de prompts",
@@ -44,15 +40,17 @@ export default async function Trilha() {
       </div>
 
       <div className="space-y-10">
-        {trilha.modulos.map((m) => (
+        {trilha.modulos.map((m, iModulo) => (
           <section key={m.id}>
             <div className="mb-4 flex items-center gap-3">
               <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl"
-                style={{ background: m.cor + "22" }}
-                aria-hidden="true"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+                style={{ background: m.cor + "1A" }}
               >
-                {m.icone ?? "📘"}
+                <Icone3D
+                  nome={ICONE_POR_ENCONTRO[iModulo] ?? "rocket"}
+                  tamanho={38}
+                />
               </span>
               <div>
                 <h2 className="font-titulo text-xl font-extrabold" style={{ color: m.cor }}>
@@ -77,14 +75,22 @@ export default async function Trilha() {
                 const no = (
                   <div className="flex items-center gap-4">
                     <span
-                      className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base"
+                      className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
                       style={{
-                        background: concluida ? "#10B981" : bloqueada ? "#E2E8F0" : m.cor,
-                        color: "#fff",
+                        background: concluida
+                          ? "#10B981"
+                          : bloqueada
+                            ? "#E2E8F0"
+                            : m.cor + "1A",
                       }}
-                      aria-hidden="true"
                     >
-                      {concluida ? "✓" : bloqueada ? "🔒" : ICONE_TIPO[l.tipo] ?? "•"}
+                      {concluida ? (
+                        <span className="font-titulo text-lg font-bold text-white">✓</span>
+                      ) : bloqueada ? (
+                        <Icone3D nome="lock" tamanho={22} className="opacity-50" />
+                      ) : (
+                        <Icone3D nome={ICONE_POR_TIPO[l.tipo] ?? "star"} tamanho={28} />
+                      )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p

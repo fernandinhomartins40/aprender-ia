@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
-const LADROES = [
-  { icone: "📝", titulo: "Pareceres descritivos", texto: "30 a 40 textos individuais, todo fim de bimestre." },
-  { icone: "📚", titulo: "Planejamento", texto: "Horas montando planos de aula do zero." },
-  { icone: "✏️", titulo: "Correção", texto: "Pilhas de provas e redações no fim de semana." },
-  { icone: "📋", titulo: "Burocracia", texto: "Atas, relatórios, comunicados e diários." },
+const LADROES: { icone: NomeIcone; titulo: string; texto: string }[] = [
+  { icone: "file-text", titulo: "Pareceres descritivos", texto: "30 a 40 textos individuais, todo fim de bimestre." },
+  { icone: "notebook", titulo: "Planejamento", texto: "Horas montando planos de aula do zero." },
+  { icone: "pencil", titulo: "Correção", texto: "Pilhas de provas e redações no fim de semana." },
+  { icone: "folder", titulo: "Burocracia", texto: "Atas, relatórios, comunicados e diários." },
 ];
 
 const ENCONTROS = [
@@ -76,7 +77,7 @@ export default function Home() {
       <section className="bg-grad-capa">
         <div className="mx-auto max-w-6xl px-5 py-16 text-center sm:py-24">
           <span className="inline-flex items-center gap-2 rounded-full bg-indigo px-5 py-2 font-titulo text-sm font-bold text-white">
-            🕐 Formação de 40 horas · Rede pública
+            Formação de 40 horas · Rede pública
           </span>
 
           <h1 className="mx-auto mt-7 max-w-4xl font-titulo text-4xl font-extrabold leading-tight text-tinta sm:text-6xl">
@@ -121,7 +122,7 @@ export default function Home() {
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {LADROES.map((l) => (
             <div key={l.titulo} className="card text-center">
-              <div className="text-4xl">{l.icone}</div>
+              <Icone3D nome={l.icone} tamanho={64} />
               <h3 className="mt-3 font-titulo text-lg font-bold">{l.titulo}</h3>
               <p className="mt-2 text-tinta-clara">{l.texto}</p>
             </div>
@@ -197,7 +198,7 @@ export default function Home() {
                   {f.nome}
                 </span>
                 <span className={seloClasse[f.selo]}>
-                  {f.selo === "verde" ? "🟢" : "🟡"}
+                  {f.selo === "verde" ? "Gratuito" : "Com limite"}
                 </span>
               </div>
               <p className="mt-2 text-tinta-clara">{f.nota}</p>
@@ -244,7 +245,7 @@ export default function Home() {
               href="/admin"
               className="inline-flex items-center gap-1.5 hover:text-indigo hover:underline"
             >
-              <span aria-hidden="true">🔐</span> Painel administrativo
+              Painel administrativo
             </Link>
           </div>
         </div>
