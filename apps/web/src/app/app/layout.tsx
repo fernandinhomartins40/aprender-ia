@@ -4,6 +4,8 @@ import { Logo } from "@/components/logo";
 import { redirect } from "next/navigation";
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
+import { lerNumero } from "@/server/configuracoes";
+import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
 const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
@@ -14,6 +16,10 @@ const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "medal" },
 ];
 
+function dataLonga(d: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(d));
+}
+
 export default async function LayoutAluno({ children }: { children: React.ReactNode }) {
   const user = await exigirAluno();
 
@@ -22,9 +28,23 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
   // por quem tem a lista de chamada.
   const conta = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { precisaTrocarSenha: true },
+    select: {
+      precisaTrocarSenha: true,
+      plano: true,
+      freeAte: true,
+      freeRevogadoEm: true,
+    },
   });
   if (conta?.precisaTrocarSenha) redirect("/trocar-senha");
+
+  // Aviso de prazo: um acesso que expira sem avisar é uma porta que
+  // fecha na cara de quem estava estudando. Só aparece na janela
+  // configurada, e não para quem tem plano completo.
+  const avisarDiasAntes = await lerNumero("free.avisar_dias_antes");
+  const situacaoFree =
+    conta && conta.plano !== "PREMIUM"
+      ? avaliarFree(conta, avisarDiasAntes || 7)
+      : null;
 
   return (
     <div className="min-h-screen bg-fundo pb-20 md:pb-0">
@@ -68,6 +88,27 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
           </ul>
         </nav>
       </header>
+
+      {situacaoFree?.avisar && conta?.freeAte && (
+        <div className="border-b border-amarelo bg-amarelo-soft">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-3">
+            <p className="text-sm text-amarelo-dark">
+              <strong>
+                Seu acesso gratuito termina{" "}
+                {textoPrazo(situacaoFree.diasRestantes ?? 0)}
+              </strong>{" "}
+              ({dataLonga(conta.freeAte)}). Seu progresso fica salvo — você poderá
+              pedir mais tempo.
+            </p>
+            <Link
+              href="/app/acesso"
+              className="shrink-0 font-titulo text-sm font-bold text-amarelo-dark underline"
+            >
+              Ver meu acesso
+            </Link>
+          </div>
+        </div>
+      )}
 
       <main className="mx-auto max-w-5xl overflow-x-hidden px-5 py-8">{children}</main>
 

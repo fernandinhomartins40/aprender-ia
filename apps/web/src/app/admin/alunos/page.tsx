@@ -9,8 +9,17 @@ import {
 } from "@/server/admin";
 import { importarAlunos } from "@/server/importar-alunos";
 import { salvarTurma } from "@/server/turmas";
+import {
+  definirPrazoFree,
+  prorrogarFree,
+  revogarFree,
+  reativarFree,
+} from "@/server/acesso-free";
+import { lerNumero } from "@/server/configuracoes";
+import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { ImportarAlunos } from "@/components/importar-alunos";
 import { NovaTurma } from "@/components/painel-turma";
+import { AcoesAcessoAluno } from "@/components/acoes-acesso-aluno";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +57,14 @@ export default async function Alunos({
   const busca = params.busca?.trim() || undefined;
   const pagina = Math.max(1, Number(params.pagina ?? 1) || 1);
 
-  const [{ usuarios, total, paginas }, cursos, turmas, instrutores, semTurma] =
-    await Promise.all([
+  const [
+    { usuarios, total, paginas },
+    cursos,
+    turmas,
+    instrutores,
+    semTurma,
+    diasPadraoFree,
+  ] = await Promise.all([
       listarAlunos(busca, pagina),
       prisma.course.findMany({
         select: { id: true, titulo: true },
@@ -70,6 +85,7 @@ export default async function Alunos({
       }),
       listarInstrutores(),
       contarAlunosSemTurma(),
+      lerNumero("free.dias_ao_aprovar"),
     ]);
 
   return (
@@ -176,6 +192,7 @@ export default async function Alunos({
                 <th className="p-4">Professor(a)</th>
                 <th className="p-4">Turma</th>
                 <th className="p-4">Escola / disciplina</th>
+                <th className="p-4">Acesso</th>
                 <th className="p-4 text-center">Progresso</th>
                 <th className="p-4 text-center">Ofensiva</th>
                 <th className="p-4">Permissão</th>
@@ -224,6 +241,43 @@ export default async function Alunos({
                       {u.escola || "—"}
                       {u.disciplina && (
                         <div className="text-cinza">{u.disciplina}</div>
+                      )}
+                    </td>
+                    <td data-rotulo="Acesso" className="p-4 text-sm">
+                      {u.plano === "PREMIUM" ? (
+                        <span className="selo-verde">Premium</span>
+                      ) : (
+                        <>
+                          {(() => {
+                            const s = avaliarFree(u);
+                            if (s.revogado)
+                              return <span className="selo-vermelho">Revogado</span>;
+                            if (s.permanente)
+                              return <span className="selo-cinza">Sem prazo</span>;
+                            if (s.expirado)
+                              return <span className="selo-vermelho">Expirado</span>;
+                            return (
+                              <span className={s.avisar ? "selo-amarelo" : "selo-verde"}>
+                                {textoPrazo(s.diasRestantes ?? 0)}
+                              </span>
+                            );
+                          })()}
+                          {u.papel === "ALUNO" && (
+                            <div className="mt-2">
+                              <AcoesAcessoAluno
+                                userId={u.id}
+                                nome={u.nome}
+                                freeAte={u.freeAte}
+                                revogado={Boolean(u.freeRevogadoEm)}
+                                diasPadrao={diasPadraoFree}
+                                acaoDefinir={definirPrazoFree}
+                                acaoProrrogar={prorrogarFree}
+                                acaoRevogar={revogarFree}
+                                acaoReativar={reativarFree}
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
                     <td data-rotulo="Progresso" className="p-4">

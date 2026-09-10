@@ -15,19 +15,36 @@ import { prisma, type Plano, type SituacaoConta } from "@aprender/db";
 export type MotivoBloqueio =
   | "curso-pago-plano-free"
   | "conta-suspensa"
-  | "premium-expirado";
+  | "premium-expirado"
+  | "free-expirado"
+  | "free-revogado";
 
 export type Veredito =
   | { permitido: true }
   | { permitido: false; motivo: MotivoBloqueio; mensagem: string };
 
+/** Campos de acesso que toda avaliação precisa ler. */
+export type ContaParaAcesso = {
+  plano: Plano;
+  situacao: SituacaoConta;
+  premiumAte: Date | null;
+  freeAte: Date | null;
+  freeRevogadoEm: Date | null;
+  papel?: string;
+};
+
+/** Só estes campos — usado nos `select` do Prisma, num lugar só. */
+export const SELECT_ACESSO = {
+  plano: true,
+  situacao: true,
+  premiumAte: true,
+  freeAte: true,
+  freeRevogadoEm: true,
+  papel: true,
+} as const;
+
 export function avaliarAcesso(
-  aluno: {
-    plano: Plano;
-    situacao: SituacaoConta;
-    premiumAte: Date | null;
-    papel?: string;
-  },
+  aluno: ContaParaAcesso,
   curso: { pago: boolean },
 ): Veredito {
   // Administradores e instrutores enxergam tudo, para poder revisar
@@ -36,16 +53,44 @@ export function avaliarAcesso(
     return { permitido: true };
   }
 
-  if (!curso.pago) return { permitido: true };
-
+  // Suspensão vale para qualquer curso, pago ou não.
   if (aluno.situacao === "SUSPENSO") {
     return {
       permitido: false,
       motivo: "conta-suspensa",
       mensagem:
-        "Seu acesso a este curso está temporariamente suspenso. Seu progresso está guardado — fale com a coordenação para regularizar.",
+        "Seu acesso está temporariamente suspenso. Seu progresso está guardado — fale com a coordenação para regularizar.",
     };
   }
+
+  /**
+   * O prazo do acesso gratuito vale para QUALQUER curso, inclusive os
+   * gratuitos.
+   *
+   * Antes desta checagem o método saía cedo em `if (!curso.pago) return
+   * permitido`, e por isso o acesso Free nunca expirava — era eterno por
+   * construção. Quem tem plano PREMIUM ativo não passa por aqui.
+   */
+  if (aluno.plano !== "PREMIUM") {
+    if (aluno.freeRevogadoEm) {
+      return {
+        permitido: false,
+        motivo: "free-revogado",
+        mensagem:
+          "Seu acesso gratuito foi encerrado. Seu progresso continua salvo — você pode solicitar um novo acesso.",
+      };
+    }
+    if (aluno.freeAte && aluno.freeAte.getTime() < Date.now()) {
+      return {
+        permitido: false,
+        motivo: "free-expirado",
+        mensagem:
+          "Seu período de acesso gratuito terminou. Seu progresso continua salvo — solicite um novo acesso para continuar.",
+      };
+    }
+  }
+
+  if (!curso.pago) return { permitido: true };
 
   if (aluno.plano !== "PREMIUM") {
     return {
@@ -73,7 +118,7 @@ export function avaliarAcesso(
 export async function cursosPermitidos(userId: string) {
   const aluno = await prisma.user.findUnique({
     where: { id: userId },
-    select: { plano: true, situacao: true, premiumAte: true, papel: true },
+    select: SELECT_ACESSO,
   });
   if (!aluno) return [];
 
@@ -93,7 +138,7 @@ export async function verificarAcessoCurso(
   const [aluno, curso] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { plano: true, situacao: true, premiumAte: true, papel: true },
+      select: SELECT_ACESSO,
     }),
     prisma.course.findUnique({
       where: { id: courseId },

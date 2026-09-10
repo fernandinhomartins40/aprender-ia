@@ -7,6 +7,7 @@ import {
   atividadeRecente,
 } from "@/server/metricas";
 import { ferramentasMaisUsadas } from "@/server/admin";
+import { contarSolicitacoesPendentes } from "@/server/acesso-free";
 import { periodoPreset, PRESETS } from "@/lib/periodo";
 import { reais } from "@/lib/dinheiro";
 import { GraficoLinha, GraficoBarras, StatTile, Medidor } from "@/components/graficos";
@@ -22,14 +23,16 @@ export default async function VisaoGeral({
   const params = await searchParams;
   const periodo = periodoPreset(params.periodo);
 
-  const [alunos, fin, progresso, series, ferramentas, atividade] = await Promise.all([
-    indicadoresAlunos(periodo),
-    indicadoresFinanceiros(periodo),
-    indicadoresProgresso(),
-    seriesDoPeriodo(periodo),
-    ferramentasMaisUsadas(),
-    atividadeRecente(),
-  ]);
+  const [alunos, fin, progresso, series, ferramentas, atividade, pendentes] =
+    await Promise.all([
+      indicadoresAlunos(periodo),
+      indicadoresFinanceiros(periodo),
+      indicadoresProgresso(),
+      seriesDoPeriodo(periodo),
+      ferramentasMaisUsadas(),
+      atividadeRecente(),
+      contarSolicitacoesPendentes(),
+    ]);
 
   const maisUsada = ferramentas[0]?.usos ?? 0;
 
@@ -41,6 +44,25 @@ export default async function VisaoGeral({
           O estado da plataforma — {periodo.rotulo}.
         </p>
       </div>
+
+      {/* Fila de trabalho: pedidos esperando decisão vêm antes de tudo,
+          porque do outro lado há alguém sem acesso à plataforma. */}
+      {pendentes > 0 && (
+        <Link
+          href="/admin/solicitacoes?status=PENDENTE"
+          className="mb-6 block rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-4 transition-shadow hover:shadow-md"
+        >
+          <p className="font-titulo font-bold text-amarelo-dark">
+            {pendentes === 1
+              ? "1 aluno aguardando liberação de acesso"
+              : `${pendentes} alunos aguardando liberação de acesso`}
+          </p>
+          <p className="mt-1 text-sm text-amarelo-dark">
+            O prazo gratuito deles terminou e pediram um novo período. Nada é
+            liberado sem a sua aprovação.
+          </p>
+        </Link>
+      )}
 
       {/* Filtro numa linha só, acima de tudo o que ele afeta. */}
       <nav
@@ -94,6 +116,11 @@ export default async function VisaoGeral({
         <StatTile
           rotulo="Gratuitos (Free)"
           valor={alunos.free.toLocaleString("pt-BR")}
+          detalhe={
+            alunos.freeExpirando > 0
+              ? `${alunos.freeExpirando} expira(m) em 7 dias`
+              : `${alunos.freeExpirados} com prazo vencido`
+          }
         />
         <StatTile
           rotulo="Pagantes (Premium)"
@@ -110,6 +137,27 @@ export default async function VisaoGeral({
           rotulo="Conversão para pagante"
           pct={alunos.conversao}
           detalhe={`${alunos.premium} de ${alunos.total} alunos · foto de hoje`}
+        />
+      </div>
+
+      {/* Acesso gratuito: quem perdeu e quem está a perder. */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          rotulo="Free com prazo vencido"
+          valor={alunos.freeExpirados.toLocaleString("pt-BR")}
+          detalhe="perderam o acesso e podem pedir renovação"
+          alerta={alunos.freeExpirados > 0}
+        />
+        <StatTile
+          rotulo="Free a expirar"
+          valor={alunos.freeExpirando.toLocaleString("pt-BR")}
+          detalhe="nos próximos 7 dias"
+        />
+        <StatTile
+          rotulo="Pedidos aguardando"
+          valor={pendentes.toLocaleString("pt-BR")}
+          detalhe="esperando sua decisão"
+          alerta={pendentes > 0}
         />
       </div>
 

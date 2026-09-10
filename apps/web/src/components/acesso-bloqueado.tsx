@@ -5,20 +5,29 @@ const TITULO: Record<string, string> = {
   "curso-pago-plano-free": "Este curso faz parte do plano completo",
   "conta-suspensa": "Seu acesso está temporariamente suspenso",
   "premium-expirado": "Seu acesso ao plano completo expirou",
+  "free-expirado": "Seu período de acesso gratuito terminou",
+  "free-revogado": "Seu acesso gratuito foi encerrado",
 };
 
 const ICONE: Record<string, string> = {
   "curso-pago-plano-free": "🔒",
   "conta-suspensa": "⏸️",
   "premium-expirado": "⏳",
+  "free-expirado": "⏳",
+  "free-revogado": "🔒",
 };
+
+/** Motivos em que pedir um novo acesso gratuito faz sentido. */
+const PODE_SOLICITAR = new Set(["free-expirado", "free-revogado"]);
 
 /**
  * Tela mostrada quando o aluno não pode acessar o curso.
  *
  * O tom é deliberadamente acolhedor: quem chega aqui costuma ser um
- * professor que esqueceu de pagar, não alguém tentando burlar o sistema.
- * Por isso reforçamos que o progresso continua guardado.
+ * professor cujo prazo terminou, não alguém tentando burlar o sistema.
+ * Por isso reforçamos que o progresso continua guardado — e, quando o
+ * caso é prazo vencido, oferecemos o caminho para pedir mais tempo em vez
+ * de deixar a pessoa numa parede.
  */
 export function AcessoBloqueado({
   veredito,
@@ -28,6 +37,7 @@ export function AcessoBloqueado({
   cursoTitulo?: string;
 }) {
   const contato = process.env.NEXT_PUBLIC_WHATSAPP_SUPORTE;
+  const podeSolicitar = PODE_SOLICITAR.has(veredito.motivo);
 
   return (
     <div className="mx-auto max-w-xl">
@@ -49,6 +59,11 @@ export function AcessoBloqueado({
         <p className="mt-4 text-tinta-clara">{veredito.mensagem}</p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {podeSolicitar && (
+            <Link href="/app/acesso" className="btn-primario">
+              Solicitar novo acesso
+            </Link>
+          )}
           {contato && (
             <a
               href={`https://wa.me/${contato}?text=${encodeURIComponent(
@@ -56,14 +71,16 @@ export function AcessoBloqueado({
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primario"
+              className={podeSolicitar ? "btn-secundario" : "btn-primario"}
             >
               Falar com a coordenação
             </a>
           )}
-          <Link href="/app" className="btn-secundario">
-            Voltar ao painel
-          </Link>
+          {!podeSolicitar && (
+            <Link href="/app/acesso" className="btn-secundario">
+              Ver meu acesso
+            </Link>
+          )}
         </div>
 
         <p className="mt-6 text-sm text-cinza">

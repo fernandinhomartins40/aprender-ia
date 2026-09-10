@@ -67,7 +67,10 @@ export async function listarAlunos(busca?: string, pagina = 1, porPagina = 20) {
       take: porPagina,
       select: {
         id: true, nome: true, email: true, telefone: true, papel: true, escola: true,
-        disciplina: true, criadoEm: true,
+        disciplina: true, criadoEm: true, ultimoAcessoEm: true,
+        // Acesso: a coluna da tabela mostra prazo e permite prorrogar,
+        // definir ou revogar sem sair da lista.
+        plano: true, premiumAte: true, freeAte: true, freeRevogadoEm: true,
         ofensiva: { select: { diasSeguidos: true } },
         matriculas: { select: { progressoPct: true, xpTotal: true } },
         // A turma é parte da identidade do aluno neste painel: sem ela

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@aprender/auth";
 import { prisma, type StatusLicao } from "@aprender/db";
-import { avaliarAcesso, type Veredito } from "./acesso";
+import { avaliarAcesso, SELECT_ACESSO, type Veredito } from "./acesso";
 
 /** Garante sessão e devolve o usuário. */
 export async function exigirAluno() {
@@ -17,7 +17,7 @@ export async function exigirAluno() {
 export async function garantirMatricula(userId: string) {
   const aluno = await prisma.user.findUnique({
     where: { id: userId },
-    select: { plano: true, situacao: true, premiumAte: true, papel: true },
+    select: SELECT_ACESSO,
   });
   if (!aluno) return null;
 
@@ -67,7 +67,7 @@ export async function carregarTrilha(userId: string) {
   // pode ter sido suspenso ou ter o prazo vencido depois da matrícula.
   const dono = await prisma.user.findUnique({
     where: { id: userId },
-    select: { plano: true, situacao: true, premiumAte: true, papel: true },
+    select: SELECT_ACESSO,
   });
   const veredito = dono
     ? avaliarAcesso(dono, curso)

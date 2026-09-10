@@ -53,6 +53,8 @@ export async function indicadoresAlunos(periodo: Periodo) {
     premium,
     suspensos,
     premiumVencendo,
+    freeExpirados,
+    freeExpirando,
   ] = await Promise.all([
     prisma.user.count({ where: soAlunos }),
     prisma.user.count({
@@ -85,6 +87,31 @@ export async function indicadoresAlunos(periodo: Periodo) {
         },
       },
     }),
+    // Free com prazo vencido ou revogado: perderam o acesso e são a
+    // fila natural de quem vai pedir renovação.
+    contarTolerante(() =>
+      prisma.user.count({
+        where: {
+          ...soAlunos,
+          plano: "FREE",
+          OR: [
+            { freeAte: { lt: new Date() } },
+            { freeRevogadoEm: { not: null } },
+          ],
+        },
+      }),
+    ),
+    // Free a expirar nos próximos 7 dias.
+    contarTolerante(() =>
+      prisma.user.count({
+        where: {
+          ...soAlunos,
+          plano: "FREE",
+          freeRevogadoEm: null,
+          freeAte: { gte: new Date(), lte: new Date(Date.now() + 7 * 86_400_000) },
+        },
+      }),
+    ),
   ]);
 
   // Conversão free → pago: proporção de quem é pagante hoje sobre o total.
@@ -101,6 +128,8 @@ export async function indicadoresAlunos(periodo: Periodo) {
     premium,
     suspensos,
     premiumVencendo,
+    freeExpirados,
+    freeExpirando,
     conversao,
     diasInativo: diasInativo || 30,
   };

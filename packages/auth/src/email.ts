@@ -147,3 +147,113 @@ export function montarEmailRecuperacao(dados: {
 
   return { assunto, texto, html };
 }
+
+/* ============================================================
+   MODELO: ACESSO GRATUITO
+   ============================================================ */
+
+/** Moldura comum dos e-mails, para não repetir o HTML em cada modelo. */
+function moldura(corpo: string): string {
+  return `
+<div style="font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size:16px; line-height:1.6; color:#1E293B; max-width:520px; margin:0 auto; padding:24px;">
+  <p style="font-size:20px; font-weight:800; margin:0 0 24px;">
+    Aprender<span style="color:#F97316;">IA</span>
+  </p>
+  ${corpo}
+</div>`.trim();
+}
+
+function botao(link: string, rotulo: string): string {
+  return `<p style="margin:28px 0;">
+    <a href="${link}" style="display:inline-block; background:#4F46E5; color:#ffffff; text-decoration:none; font-weight:700; padding:14px 24px; border-radius:12px;">${rotulo}</a>
+  </p>`;
+}
+
+export function montarEmailAcessoAprovado(dados: {
+  nome: string;
+  dias: number;
+  ate: string;
+  link: string;
+}): { assunto: string; texto: string; html: string } {
+  const primeiroNome = dados.nome.split(" ")[0] ?? "";
+  return {
+    assunto: "Seu acesso foi liberado — Aprender IA",
+    texto: [
+      `Olá, ${primeiroNome}.`,
+      "",
+      `Seu acesso à plataforma foi liberado por ${dados.dias} dias, até ${dados.ate}.`,
+      "",
+      "Continue de onde parou:",
+      dados.link,
+      "",
+      "Seu progresso e suas anotações estavam guardados e continuam lá.",
+    ].join("\n"),
+    html: moldura(`
+  <p>Olá, ${primeiroNome}.</p>
+  <p>Seu acesso à plataforma foi liberado por <strong>${dados.dias} dias</strong>, até <strong>${dados.ate}</strong>.</p>
+  ${botao(dados.link, "Continuar meu curso")}
+  <p style="color:#475569; font-size:14px;">Seu progresso e suas anotações estavam guardados e continuam lá.</p>`),
+  };
+}
+
+export function montarEmailAcessoRecusado(dados: {
+  nome: string;
+  contato?: string | null;
+}): { assunto: string; texto: string; html: string } {
+  const primeiroNome = dados.nome.split(" ")[0] ?? "";
+  const linhaContato = dados.contato
+    ? `Se quiser conversar sobre isso, fale com a coordenação: ${dados.contato}.`
+    : "Se quiser conversar sobre isso, procure a coordenação do curso.";
+
+  return {
+    assunto: "Sobre seu pedido de acesso — Aprender IA",
+    texto: [
+      `Olá, ${primeiroNome}.`,
+      "",
+      "Analisamos seu pedido de novo acesso gratuito e não foi possível liberá-lo agora.",
+      "",
+      linhaContato,
+      "",
+      "Seu progresso continua salvo — nada foi apagado.",
+    ].join("\n"),
+    html: moldura(`
+  <p>Olá, ${primeiroNome}.</p>
+  <p>Analisamos seu pedido de novo acesso gratuito e não foi possível liberá-lo agora.</p>
+  <p>${linhaContato}</p>
+  <p style="color:#475569; font-size:14px;">Seu progresso continua salvo — nada foi apagado.</p>`),
+  };
+}
+
+export function montarEmailAcessoExpirando(dados: {
+  nome: string;
+  diasRestantes: number;
+  ate: string;
+  link: string;
+}): { assunto: string; texto: string; html: string } {
+  const primeiroNome = dados.nome.split(" ")[0] ?? "";
+  const quando =
+    dados.diasRestantes === 0
+      ? "hoje"
+      : dados.diasRestantes === 1
+        ? "amanhã"
+        : `em ${dados.diasRestantes} dias`;
+
+  return {
+    assunto: `Seu acesso gratuito termina ${quando} — Aprender IA`,
+    texto: [
+      `Olá, ${primeiroNome}.`,
+      "",
+      `Seu acesso gratuito termina ${quando} (${dados.ate}).`,
+      "",
+      "Se ainda faltam lições, aproveite este período:",
+      dados.link,
+      "",
+      "Quando o prazo terminar, seu progresso continua salvo e você poderá solicitar um novo acesso.",
+    ].join("\n"),
+    html: moldura(`
+  <p>Olá, ${primeiroNome}.</p>
+  <p>Seu acesso gratuito termina <strong>${quando}</strong> (${dados.ate}).</p>
+  ${botao(dados.link, "Continuar agora")}
+  <p style="color:#475569; font-size:14px;">Quando o prazo terminar, seu progresso continua salvo e você poderá solicitar um novo acesso.</p>`),
+  };
+}

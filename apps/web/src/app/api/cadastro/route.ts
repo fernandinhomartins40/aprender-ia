@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@aprender/db";
 import { gerarHashSenha } from "@aprender/auth";
 import { cadastroSchema } from "@aprender/types";
+import { prazoFreeInicial } from "@/server/acesso-free";
 
 /**
  * Cadastro público de professor.
@@ -88,12 +89,18 @@ export async function POST(req: Request) {
 
   // Conta, matrícula e vínculo nascem juntos: se algo falhar no meio, a
   // pessoa não fica com conta criada e matrícula pela metade.
+  // Prazo do acesso gratuito, conforme as configurações da plataforma.
+  // Nulo quando o administrador definiu 0 dias (acesso sem expiração).
+  const freeAte = await prazoFreeInicial();
+
   const usuario = await prisma.user.create({
     data: {
       nome: nome.trim(),
       email: emailNormalizado,
       telefone: telefone || null,
       senhaHash: await gerarHashSenha(senha),
+      freeAte,
+      freeConcedidoEm: new Date(),
       disciplina: disciplina?.trim() || null,
       anoEscolar: anoEscolar?.trim() || null,
       escola: escola?.trim() || null,

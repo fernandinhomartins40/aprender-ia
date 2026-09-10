@@ -68,6 +68,16 @@ model User {
   /// uma lição, e entrar sem estudar também é acesso.
   ultimoAcessoEm DateTime?
 
+  // ---- Acesso gratuito ----
+  /// Até quando o acesso gratuito vale. Nulo = sem prazo (permanente),
+  /// que é o estado das contas criadas antes desta regra existir.
+  freeAte         DateTime?
+  /// Quando o prazo atual foi concedido — base do histórico de acessos.
+  freeConcedidoEm DateTime?
+  /// Revogação manual pelo administrador. Preenchido, corta o acesso
+  /// mesmo que `freeAte` ainda esteja no futuro.
+  freeRevogadoEm  DateTime?
+
   contas           Account[]
   sessoes          Session[]
   tokensSenha      PasswordResetToken[]
@@ -82,13 +92,67 @@ model User {
   pagamentos       Payment[]
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
+  solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
+  solicitacoesDecididas AccessRequest[] @relation("DecisorDoAcesso")
 
   @@index([papel])
   @@index([telefone])
   @@index([plano])
   @@index([situacao])
   @@index([ultimoAcessoEm])
+  @@index([freeAte])
   @@map("users")
+}
+
+// ============================================================
+// SOLICITAÇÃO DE ACESSO GRATUITO
+// ============================================================
+
+enum StatusSolicitacao {
+  PENDENTE
+  APROVADA
+  RECUSADA
+}
+
+/// Pedido de (re)liberação de acesso gratuito.
+///
+/// Nunca libera nada sozinho: existe justamente para que a liberação
+/// passe pelo administrador. Guarda o prazo que expirou e quantos dias
+/// foram concedidos, para o histórico responder "quantas vezes essa
+/// pessoa já pediu, e o que foi dado" sem cruzar tabelas.
+model AccessRequest {
+  id     String            @id @default(cuid())
+  userId String
+  status StatusSolicitacao @default(PENDENTE)
+
+  /// O que o aluno escreveu ao pedir. Opcional — exigir justificativa
+  /// afasta justamente quem tem mais vergonha de pedir.
+  motivo String? @db.Text
+
+  /// Estado no momento do pedido, congelado para auditoria.
+  expiradoEm      DateTime?
+  /// Qual pedido é este para esta pessoa (1º, 2º…).
+  ordem           Int       @default(1)
+
+  // ---- Decisão ----
+  decididoEm  DateTime?
+  decididoPor String?
+  decisorNome String?
+  /// Dias concedidos na aprovação; nulo numa recusa.
+  diasConcedidos Int?
+  /// Anotação do administrador — o aluno não vê.
+  observacao     String?  @db.Text
+
+  criadoEm DateTime @default(now())
+
+  user    User  @relation("SolicitanteDoAcesso", fields: [userId], references: [id], onDelete: Cascade)
+  /// Quem decidiu sai sem apagar o pedido: o vínculo fica nulo.
+  decisor User? @relation("DecisorDoAcesso", fields: [decididoPor], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([criadoEm])
+  @@map("access_requests")
 }
 
 // ============================================================

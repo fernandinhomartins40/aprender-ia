@@ -5,6 +5,7 @@ import { prisma } from "@aprender/db";
 import { gerarHashSenha } from "@aprender/auth";
 import { exigirAdmin } from "./admin";
 import { criarTurmaBasica, podeReceber } from "./turmas";
+import { prazoFreeInicial } from "./acesso-free";
 import { deInputDate } from "@/lib/datas";
 
 /**
@@ -222,6 +223,9 @@ export async function importarAlunos(
   });
   if (!curso) return { ...vazio, mensagem: "Curso não encontrado." };
 
+  // Um prazo só para todo o lote: a turma inteira começa e termina junto.
+  const freeAte = await prazoFreeInicial();
+
   let criados = 0;
   let jaExistiam = 0;
   let matriculados = 0;
@@ -252,6 +256,8 @@ export async function importarAlunos(
             senhaHash: await gerarHashSenha(linha.senha),
             precisaTrocarSenha: true,
             papel: "ALUNO",
+            freeAte,
+            freeConcedidoEm: new Date(),
             ofensiva: { create: {} },
           },
           select: { id: true, nome: true },
