@@ -170,7 +170,10 @@ export default function Cadastro() {
 
           <p className="mt-6 text-center text-tinta-clara">
             Já tem conta?{" "}
-            <Link href="/entrar" className="font-bold text-indigo hover:underline">
+            <Link
+              href="/entrar"
+              className="inline-block py-2 font-bold text-indigo hover:underline"
+            >
               Entrar
             </Link>
           </p>

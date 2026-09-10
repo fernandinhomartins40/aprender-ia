@@ -234,16 +234,22 @@ export default function Home() {
           <p className="mt-3">
             Formação em Inteligência Artificial para professores da rede pública.
           </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link href="/entrar" className="hover:text-indigo hover:underline">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+            <Link
+              href="/entrar"
+              className="inline-flex min-h-[44px] items-center px-3 hover:text-indigo hover:underline"
+            >
               Entrar
             </Link>
-            <Link href="/cadastro" className="hover:text-indigo hover:underline">
+            <Link
+              href="/cadastro"
+              className="inline-flex min-h-[44px] items-center px-3 hover:text-indigo hover:underline"
+            >
               Criar conta
             </Link>
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1.5 hover:text-indigo hover:underline"
+              className="inline-flex min-h-[44px] items-center gap-1.5 px-3 hover:text-indigo hover:underline"
             >
               Painel administrativo
             </Link>
