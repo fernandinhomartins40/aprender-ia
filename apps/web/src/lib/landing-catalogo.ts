@@ -2,14 +2,13 @@
  * Catálogo das seções da landing page.
  *
  * As seções são FIXAS: cada chave corresponde a um bloco que o código sabe
- * desenhar, e o painel edita textos, ordem e visibilidade — não cria
- * layout. Isso é escolha, não limitação de tempo: um construtor de páginas
- * livre permitiria quebrar o desenho da página, e o que o projeto precisa
- * é trocar palavras sem deploy.
+ * desenhar, e o painel edita textos, itens, ordem e visibilidade — não cria
+ * layout. Escolha deliberada: um construtor de páginas livre permitiria
+ * quebrar o desenho, e o que o projeto precisa é trocar palavras sem deploy.
  *
- * Os valores aqui são o conteúdo atual da página e servem de fallback: se
- * o banco não tiver nada salvo (ou a migration não tiver rodado), a landing
- * aparece exatamente como hoje. Nunca uma página em branco.
+ * Os valores aqui são o conteúdo atual da página e servem de fallback: sem
+ * nada salvo no banco (ou com a migration pendente), a landing aparece
+ * completa. A porta de entrada do projeto nunca fica em branco.
  *
  * Vive em `lib/` porque um módulo "use server" só exporta funções async.
  */
@@ -21,6 +20,8 @@ export type ItemPadrao = {
   icone?: string;
   cor?: string;
   selo?: string;
+  imagem?: string;
+  link?: string;
 };
 
 export type SecaoPadrao = {
@@ -37,6 +38,7 @@ export type SecaoPadrao = {
   ctaLink?: string;
   cta2Texto?: string;
   cta2Link?: string;
+  imagem?: string;
   /// Quais campos a tela mostra — nem toda seção usa todos.
   campos: ("selo" | "titulo" | "subtitulo" | "texto" | "cta" | "cta2" | "imagem" | "video")[];
   /// Rótulo da lista, quando a seção tem itens. Ausente = sem lista.
@@ -51,108 +53,156 @@ export const SECOES: SecaoPadrao[] = [
     chave: "hero",
     rotulo: "Capa (primeira dobra)",
     ajuda:
-      "É o que a pessoa lê nos primeiros três segundos. Use quebra de linha no título para controlar onde ele parte.",
+      "O que a pessoa lê nos primeiros três segundos. No título, cada quebra de linha vira uma quebra na página; a última linha sai em destaque azul.",
     ordem: 1,
-    campos: ["selo", "titulo", "subtitulo", "cta", "cta2", "texto"],
-    selo: "Formação de 40 horas · Rede pública",
-    titulo: "Menos burocracia.\nAulas melhores.\nSeu fim de semana de volta.",
+    campos: ["selo", "titulo", "subtitulo", "cta", "cta2", "imagem"],
+    selo: "Plataforma Aprender IA",
+    titulo: "Aprenda. Pratique.\nEvolua com IA.",
     subtitulo:
-      "Uma trilha prática para você usar Inteligência Artificial na rotina escolar — com ferramentas 100% gratuitas, sem jargão técnico e sem precisar de cartão de crédito.",
+      "A plataforma completa para você aprender, aplicar e se atualizar em Inteligência Artificial, com cursos gratuitos e pagos, ferramentas, materiais práticos e uma comunidade que acelera o seu desenvolvimento.",
     ctaTexto: "Criar minha conta gratuita",
     ctaLink: "/cadastro",
-    cta2Texto: "Ver como funciona",
-    cta2Link: "#trilha",
-    texto: "Gratuito para professores da rede pública · Sem cartão de crédito",
+    cta2Texto: "Conheça os cursos",
+    cta2Link: "#trilhas",
+    imagem: "/landing/hero-banner.webp",
+    listaRotulo: "Selos abaixo dos botões",
+    camposItem: ["icone", "cor"],
+    itens: [
+      { titulo: "Conteúdo para todos os níveis", icone: "conquistas", cor: "#10B981" },
+      { titulo: "Comunidade ativa de educadores", icone: "comunidade", cor: "#6366F1" },
+      { titulo: "Ferramentas e materiais gratuitos", icone: "ferramentas", cor: "#F59E0B" },
+    ],
   },
   {
-    chave: "dor",
-    rotulo: "O problema (ladrões de tempo)",
+    chave: "publico",
+    rotulo: "Para quem é a plataforma",
     ajuda:
-      "Os quatro cartões do que consome o tempo do professor. O texto final é a faixa destacada abaixo deles.",
+      "Os quatro perfis de público, cada um com sua foto e cor de fundo. É onde a pessoa se reconhece.",
     ordem: 2,
-    campos: ["titulo", "subtitulo", "texto"],
-    titulo: "Onde foi parar o seu tempo?",
+    campos: ["selo", "titulo", "subtitulo"],
+    selo: "APRENDER IA É PARA TODOS",
+    titulo: "Para quem é a plataforma?",
     subtitulo:
-      "Você foi formado para ensinar, inspirar e transformar vidas. Mas boa parte das suas horas vai para outra coisa.",
-    texto:
-      "A IA não substitui o professor. Ela assume o trabalho braçal e repetitivo — a digitação, o rascunho, a formatação — e devolve a você o recurso mais escasso da educação: tempo para olhar nos olhos dos seus alunos.",
-    listaRotulo: "Ladrões de tempo",
-    camposItem: ["texto", "icone"],
+      "Seja você educador, estudante, profissional ou apenas curioso, aqui você encontra conteúdos práticos e acessíveis para usar a IA no seu dia a dia.",
+    listaRotulo: "Perfis",
+    camposItem: ["texto", "cor", "imagem"],
     itens: [
-      { titulo: "Pareceres descritivos", texto: "30 a 40 textos individuais, todo fim de bimestre.", icone: "file-text" },
-      { titulo: "Planejamento", texto: "Horas montando planos de aula do zero.", icone: "notebook" },
-      { titulo: "Correção", texto: "Pilhas de provas e redações no fim de semana.", icone: "pencil" },
-      { titulo: "Burocracia", texto: "Atas, relatórios, comunicados e diários.", icone: "folder" },
+      {
+        titulo: "Educadores",
+        texto:
+          "Planeje aulas incríveis, economize tempo e transforme a sua prática pedagógica.",
+        cor: "#EFF6FF",
+        imagem: "/landing/publico-educadores.webp",
+      },
+      {
+        titulo: "Estudantes",
+        texto: "Descubra novas formas de aprender e potencialize seus estudos.",
+        cor: "#ECFDF5",
+        imagem: "/landing/publico-estudantes.webp",
+      },
+      {
+        titulo: "Profissionais",
+        texto: "Aumente sua produtividade e destaque-se no mercado de trabalho.",
+        cor: "#FEF3C7",
+        imagem: "/landing/publico-profissionais.webp",
+      },
+      {
+        titulo: "Curiosos",
+        texto: "Explore o mundo da IA de forma simples, prática e descomplicada.",
+        cor: "#FDF2F8",
+        imagem: "/landing/publico-curiosos.webp",
+      },
     ],
   },
   {
-    chave: "trilha",
-    rotulo: "A trilha (encontros)",
+    chave: "plataforma",
+    rotulo: "Faixa roxa (mais que cursos)",
     ajuda:
-      'Os encontros do curso. Em cada um, "Você leva" é o material que o professor sai com a mão. A cor pinta a borda e o número.',
+      "A faixa escura com o robô à esquerda e quatro pilares à direita. Serve para dizer que a plataforma é mais do que uma lista de aulas.",
     ordem: 3,
-    campos: ["titulo", "subtitulo"],
-    titulo: "Quatro encontros. Sempre com algo pronto na mão.",
-    subtitulo:
-      "Você não sai de nenhum encontro de mãos vazias — cada um termina com material que dá para usar na segunda-feira.",
-    listaRotulo: "Encontros",
-    camposItem: ["extra", "cor"],
+    campos: ["titulo", "texto", "imagem"],
+    titulo: "Muito mais que cursos.\nUma plataforma completa.",
+    texto:
+      "No Aprender IA você encontra cursos, ferramentas, materiais, desafios práticos e uma comunidade engajada para aprender e aplicar a Inteligência Artificial de verdade.",
+    imagem: "/landing/robo-notebook.webp",
+    listaRotulo: "Pilares",
+    camposItem: ["icone", "cor"],
     itens: [
-      {
-        titulo: "Primeiros passos e a arte de conversar com a IA",
-        extra: "1 plano de aula completo, gerado e refinado por você",
-        cor: "#6366F1",
-      },
-      {
-        titulo: "Sua rotina, seu planejamento e a BNCC",
-        extra: "3 pareceres, 1 ata e 1 sequência didática prontos",
-        cor: "#0EA5E9",
-      },
-      {
-        titulo: "Materiais, inclusão e recursos visuais",
-        extra: "1 atividade em 3 níveis e 1 material adaptado",
-        cor: "#10B981",
-      },
-      {
-        titulo: "Avaliação, ética e seu projeto final",
-        extra: "1 prova com gabarito, 1 rubrica e seu projeto",
-        cor: "#F59E0B",
-      },
+      { titulo: "Cursos gratuitos e pagos", icone: "cursos", cor: "#6366F1" },
+      { titulo: "Ferramentas de IA selecionadas", icone: "ia", cor: "#2563EB" },
+      { titulo: "Materiais e templates prontos", icone: "materiais", cor: "#10B981" },
+      { titulo: "Comunidade e suporte", icone: "comunidade", cor: "#F97316" },
     ],
   },
   {
-    chave: "ferramentas",
-    rotulo: "Ferramentas",
+    chave: "trilhas",
+    rotulo: "Trilhas de aprendizado",
     ajuda:
-      'As ferramentas e seus limites reais. O selo "verde" mostra "Gratuito"; qualquer outro valor mostra "Com limite".',
+      "Os caminhos de estudo. Cada trilha tem cor própria, que pinta o ícone e o fundo do cartão. O link leva para o curso correspondente.",
     ordem: 4,
-    campos: ["titulo", "subtitulo"],
-    titulo: "Ferramentas gratuitas de verdade",
+    campos: ["selo", "titulo", "subtitulo", "cta"],
+    selo: "TRILHAS DE APRENDIZADO",
+    titulo: "Comece a aprender hoje",
     subtitulo:
-      "Nada de descobrir na terceira pergunta que precisa pagar. Dizemos os limites reais de cada uma — verificados em setembro de 2026.",
-    listaRotulo: "Ferramentas",
-    camposItem: ["texto", "cor", "selo", "link"],
+      "Escolha sua trilha e desenvolva novas habilidades com o apoio da nossa plataforma.",
+    ctaTexto: "Ver todos os cursos",
+    ctaLink: "/cadastro",
+    listaRotulo: "Trilhas",
+    camposItem: ["texto", "icone", "cor", "link"],
     itens: [
-      { titulo: "DeepSeek", texto: "Sem limite de mensagens", cor: "#4D6BFE", selo: "verde" },
-      { titulo: "Google Gemini", texto: "Gratuito com conta Google", cor: "#4285F4", selo: "verde" },
-      { titulo: "Canva Educação", texto: "Pro gratuito para docentes", cor: "#00A8B0", selo: "verde" },
-      { titulo: "NotebookLM", texto: "~50 perguntas por dia", cor: "#F97316", selo: "amarelo" },
-      { titulo: "ChatGPT", texto: "Troca de modelo após uso intenso", cor: "#10A37F", selo: "amarelo" },
-      { titulo: "Diffit", texto: "Não exporta para Docs no free", cor: "#EC4899", selo: "amarelo" },
+      {
+        titulo: "IA na Educação",
+        texto: "Do planejamento à avaliação, com IA na prática.",
+        icone: "aulas",
+        cor: "#2563EB",
+        link: "/cadastro",
+      },
+      {
+        titulo: "Produtividade",
+        texto: "Faça mais em menos tempo com IA.",
+        icone: "progresso",
+        cor: "#7C3AED",
+        link: "/cadastro",
+      },
+      {
+        titulo: "Criação de Conteúdo",
+        texto: "Textos, imagens, vídeos e apresentações.",
+        icone: "editar_conteudo",
+        cor: "#10B981",
+        link: "/cadastro",
+      },
+      {
+        titulo: "Carreira e Negócios",
+        texto: "IA para o seu desenvolvimento profissional.",
+        icone: "empreendedores",
+        cor: "#F97316",
+        link: "/cadastro",
+      },
+      {
+        titulo: "Explorando a IA",
+        texto: "Primeiros passos para curiosos e iniciantes.",
+        icone: "ideias",
+        cor: "#EC4899",
+        link: "/cadastro",
+      },
     ],
   },
   {
-    chave: "depoimentos",
-    rotulo: "Depoimentos",
+    chave: "numeros",
+    rotulo: "Números da plataforma",
     ajuda:
-      "Fica escondido enquanto não houver depoimento cadastrado — uma seção vazia é pior que seção nenhuma. Em cada item: título é o nome, extra é a escola ou cargo.",
+      "A faixa de indicadores. São números que você declara aqui — não são calculados do banco. Mantenha-os verdadeiros.",
     ordem: 5,
-    campos: ["titulo", "subtitulo"],
-    titulo: "Quem já passou por aqui",
-    subtitulo: "",
-    listaRotulo: "Depoimentos",
-    camposItem: ["texto", "extra", "imagem"],
-    itens: [],
+    campos: ["texto"],
+    texto: "Juntos por um futuro mais inteligente!",
+    listaRotulo: "Indicadores",
+    camposItem: ["texto", "icone", "cor"],
+    itens: [
+      { titulo: "+50 mil", texto: "pessoas na comunidade", icone: "comunidade", cor: "#6366F1" },
+      { titulo: "+200", texto: "aulas e tutoriais", icone: "aulas", cor: "#2563EB" },
+      { titulo: "4,9", texto: "avaliação média", icone: "favoritos", cor: "#EC4899" },
+      { titulo: "Conteúdo sempre atualizado", texto: "", icone: "novidades", cor: "#EAB308" },
+    ],
   },
   {
     chave: "planos",
@@ -166,11 +216,23 @@ export const SECOES: SecaoPadrao[] = [
     texto: "",
   },
   {
+    chave: "depoimentos",
+    rotulo: "Depoimentos",
+    ajuda:
+      "Fica escondida enquanto não houver depoimento cadastrado — uma seção vazia é pior que seção nenhuma. Em cada item: título é o nome, extra é a escola ou cargo.",
+    ordem: 7,
+    campos: ["titulo", "subtitulo"],
+    titulo: "Quem já passou por aqui",
+    listaRotulo: "Depoimentos",
+    camposItem: ["texto", "extra", "imagem"],
+    itens: [],
+  },
+  {
     chave: "faq",
     rotulo: "Perguntas frequentes",
     ajuda:
       "Em cada item, o título é a pergunta e o texto é a resposta. Fica escondida sem perguntas cadastradas.",
-    ordem: 7,
+    ordem: 8,
     campos: ["titulo", "subtitulo"],
     titulo: "Perguntas frequentes",
     listaRotulo: "Perguntas",
@@ -179,39 +241,69 @@ export const SECOES: SecaoPadrao[] = [
       {
         titulo: "Preciso saber de tecnologia para acompanhar?",
         texto:
-          "Não. A formação parte do zero e usa linguagem do dia a dia da escola, sem jargão técnico.",
+          "Não. A plataforma parte do zero e usa linguagem do dia a dia, sem jargão técnico.",
       },
       {
         titulo: "As ferramentas são realmente gratuitas?",
         texto:
-          "Sim. Todas as ferramentas da trilha têm versão gratuita, e dizemos com clareza os limites de cada uma.",
+          "Sim. Todas as ferramentas indicadas têm versão gratuita, e dizemos com clareza os limites de cada uma.",
       },
       {
         titulo: "Vou receber certificado?",
         texto:
-          "Sim, ao concluir a trilha completa de 40 horas você recebe o certificado pela plataforma.",
+          "Sim, ao concluir a trilha completa você recebe o certificado pela plataforma.",
       },
     ],
   },
   {
     chave: "chamada_final",
     rotulo: "Chamada final",
-    ajuda: "O último empurrão, antes do rodapé.",
-    ordem: 8,
-    campos: ["titulo", "subtitulo", "cta"],
-    titulo: "Comece hoje. A primeira lição leva 5 minutos.",
-    subtitulo: "Sem instalação, sem cartão de crédito, direto do seu celular.",
+    ajuda: "A faixa colorida com o robô, logo antes do rodapé.",
+    ordem: 9,
+    campos: ["titulo", "subtitulo", "texto", "cta", "imagem"],
+    titulo: "Seu próximo passo\ncomeça aqui.",
+    subtitulo:
+      "Crie sua conta gratuita, explore os conteúdos e faça parte da comunidade Aprender IA.",
     ctaTexto: "Criar minha conta gratuita",
     ctaLink: "/cadastro",
+    texto: "Sem cartão de crédito. Comece em menos de 1 minuto.",
+    imagem: "/landing/robo-comemorando.webp",
   },
   {
     chave: "rodape",
     rotulo: "Rodapé",
-    ajuda: "A linha de descrição embaixo da marca.",
-    ordem: 9,
-    campos: ["texto"],
-    texto: "Formação em Inteligência Artificial para professores da rede pública.",
+    ajuda: "A linha de descrição embaixo da marca e os links de redes sociais.",
+    ordem: 10,
+    campos: ["titulo", "texto"],
+    titulo: "Aprender IA",
+    texto: "Inteligência Artificial para um futuro com mais oportunidades.",
+    listaRotulo: "Redes sociais",
+    camposItem: ["icone", "link"],
+    // O ícone aqui é a marca da rede, desenhada em SVG no componente:
+    // logo de terceiro não se redesenha no nosso estilo 3D, e no rodapé
+    // ela funciona melhor monocromática. Sem link, a rede não aparece.
+    itens: [
+      { titulo: "YouTube", icone: "youtube", link: "" },
+      { titulo: "Instagram", icone: "instagram", link: "" },
+      { titulo: "LinkedIn", icone: "linkedin", link: "" },
+      { titulo: "Discord", icone: "discord", link: "" },
+    ],
   },
 ];
 
 export const SECAO_POR_CHAVE = new Map(SECOES.map((s) => [s.chave, s]));
+
+/**
+ * Menu do topo da landing.
+ *
+ * Fica no código e não no banco: são âncoras e rotas que precisam existir
+ * de verdade, então deixá-las editáveis por texto livre convidaria a links
+ * quebrados na porta de entrada do site.
+ */
+export const MENU_TOPO: { rotulo: string; href: string }[] = [
+  { rotulo: "Início", href: "/" },
+  { rotulo: "Cursos", href: "#trilhas" },
+  { rotulo: "Ferramentas", href: "#plataforma" },
+  { rotulo: "Comunidade", href: "#numeros" },
+  { rotulo: "Sobre", href: "#publico" },
+];

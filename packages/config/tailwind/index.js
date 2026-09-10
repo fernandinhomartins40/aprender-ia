@@ -20,6 +20,7 @@ module.exports = {
         bloqueado: "#94A3B8",
         tinta: { DEFAULT: "#1E293B", clara: "#475569" },
         cinza: { DEFAULT: "#64748B", claro: "#94A3B8" },
+        azul: { DEFAULT: "#2563EB", soft: "#EFF6FF" },
         borda: "#E2E8F0",
         fundo: "#FCFCFE",
         superficie: "#FFFFFF",
@@ -42,6 +43,11 @@ module.exports = {
         "grad-energia": "linear-gradient(135deg,#F97316 0%,#FB923C 100%)",
         "grad-sucesso": "linear-gradient(135deg,#10B981 0%,#34D399 100%)",
         "grad-capa": "linear-gradient(150deg,#EEF0FE 0%,#F6F4FF 45%,#FFF8F0 100%)",
+        // Faixa escura da landing ("Muito mais que cursos"). O texto sobre
+        // ela é branco, então os dois extremos são escuros o bastante.
+        "grad-escuro": "linear-gradient(120deg,#1E1B4B 0%,#312E81 55%,#4C1D95 100%)",
+        // Chamada final: azul → roxo, com o mascote sobreposto.
+        "grad-chamada": "linear-gradient(110deg,#2563EB 0%,#4F46E5 45%,#7C3AED 100%)",
       },
       keyframes: {
         pulsar: { "0%,100%": { transform: "scale(1)" }, "50%": { transform: "scale(1.05)" } },

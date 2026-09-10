@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import type { ResultadoLanding, SecaoResolvida } from "@/server/landing";
+import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
+import { ICONES_APP, ICONES_REDE } from "@/lib/icones-catalogo";
 
 type AcaoForm = (
   anterior: ResultadoLanding | null,
@@ -451,11 +453,9 @@ function FormItem({
             <span className="mb-1 block font-titulo text-xs font-bold text-tinta-clara">
               Ícone
             </span>
-            <input
-              name="icone"
-              defaultValue={item?.icone ?? ""}
-              placeholder="notebook"
-              className="campo w-full"
+            <SeletorIcone
+              secao={secao.chave}
+              valor={item?.icone ?? ""}
             />
           </label>
         )}
@@ -522,5 +522,42 @@ function FormItem({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Escolha do ícone, com prévia.
+ *
+ * São 81 ícones autorais; digitar o nome à cega convidaria a erro de
+ * digitação e a um ícone que não carrega. A lista vem do tipo gerado a
+ * partir dos arquivos, então nome inválido não chega aqui.
+ *
+ * No rodapé o "ícone" é a marca de uma rede social, desenhada em SVG e
+ * não parte do conjunto 3D — por isso aquela seção tem sua própria lista.
+ */
+function SeletorIcone({ secao, valor }: { secao: string; valor: string }) {
+  const [atual, setAtual] = useState(valor);
+
+  const opcoes = secao === "rodape" ? ICONES_REDE : ICONES_APP;
+
+  return (
+    <div className="flex items-center gap-2">
+      {atual && secao !== "rodape" && (
+        <IconeApp nome={atual as NomeIconeApp} tamanho={32} />
+      )}
+      <select
+        name="icone"
+        value={atual}
+        onChange={(e) => setAtual(e.target.value)}
+        className="campo w-full"
+      >
+        <option value="">— sem ícone —</option>
+        {opcoes.map((n) => (
+          <option key={n} value={n}>
+            {n.replace(/_/g, " ")}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

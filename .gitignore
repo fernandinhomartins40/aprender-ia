@@ -50,3 +50,10 @@ CREDENCIAIS-*.txt
 # Acervo completo do 3dicons (fonte local, 31MB)
 # A aplicação usa apenas os selecionados em apps/web/public/icones-3d
 assets-3dicons/
+
+# Originais em alta dos ícones autorais (87MB) e da arte da landing (10MB).
+# A aplicação usa as versões WebP redimensionadas — essas sim versionadas,
+# em apps/web/public/icones-app e apps/web/public/landing, somando 1,6MB.
+# Guarde estas pastas fora do repositório para poder regerar quando preciso.
+fuse3dicons/
+assets landingpage/
