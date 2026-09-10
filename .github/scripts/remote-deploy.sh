@@ -42,6 +42,24 @@ if [ "$LIVRE_GB" -lt 5 ]; then
 fi
 
 # ------------------------------------------------------------
+# Versão do service worker
+#
+# O sw.js guarda os assets de /_next/static com cache-first e só apaga
+# caches cuja chave difere da atual. Com uma VERSAO fixa no código, essa
+# limpeza nunca acontecia: o navegador de quem já visitou o site seguia
+# com os chunks do build antigo e passava a misturar HTML novo com
+# JavaScript velho depois de cada deploy. Carimbamos a release aqui, no
+# arquivo, antes do build da imagem.
+# ------------------------------------------------------------
+SW="$RELEASE_DIR/apps/web/public/sw.js"
+if [ -f "$SW" ]; then
+  sed -i "s/^const VERSAO = \".*\";/const VERSAO = \"aprender-ia-$RELEASE\";/" "$SW"
+  echo "==> Service worker versionado: $(grep -m1 '^const VERSAO' "$SW")"
+else
+  echo "AVISO: sw.js não encontrado em $SW; cache do navegador não será invalidado." >&2
+fi
+
+# ------------------------------------------------------------
 # Build e subida
 # ------------------------------------------------------------
 echo "==> Construindo imagens..."

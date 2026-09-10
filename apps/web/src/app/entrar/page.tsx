@@ -58,25 +58,37 @@ function FormularioEntrar() {
       /* não impedir o login por causa do armazenamento */
     }
 
-    const r = await signIn("credentials", {
-      email,
-      senha,
-      // Vira o prazo da sessão no callback `jwt`: 30 dias com a caixa
-      // marcada, 12 horas sem ela (e o cookie morre ao fechar o navegador).
-      manterConectado: String(manterConectado),
-      redirect: false,
-    });
+    // O signIn precisa estar protegido: se a promessa rejeitar (rede
+    // instável, service worker interceptando, requisição pendurada), um
+    // erro solto aqui aborta a função ANTES de `setCarregando(false)` e o
+    // botão fica preso em "Entrando..." para sempre — o usuário só sai
+    // disso recarregando a página.
+    try {
+      const r = await signIn("credentials", {
+        email,
+        senha,
+        // Vira o prazo da sessão no callback `jwt`: 30 dias com a caixa
+        // marcada, 12 horas sem ela (e o cookie morre ao fechar o navegador).
+        manterConectado: String(manterConectado),
+        redirect: false,
+      });
 
-    if (r?.error) {
-      // Mensagem genérica de propósito: dizer "e-mail não existe" ajudaria
-      // alguém a descobrir quem tem conta na plataforma.
-      setErro("E-mail/telefone ou senha incorretos. Confira os dados e tente de novo.");
+      if (r?.error) {
+        // Mensagem genérica de propósito: dizer "e-mail não existe" ajudaria
+        // alguém a descobrir quem tem conta na plataforma.
+        setErro("E-mail/telefone ou senha incorretos. Confira os dados e tente de novo.");
+        setCarregando(false);
+        return;
+      }
+
+      router.push(proximo);
+      router.refresh();
+    } catch {
+      setErro(
+        "Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo.",
+      );
       setCarregando(false);
-      return;
     }
-
-    router.push(proximo);
-    router.refresh();
   }
 
   return (

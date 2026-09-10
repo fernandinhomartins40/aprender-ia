@@ -7,7 +7,12 @@
  *  - nunca cacheamos /api, /admin nem rotas autenticadas — dado de
  *    progresso desatualizado confunde mais do que ajuda
  */
-const VERSAO = "aprender-ia-v1";
+// A versão precisa mudar a CADA build. Com um valor fixo, o `activate`
+// nunca encontra cache antigo para apagar e os chunks de /_next/static
+// (servidos com cache-first) sobrevivem para sempre no navegador de quem
+// já visitou o site — que passa a misturar HTML novo com JavaScript velho
+// depois de cada deploy. O deploy reescreve este valor.
+const VERSAO = "aprender-ia-v2";
 const ESSENCIAIS = ["/offline", "/manifest.json", "/marca/logo-900.png"];
 
 self.addEventListener("install", (e) => {
@@ -34,6 +39,10 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== self.location.origin) return;
   // Rotas que nunca devem vir do cache
   if (url.pathname.startsWith("/api") || url.pathname.startsWith("/admin")) return;
+
+  // Nunca interceptamos a autenticação: uma resposta vinda do cache aqui
+  // deixa o formulário de login pendurado.
+  if (url.pathname.startsWith("/entrar") || url.pathname.startsWith("/cadastro")) return;
 
   // Assets com hash: cache primeiro
   if (url.pathname.startsWith("/_next/static") || url.pathname.startsWith("/marca")
