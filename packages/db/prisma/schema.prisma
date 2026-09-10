@@ -71,6 +71,8 @@ model User {
   ofensiva         Streak?
   conquistas       UserAchievement[]
   membroTurmas     CohortMember[]
+  turmasQueMinistro Cohort[]         @relation("TurmasQueMinistro")
+  presencas        MeetingAttendance[]
   registrosDiario  DiaryEntry[]
   pagamentos       Payment[]
 
@@ -490,21 +492,137 @@ model Payment {
 // TURMAS
 // ============================================================
 
+/// Como a turma acontece. ONLINE não tem endereço; PRESENCIAL tem local
+/// fixo; HIBRIDA mistura, e aí cada encontro diz se é presencial ou remoto.
+enum ModalidadeTurma {
+  ONLINE
+  PRESENCIAL
+  HIBRIDA
+}
+
+/// Ciclo de vida da turma. Só INSCRICOES_ABERTAS aceita novo aluno pelo
+/// código; CONCLUIDA e CANCELADA preservam o histórico sem deixar entrar.
+enum SituacaoTurma {
+  RASCUNHO
+  INSCRICOES_ABERTAS
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+/// Um encontro isolado pode fugir da modalidade da turma: numa turma
+/// presencial, o encontro 3 pode ser remoto por causa de chuva.
+enum ModalidadeEncontro {
+  PRESENCIAL
+  REMOTO
+}
+
+enum PresencaEncontro {
+  PRESENTE
+  FALTA
+  JUSTIFICADA
+}
+
 model Cohort {
-  id       String    @id @default(cuid())
-  courseId String
-  nome     String
-  descricao String?
-  inicioEm DateTime?
-  fimEm    DateTime?
-  codigo   String    @unique // código de matrícula
+  id        String  @id @default(cuid())
+  courseId  String
+  nome      String
+  descricao String? @db.Text
+  inicioEm  DateTime?
+  fimEm     DateTime?
+  codigo    String  @unique // código de matrícula
+
+  // ---- Como e onde acontece ----
+  modalidade ModalidadeTurma @default(ONLINE)
+  situacao   SituacaoTurma   @default(RASCUNHO)
+
+  /// Nome do lugar ("EMEF Vila Nova"), não o endereço.
+  local     String?
+  endereco  String?
+  cidade    String?
+  uf        String?
+  /// Sala, bloco, andar — o que falta para achar a porta.
+  sala      String?
+  /// Link da videochamada, para turma ONLINE ou encontro REMOTO.
+  linkOnline String?
+
+  // ---- Capacidade e responsável ----
+  /// Nulo = sem limite. Ao lotar, o código para de aceitar inscrição.
+  vagas       Int?
+  instrutorId String?
+
+  /// Anotações internas — nunca exibidas ao aluno.
+  observacoes String? @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  course    Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  /// Instrutor sai da turma sem apagá-la: o vínculo apenas fica nulo.
+  instrutor User?           @relation("TurmasQueMinistro", fields: [instrutorId], references: [id], onDelete: SetNull)
+  membros   CohortMember[]
+  encontros CohortMeeting[]
+
+  @@index([courseId])
+  @@index([situacao])
+  @@index([instrutorId])
+  @@map("cohorts")
+}
+
+/// Um encontro da turma — a aula com data e hora marcadas.
+model CohortMeeting {
+  id       String @id @default(cuid())
+  cohortId String
+  /// 1, 2, 3... Ordena a lista e nomeia ("Encontro 2") quando não há tema.
+  ordem    Int
+  titulo   String?
+  /// O que será tratado neste encontro.
+  pauta    String? @db.Text
+
+  /// Dia do encontro. A hora fica nos campos abaixo, como texto "HH:MM",
+  /// para não depender do fuso do servidor ao exibir "19:00".
+  data         DateTime
+  horaInicio   String?
+  horaFim      String?
+
+  modalidade ModalidadeEncontro @default(PRESENCIAL)
+  /// Sobrescrevem o local da turma quando este encontro é em outro lugar.
+  local      String?
+  endereco   String?
+  sala       String?
+  linkOnline String?
+
+  /// Encontro remarcado ou cancelado continua na lista, com o aviso.
+  canceladoEm DateTime?
+  motivoCancelamento String?
 
   criadoEm DateTime @default(now())
 
-  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  membros CohortMember[]
+  cohort   Cohort              @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  presencas MeetingAttendance[]
 
-  @@map("cohorts")
+  @@unique([cohortId, ordem])
+  @@index([data])
+  @@map("cohort_meetings")
+}
+
+/// Presença de um aluno num encontro. A ausência de registro significa
+/// "ainda não chamado", diferente de FALTA.
+model MeetingAttendance {
+  id        String           @id @default(cuid())
+  meetingId String
+  userId    String
+  situacao  PresencaEncontro @default(PRESENTE)
+  anotacao  String?
+
+  registradoEm DateTime @default(now())
+
+  meeting CohortMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+  @@index([userId])
+  @@map("meeting_attendances")
 }
 
 model CohortMember {

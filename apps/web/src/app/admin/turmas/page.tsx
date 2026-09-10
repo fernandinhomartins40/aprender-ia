@@ -1,44 +1,36 @@
-import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { prisma } from "@aprender/db";
-import { listarTurmas, exigirAdmin } from "@/server/admin";
+import { listarTurmas, listarInstrutores, exigirAdmin } from "@/server/admin";
+import { salvarTurma } from "@/server/turmas";
+import { NovaTurma } from "@/components/painel-turma";
+import { dataCurta, faixaHoraria, proximoEncontro } from "@/lib/datas";
 
 export const dynamic = "force-dynamic";
 
-/** Código curto, legível e sem caracteres ambíguos (0/O, 1/I). */
-function gerarCodigo(): string {
-  const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () =>
-    alfabeto[Math.floor(Math.random() * alfabeto.length)],
-  ).join("");
-}
+const SELO_SITUACAO: Record<string, { classe: string; rotulo: string }> = {
+  RASCUNHO: { classe: "selo-cinza", rotulo: "Rascunho" },
+  INSCRICOES_ABERTAS: { classe: "selo-verde", rotulo: "Inscrições abertas" },
+  EM_ANDAMENTO: { classe: "selo-indigo", rotulo: "Em andamento" },
+  CONCLUIDA: { classe: "selo-cinza", rotulo: "Concluída" },
+  CANCELADA: { classe: "selo-vermelho", rotulo: "Cancelada" },
+};
 
-async function criarTurma(dados: FormData) {
-  "use server";
-  await exigirAdmin();
-
-  const nome = String(dados.get("nome") ?? "").trim();
-  const courseId = String(dados.get("courseId") ?? "");
-  if (!nome || !courseId) return;
-
-  // Colisão de código é improvável, mas o campo é único: tentamos algumas vezes.
-  for (let i = 0; i < 5; i++) {
-    try {
-      await prisma.cohort.create({
-        data: { nome, courseId, codigo: gerarCodigo() },
-      });
-      break;
-    } catch {
-      if (i === 4) throw new Error("Não foi possível gerar um código único.");
-    }
-  }
-  revalidatePath("/admin/turmas");
-}
+const ROTULO_MODALIDADE: Record<string, string> = {
+  ONLINE: "Online",
+  PRESENCIAL: "Presencial",
+  HIBRIDA: "Híbrida",
+};
 
 export default async function Turmas() {
   await exigirAdmin();
-  const [turmas, cursos] = await Promise.all([
+
+  const [turmas, cursos, instrutores] = await Promise.all([
     listarTurmas(),
-    prisma.course.findMany({ select: { id: true, titulo: true }, orderBy: { ordem: "asc" } }),
+    prisma.course.findMany({
+      select: { id: true, titulo: true },
+      orderBy: { ordem: "asc" },
+    }),
+    listarInstrutores(),
   ]);
 
   return (
@@ -46,34 +38,16 @@ export default async function Turmas() {
       <div className="mb-6">
         <h1 className="font-titulo text-3xl font-extrabold">Turmas</h1>
         <p className="mt-1 text-tinta-clara">
-          Agrupe professores por formação. Cada turma tem um código de matrícula.
+          Cada turma tem cronograma, local e código de matrícula próprios. Para
+          cadastrar alunos, use{" "}
+          <Link href="/admin/alunos" className="font-bold text-indigo hover:underline">
+            Alunos e turmas
+          </Link>
+          .
         </p>
       </div>
 
-      {cursos.length > 0 && (
-        <div className="card mb-6">
-          <h2 className="font-titulo text-lg font-bold">Nova turma</h2>
-          <form action={criarTurma} className="mt-4 flex flex-wrap gap-3">
-            <input
-              name="nome"
-              required
-              placeholder="Ex: Rede Municipal — turma de março"
-              aria-label="Nome da turma"
-              className="campo min-w-64 flex-1"
-            />
-            <select name="courseId" required aria-label="Curso" className="campo w-64">
-              {cursos.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.titulo}
-                </option>
-              ))}
-            </select>
-            <button type="submit" className="btn-primario">
-              Criar turma
-            </button>
-          </form>
-        </div>
-      )}
+      <NovaTurma acao={salvarTurma} cursos={cursos} instrutores={instrutores} />
 
       {turmas.length === 0 ? (
         <div className="card text-center">
@@ -84,31 +58,89 @@ export default async function Turmas() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {turmas.map((t) => (
-            <div key={t.id} className="card">
-              <h3 className="font-titulo font-bold">{t.nome}</h3>
-              <p className="mt-1 text-sm text-tinta-clara">{t.course.titulo}</p>
-              <div className="mt-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-cinza">
-                    Código de matrícula
-                  </p>
-                  <p className="font-mono text-xl font-bold tracking-widest text-indigo">
-                    {t.codigo}
-                  </p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {turmas.map((t) => {
+            const selo = SELO_SITUACAO[t.situacao] ?? SELO_SITUACAO.RASCUNHO!;
+            const proximo = proximoEncontro(
+              t.encontros.map((e) => ({ ...e, data: new Date(e.data) })),
+            );
+            const ativos = t.encontros.filter((e) => !e.canceladoEm).length;
+            const lotada = t.vagas != null && t._count.membros >= t.vagas;
+
+            return (
+              <Link
+                key={t.id}
+                href={`/admin/turmas/${t.id}`}
+                className="card transition-shadow hover:shadow-lg"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="truncate font-titulo text-lg font-extrabold">
+                      {t.nome}
+                    </h2>
+                    <p className="truncate text-sm text-tinta-clara">
+                      {t.course.titulo}
+                    </p>
+                  </div>
+                  <span className={selo.classe}>{selo.rotulo}</span>
                 </div>
-                <div className="text-right">
-                  <p className="font-titulo text-2xl font-extrabold text-indigo">
+
+                <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                  <span className="selo-cinza">
+                    {ROTULO_MODALIDADE[t.modalidade] ?? t.modalidade}
+                  </span>
+                  <span className={lotada ? "selo-amarelo" : "selo-cinza"}>
                     {t._count.membros}
-                  </p>
-                  <p className="text-xs text-cinza">
-                    {t._count.membros === 1 ? "professor" : "professores"}
-                  </p>
+                    {t.vagas != null ? `/${t.vagas}` : ""} aluno(s)
+                    {lotada ? " · lotada" : ""}
+                  </span>
+                  <span className="selo-cinza">
+                    {ativos} encontro{ativos === 1 ? "" : "s"}
+                  </span>
                 </div>
-              </div>
-            </div>
-          ))}
+
+                {t.modalidade !== "ONLINE" && t.local && (
+                  <p className="mt-3 truncate text-sm text-cinza">
+                    {[t.local, t.cidade].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+
+                {proximo ? (
+                  <p className="mt-3 rounded-md bg-indigo-soft px-3 py-2 text-sm text-indigo-dark">
+                    <strong>Próximo encontro:</strong> {dataCurta(proximo.data)}
+                    {faixaHoraria(proximo.horaInicio, proximo.horaFim)
+                      ? ` · ${faixaHoraria(proximo.horaInicio, proximo.horaFim)}`
+                      : ""}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm text-cinza">
+                    {ativos === 0
+                      ? "Nenhum encontro marcado."
+                      : "Todos os encontros já aconteceram."}
+                  </p>
+                )}
+
+                <div className="mt-4 flex items-center justify-between border-t border-borda pt-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-cinza">
+                      Código de matrícula
+                    </p>
+                    <p className="font-mono text-lg font-bold tracking-widest text-indigo">
+                      {t.codigo}
+                    </p>
+                  </div>
+                  {t.instrutor && (
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-wide text-cinza">
+                        Instrutor
+                      </p>
+                      <p className="text-sm font-bold">{t.instrutor.nome}</p>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

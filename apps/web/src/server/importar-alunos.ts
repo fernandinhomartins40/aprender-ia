@@ -4,17 +4,23 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import { gerarHashSenha } from "@aprender/auth";
 import { exigirAdmin } from "./admin";
+import { criarTurmaBasica, podeReceber } from "./turmas";
+import { deInputDate } from "@/lib/datas";
 
 /**
- * Cadastro de alunos em lote.
+ * Cadastro de alunos em lote — sempre dentro de uma turma.
  *
- * O administrador cola uma lista no formato "Nome - Telefone" e a
- * plataforma cria as contas, define senha provisória e matricula todos
- * no curso escolhido.
+ * O administrador cola uma lista "Nome - Telefone" e a plataforma cria as
+ * contas, define senha provisória, matricula no curso e vincula à turma.
  *
- * Cada aluno entra com o TELEFONE como login. Como o Auth.js identifica
- * a conta pelo e-mail, geramos um e-mail interno a partir do telefone —
- * o aluno nunca precisa vê-lo nem digitá-lo.
+ * A turma é obrigatória: um aluno sem turma não tem cronograma, não tem
+ * local de encontro e não aparece em nenhuma chamada — na prática, é um
+ * cadastro órfão. Para não obrigar o admin a sair da tela e voltar, a
+ * turma pode ser CRIADA aqui mesmo, no mesmo envio (`turmaNova`).
+ *
+ * Cada aluno entra com o TELEFONE como login. Como o Auth.js identifica a
+ * conta pelo e-mail, geramos um e-mail interno a partir do telefone — o
+ * aluno nunca precisa vê-lo nem digitá-lo.
  */
 
 export type LinhaLote = {
@@ -118,6 +124,10 @@ export type ResultadoImportacao = {
   falhas: { nome: string; telefone: string; motivo: string }[];
   credenciais: { nome: string; telefone: string; senha: string }[];
   mensagem: string;
+  /** Preenchido quando a turma foi criada no mesmo envio. */
+  turmaCriada?: { id: string; nome: string; codigo: string };
+  /** Para o link "abrir a turma" no fim do cadastro. */
+  cohortId?: string;
 };
 
 export async function importarAlunos(
@@ -128,7 +138,8 @@ export async function importarAlunos(
 
   const texto = String(dados.get("lista") ?? "");
   const courseId = String(dados.get("courseId") ?? "");
-  const cohortId = String(dados.get("cohortId") ?? "");
+  const modoTurma = String(dados.get("modoTurma") ?? "existente");
+  let cohortId = String(dados.get("cohortId") ?? "");
 
   const vazio: ResultadoImportacao = {
     ok: false,
@@ -142,6 +153,9 @@ export async function importarAlunos(
 
   if (!texto.trim()) {
     return { ...vazio, mensagem: "Cole a lista de alunos." };
+  }
+  if (!courseId) {
+    return { ...vazio, mensagem: "Escolha o curso da turma." };
   }
 
   const { validos, invalidos } = await analisarLote(texto);
@@ -158,9 +172,55 @@ export async function importarAlunos(
     };
   }
 
-  const curso = courseId
-    ? await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } })
-    : null;
+  // ---- A turma: escolhida ou criada agora ----
+  let turmaCriada: ResultadoImportacao["turmaCriada"];
+
+  if (modoTurma === "nova") {
+    const nomeTurma = String(dados.get("turmaNovaNome") ?? "").trim();
+    if (nomeTurma.length < 3) {
+      return { ...vazio, mensagem: "Dê um nome à turma nova (mínimo 3 caracteres)." };
+    }
+    try {
+      const criada = await criarTurmaBasica({
+        nome: nomeTurma,
+        courseId,
+        modalidade:
+          String(dados.get("turmaNovaModalidade") ?? "ONLINE") === "PRESENCIAL"
+            ? "PRESENCIAL"
+            : String(dados.get("turmaNovaModalidade") ?? "") === "HIBRIDA"
+              ? "HIBRIDA"
+              : "ONLINE",
+        local: String(dados.get("turmaNovaLocal") ?? "").trim() || null,
+        inicioEm: deInputDate(String(dados.get("turmaNovaInicio") ?? "")),
+      });
+      cohortId = criada.id;
+      turmaCriada = { id: criada.id, nome: nomeTurma, codigo: criada.codigo };
+    } catch (e) {
+      return {
+        ...vazio,
+        mensagem: e instanceof Error ? e.message : "Não foi possível criar a turma.",
+      };
+    }
+  }
+
+  if (!cohortId) {
+    return {
+      ...vazio,
+      mensagem: "Escolha uma turma existente ou crie uma nova para estes alunos.",
+    };
+  }
+
+  // Vagas e situação da turma, antes de criar qualquer conta.
+  const cabem = await podeReceber(cohortId, validos.length);
+  if (!cabem.pode) {
+    return { ...vazio, mensagem: cabem.motivo ?? "A turma não pode receber estes alunos." };
+  }
+
+  const curso = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { id: true },
+  });
+  if (!curso) return { ...vazio, mensagem: "Curso não encontrado." };
 
   let criados = 0;
   let jaExistiam = 0;
@@ -205,31 +265,27 @@ export async function importarAlunos(
         });
       }
 
-      // Matrícula no curso escolhido
-      if (curso) {
-        const jaMatriculado = await prisma.enrollment.findUnique({
-          where: { userId_courseId: { userId: usuario.id, courseId: curso.id } },
-          select: { id: true },
+      // Matrícula no curso
+      const jaMatriculado = await prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: usuario.id, courseId: curso.id } },
+        select: { id: true },
+      });
+      if (!jaMatriculado) {
+        await prisma.enrollment.create({
+          data: { userId: usuario.id, courseId: curso.id },
         });
-        if (!jaMatriculado) {
-          await prisma.enrollment.create({
-            data: { userId: usuario.id, courseId: curso.id },
-          });
-          matriculados++;
-        }
+        matriculados++;
       }
 
-      // Vínculo com a turma, se escolhida
-      if (cohortId) {
-        const jaNaTurma = await prisma.cohortMember.findUnique({
-          where: { cohortId_userId: { cohortId, userId: usuario.id } },
-          select: { id: true },
+      // Vínculo com a turma
+      const jaNaTurma = await prisma.cohortMember.findUnique({
+        where: { cohortId_userId: { cohortId, userId: usuario.id } },
+        select: { id: true },
+      });
+      if (!jaNaTurma) {
+        await prisma.cohortMember.create({
+          data: { cohortId, userId: usuario.id },
         });
-        if (!jaNaTurma) {
-          await prisma.cohortMember.create({
-            data: { cohortId, userId: usuario.id },
-          });
-        }
       }
     } catch (e) {
       falhas.push({
@@ -241,6 +297,8 @@ export async function importarAlunos(
   }
 
   revalidatePath("/admin/alunos");
+  revalidatePath("/admin/turmas");
+  revalidatePath(`/admin/turmas/${cohortId}`);
 
   const partes = [`${criados} conta(s) criada(s)`];
   if (jaExistiam) partes.push(`${jaExistiam} já existia(m)`);
@@ -255,5 +313,7 @@ export async function importarAlunos(
     falhas,
     credenciais,
     mensagem: partes.join(" · "),
+    turmaCriada,
+    cohortId,
   };
 }

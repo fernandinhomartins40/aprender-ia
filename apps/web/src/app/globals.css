@@ -73,4 +73,46 @@
   .selo-verde { @apply selo bg-verde-soft text-verde-dark; }
   .selo-amarelo { @apply selo bg-amarelo-soft text-amarelo-dark; }
   .selo-vermelho { @apply selo bg-vermelho-soft text-vermelho-dark; }
+  .selo-indigo { @apply selo bg-indigo-soft text-indigo-dark; }
+  .selo-cinza { @apply selo bg-borda text-tinta-clara; }
+}
+
+/* ============================================================
+   IMPRESSÃO
+   A ficha da turma é levada em papel para o encontro presencial —
+   a escola raramente tem projetor e nunca tem wi-fi confiável.
+   ============================================================ */
+@media print {
+  @page { margin: 14mm; }
+
+  /* Fundo branco e tinta preta: economiza toner e sai legível em
+     impressora a laser velha, que é o que existe na escola. */
+  body { background: #fff !important; color: #000 !important; }
+
+  /* Cabeçalho, menus e botões não vão para o papel. */
+  .nao-imprimir,
+  header nav,
+  .btn,
+  .btn-primario,
+  .btn-secundario,
+  .btn-energia,
+  .btn-fantasma { display: none !important; }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #999 !important;
+    break-inside: avoid;
+  }
+
+  /* No papel não há scroll: a tabela precisa aparecer inteira. */
+  .tabela-responsiva { width: 100% !important; }
+  .overflow-x-auto, .overflow-auto, .max-h-72 {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Cada bloco marcado começa numa página nova. */
+  .quebra-pagina { break-before: page; }
+
+  a[href]::after { content: ""; } /* sem URLs impressas no meio do texto */
 }

@@ -66,16 +66,39 @@ export async function listarAlunos(busca?: string, pagina = 1, porPagina = 20) {
       skip: (pagina - 1) * porPagina,
       take: porPagina,
       select: {
-        id: true, nome: true, email: true, papel: true, escola: true,
+        id: true, nome: true, email: true, telefone: true, papel: true, escola: true,
         disciplina: true, criadoEm: true,
         ofensiva: { select: { diasSeguidos: true } },
         matriculas: { select: { progressoPct: true, xpTotal: true } },
+        // A turma é parte da identidade do aluno neste painel: sem ela
+        // não há como saber de qual formação a pessoa veio.
+        membroTurmas: {
+          orderBy: { entrouEm: "desc" },
+          select: {
+            cohort: {
+              select: {
+                id: true,
+                nome: true,
+                codigo: true,
+                situacao: true,
+                modalidade: true,
+              },
+            },
+          },
+        },
         _count: { select: { execucoesPrompt: true } },
       },
     }),
   ]);
 
   return { total, usuarios, paginas: Math.max(1, Math.ceil(total / porPagina)) };
+}
+
+/** Alunos que ficaram sem turma — fila de trabalho do administrador. */
+export async function contarAlunosSemTurma(): Promise<number> {
+  return prisma.user.count({
+    where: { papel: "ALUNO", membroTurmas: { none: {} } },
+  });
 }
 
 export async function listarCursos() {
@@ -93,10 +116,34 @@ export async function listarCursos() {
 
 export async function listarTurmas() {
   return prisma.cohort.findMany({
-    orderBy: { criadoEm: "desc" },
+    orderBy: [{ inicioEm: "desc" }, { criadoEm: "desc" }],
     include: {
-      course: { select: { titulo: true } },
-      _count: { select: { membros: true } },
+      course: { select: { id: true, titulo: true } },
+      instrutor: { select: { id: true, nome: true } },
+      encontros: {
+        orderBy: { ordem: "asc" },
+        select: {
+          id: true,
+          ordem: true,
+          data: true,
+          horaInicio: true,
+          horaFim: true,
+          modalidade: true,
+          local: true,
+          canceladoEm: true,
+          _count: { select: { presencas: true } },
+        },
+      },
+      _count: { select: { membros: true, encontros: true } },
     },
+  });
+}
+
+/** Usuários que podem ser responsáveis por uma turma. */
+export async function listarInstrutores() {
+  return prisma.user.findMany({
+    where: { papel: { in: ["INSTRUTOR", "ADMIN"] } },
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true, papel: true },
   });
 }

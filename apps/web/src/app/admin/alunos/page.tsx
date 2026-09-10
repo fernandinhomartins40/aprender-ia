@@ -1,8 +1,16 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma, type Papel } from "@aprender/db";
-import { listarAlunos, exigirAdmin } from "@/server/admin";
+import {
+  listarAlunos,
+  listarInstrutores,
+  exigirAdmin,
+  contarAlunosSemTurma,
+} from "@/server/admin";
 import { importarAlunos } from "@/server/importar-alunos";
+import { salvarTurma } from "@/server/turmas";
 import { ImportarAlunos } from "@/components/importar-alunos";
+import { NovaTurma } from "@/components/painel-turma";
 
 export const dynamic = "force-dynamic";
 
@@ -33,32 +41,45 @@ async function alterarPapel(dados: FormData) {
 export default async function Alunos({
   searchParams,
 }: {
-  searchParams: Promise<{ busca?: string; pagina?: string }>;
+  searchParams: Promise<{ busca?: string; pagina?: string; semTurma?: string }>;
 }) {
   const admin = await exigirAdmin();
   const params = await searchParams;
   const busca = params.busca?.trim() || undefined;
   const pagina = Math.max(1, Number(params.pagina ?? 1) || 1);
 
-  const [{ usuarios, total, paginas }, cursos, turmas] = await Promise.all([
-    listarAlunos(busca, pagina),
-    prisma.course.findMany({
-      select: { id: true, titulo: true },
-      orderBy: { ordem: "asc" },
-    }),
-    prisma.cohort.findMany({
-      select: { id: true, nome: true, courseId: true, course: { select: { titulo: true } } },
-      orderBy: { criadoEm: "desc" },
-    }),
-  ]);
+  const [{ usuarios, total, paginas }, cursos, turmas, instrutores, semTurma] =
+    await Promise.all([
+      listarAlunos(busca, pagina),
+      prisma.course.findMany({
+        select: { id: true, titulo: true },
+        orderBy: { ordem: "asc" },
+      }),
+      prisma.cohort.findMany({
+        orderBy: [{ situacao: "asc" }, { criadoEm: "desc" }],
+        select: {
+          id: true,
+          nome: true,
+          courseId: true,
+          codigo: true,
+          situacao: true,
+          vagas: true,
+          course: { select: { titulo: true } },
+          _count: { select: { membros: true } },
+        },
+      }),
+      listarInstrutores(),
+      contarAlunosSemTurma(),
+    ]);
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-titulo text-3xl font-extrabold">Alunos</h1>
+          <h1 className="font-titulo text-3xl font-extrabold">Alunos e turmas</h1>
           <p className="mt-1 text-tinta-clara">
-            {total} {total === 1 ? "pessoa cadastrada" : "pessoas cadastradas"}
+            {total} {total === 1 ? "pessoa cadastrada" : "pessoas cadastradas"} ·{" "}
+            {turmas.length} {turmas.length === 1 ? "turma" : "turmas"}
           </p>
         </div>
 
@@ -76,6 +97,19 @@ export default async function Alunos({
         </form>
       </div>
 
+      {/* Fila de trabalho: quem entrou sozinho pela landing, sem código. */}
+      {semTurma > 0 && (
+        <div className="mb-6 rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-4">
+          <p className="font-titulo font-bold text-amarelo-dark">
+            {semTurma} aluno(s) sem turma
+          </p>
+          <p className="mt-1 text-sm text-amarelo-dark">
+            São pessoas que se cadastraram sozinhas, sem código de turma. Elas
+            têm acesso ao conteúdo, mas ficam fora de cronograma e chamada.
+          </p>
+        </div>
+      )}
+
       <ImportarAlunos
         acao={importarAlunos}
         cursos={cursos}
@@ -84,8 +118,47 @@ export default async function Alunos({
           nome: t.nome,
           courseId: t.courseId,
           curso: t.course.titulo,
+          codigo: t.codigo,
+          situacao: t.situacao,
+          vagas: t.vagas,
+          inscritos: t._count.membros,
         }))}
       />
+
+      <NovaTurma acao={salvarTurma} cursos={cursos} instrutores={instrutores} />
+
+      {/* ---------- Turmas em resumo ---------- */}
+      {turmas.length > 0 && (
+        <div className="card mb-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-titulo text-lg font-bold">Turmas</h2>
+            <Link href="/admin/turmas" className="btn-fantasma text-sm">
+              Ver todas
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {turmas.slice(0, 6).map((t) => (
+              <Link
+                key={t.id}
+                href={`/admin/turmas/${t.id}`}
+                className="rounded-md border-2 border-borda p-3 transition-colors hover:border-indigo"
+              >
+                <p className="truncate font-titulo font-bold">{t.nome}</p>
+                <p className="truncate text-sm text-cinza">{t.course.titulo}</p>
+                <p className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="font-mono font-bold tracking-widest text-indigo">
+                    {t.codigo}
+                  </span>
+                  <span className="text-cinza">
+                    {t._count.membros}
+                    {t.vagas != null ? `/${t.vagas}` : ""} aluno(s)
+                  </span>
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {usuarios.length === 0 ? (
         <div className="card text-center">
@@ -101,10 +174,10 @@ export default async function Alunos({
             <thead className="border-b border-borda bg-indigo-soft">
               <tr className="font-titulo text-sm text-indigo-dark">
                 <th className="p-4">Professor(a)</th>
+                <th className="p-4">Turma</th>
                 <th className="p-4">Escola / disciplina</th>
                 <th className="p-4 text-center">Progresso</th>
                 <th className="p-4 text-center">Ofensiva</th>
-                <th className="p-4 text-center">Prompts</th>
                 <th className="p-4">Permissão</th>
               </tr>
             </thead>
@@ -112,6 +185,7 @@ export default async function Alunos({
               {usuarios.map((u) => {
                 const progresso = u.matriculas[0]?.progressoPct ?? 0;
                 const ehVoce = u.id === admin.id;
+                const turmaAtual = u.membroTurmas[0]?.cohort;
                 return (
                   <tr key={u.id} className="border-b border-borda last:border-0">
                     <td data-rotulo="Professor(a)" className="p-4">
@@ -123,7 +197,28 @@ export default async function Alunos({
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-cinza">{u.email}</div>
+                      <div className="text-sm text-cinza">
+                        {u.telefone || u.email}
+                      </div>
+                    </td>
+                    <td data-rotulo="Turma" className="p-4 text-sm">
+                      {turmaAtual ? (
+                        <Link
+                          href={`/admin/turmas/${turmaAtual.id}`}
+                          className="font-bold text-indigo hover:underline"
+                        >
+                          {turmaAtual.nome}
+                          {u.membroTurmas.length > 1 && (
+                            <span className="ml-1 font-normal text-cinza">
+                              +{u.membroTurmas.length - 1}
+                            </span>
+                          )}
+                        </Link>
+                      ) : u.papel === "ALUNO" ? (
+                        <span className="text-amarelo-dark">sem turma</span>
+                      ) : (
+                        <span className="text-cinza">—</span>
+                      )}
                     </td>
                     <td data-rotulo="Escola" className="p-4 text-sm text-tinta-clara">
                       {u.escola || "—"}
@@ -152,9 +247,6 @@ export default async function Alunos({
                       ) : (
                         <span className="text-cinza">—</span>
                       )}
-                    </td>
-                    <td data-rotulo="Prompts" className="p-4 text-center text-tinta-clara">
-                      {u._count.execucoesPrompt}
                     </td>
                     <td data-rotulo="Permissão" className="p-4">
                       {ehVoce ? (
