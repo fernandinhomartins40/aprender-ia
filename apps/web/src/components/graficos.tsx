@@ -26,7 +26,26 @@ const TEXTO = "#475569";
 
 export type Ponto = { rotulo: string; valor: number; chave?: string };
 
-function formatarNumero(v: number): string {
+/**
+ * Como o valor é escrito.
+ *
+ * É um dado, não uma função, de propósito: estes componentes são Client
+ * Components e uma prop-função não atravessa a fronteira servidor →
+ * cliente (o React não sabe serializá-la). Passar `formatar={(v) => ...}`
+ * daqui derrubava o painel com "Functions cannot be passed directly to
+ * Client Components" — o formatador tem de ser resolvido deste lado.
+ */
+export type FormatoValor = "numero" | "moeda";
+
+function formatarValor(v: number, formato: FormatoValor): string {
+  if (formato === "moeda") {
+    // Centavos → "R$ 1.234,56". Mesma regra de lib/dinheiro, aplicada
+    // aqui para o componente não depender do servidor.
+    return (v / 100).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  }
   return v.toLocaleString("pt-BR");
 }
 
@@ -34,11 +53,11 @@ function formatarNumero(v: number): string {
 function TabelaEquivalente({
   dados,
   rotuloValor,
-  formatar,
+  formato,
 }: {
   dados: Ponto[];
   rotuloValor: string;
-  formatar: (v: number) => string;
+  formato: FormatoValor;
 }) {
   return (
     <div className="mt-3 max-h-64 overflow-auto rounded-md border border-borda">
@@ -54,7 +73,7 @@ function TabelaEquivalente({
             <tr key={d.chave ?? d.rotulo} className="border-t border-borda">
               <td className="px-3 py-1.5">{d.rotulo}</td>
               <td className="px-3 py-1.5 text-right tabular-nums">
-                {formatar(d.valor)}
+                {formatarValor(d.valor, formato)}
               </td>
             </tr>
           ))}
@@ -118,15 +137,16 @@ export function GraficoLinha({
   titulo,
   descricao,
   dados,
-  formatar = formatarNumero,
+  formato = "numero",
   rotuloValor = "Valor",
 }: {
   titulo: string;
   descricao?: string;
   dados: Ponto[];
-  formatar?: (v: number) => string;
+  formato?: FormatoValor;
   rotuloValor?: string;
 }) {
+  const formatar = (v: number) => formatarValor(v, formato);
   const idClip = useId().replace(/:/g, "");
   const [ativo, setAtivo] = useState<number | null>(null);
 
@@ -170,7 +190,7 @@ export function GraficoLinha({
       descricao={descricao}
       vazio={vazio}
       tabela={
-        <TabelaEquivalente dados={dados} rotuloValor={rotuloValor} formatar={formatar} />
+        <TabelaEquivalente dados={dados} rotuloValor={rotuloValor} formato={formato} />
       }
     >
       <div className="relative">
@@ -313,15 +333,16 @@ export function GraficoBarras({
   titulo,
   descricao,
   dados,
-  formatar = formatarNumero,
+  formato = "numero",
   rotuloValor = "Alunos",
 }: {
   titulo: string;
   descricao?: string;
   dados: Ponto[];
-  formatar?: (v: number) => string;
+  formato?: FormatoValor;
   rotuloValor?: string;
 }) {
+  const formatar = (v: number) => formatarValor(v, formato);
   const [ativo, setAtivo] = useState<number | null>(null);
   const vazio = dados.length === 0 || dados.every((d) => d.valor === 0);
   const maximo = Math.max(1, ...dados.map((d) => d.valor));
@@ -332,7 +353,7 @@ export function GraficoBarras({
       descricao={descricao}
       vazio={vazio}
       tabela={
-        <TabelaEquivalente dados={dados} rotuloValor={rotuloValor} formatar={formatar} />
+        <TabelaEquivalente dados={dados} rotuloValor={rotuloValor} formato={formato} />
       }
     >
       {/* Barras horizontais: os rótulos das faixas são longos. */}

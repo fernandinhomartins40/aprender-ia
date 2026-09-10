@@ -159,7 +159,7 @@ export default async function VisaoGeral({
           titulo="Receita"
           descricao={`Pagamentos confirmados por ${series.granularidade}`}
           dados={series.receita}
-          formatar={(v) => reais(v)}
+          formato="moeda"
           rotuloValor="Receita"
         />
         <GraficoLinha
