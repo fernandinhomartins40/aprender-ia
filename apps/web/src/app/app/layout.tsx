@@ -69,7 +69,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
         </nav>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl overflow-x-hidden px-5 py-8">{children}</main>
 
       {/* barra inferior no celular — onde o polegar alcança */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-borda bg-white md:hidden">

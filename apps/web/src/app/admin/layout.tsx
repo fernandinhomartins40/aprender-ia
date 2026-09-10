@@ -71,7 +71,7 @@ export default async function LayoutAdmin({
         </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-7xl overflow-x-hidden px-5 py-8">{children}</main>
     </div>
   );
 }

@@ -34,7 +34,7 @@
   .btn-energia { @apply btn bg-laranja text-white hover:bg-laranja-dark; }
   .btn-fantasma { @apply btn text-tinta-clara hover:bg-indigo-soft; }
 
-  .card { @apply bg-superficie rounded-lg border border-borda shadow-md p-6; }
+  .card { @apply min-w-0 bg-superficie rounded-lg border border-borda shadow-md p-5 sm:p-6; }
 
   .campo {
     @apply w-full rounded-md border-2 border-borda bg-white px-4 py-3 text-base
