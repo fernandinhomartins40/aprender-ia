@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { CampoSenha } from "@/components/campo-senha";
 
 function FormularioEntrar() {
   const router = useRouter();
@@ -25,7 +26,7 @@ function FormularioEntrar() {
     if (r?.error) {
       // Mensagem genérica de propósito: dizer "e-mail não existe" ajudaria
       // alguém a descobrir quem tem conta na plataforma.
-      setErro("E-mail/telefone ou senha incorretos. Se você entrou com o Google antes, use o botão do Google.");
+      setErro("E-mail/telefone ou senha incorretos. Confira os dados e tente de novo.");
       setCarregando(false);
       return;
     }
@@ -73,39 +74,20 @@ function FormularioEntrar() {
               />
             </div>
 
-            <div>
-              <label htmlFor="senha" className="mb-1.5 block font-titulo text-sm font-bold">
-                Senha
-              </label>
-              <input
-                id="senha"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                className="campo"
-                placeholder="Sua senha"
-              />
-            </div>
+            <CampoSenha
+              id="senha"
+              rotulo="Senha"
+              autoComplete="current-password"
+              required
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Sua senha"
+            />
 
             <button type="submit" disabled={carregando} className="btn-primario w-full">
               {carregando ? "Entrando..." : "Entrar"}
             </button>
           </form>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-borda" />
-            <span className="text-sm text-cinza">ou</span>
-            <div className="h-px flex-1 bg-borda" />
-          </div>
-
-          <button
-            onClick={() => signIn("google", { callbackUrl: proximo })}
-            className="btn-secundario w-full"
-          >
-            Entrar com o Google
-          </button>
 
           <p className="mt-6 text-center text-tinta-clara">
             Ainda não tem conta?{" "}

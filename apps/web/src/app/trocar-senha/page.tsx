@@ -3,6 +3,7 @@ import { auth } from "@aprender/auth";
 import { prisma } from "@aprender/db";
 import { gerarHashSenha } from "@aprender/auth";
 import { Logo } from "@/components/logo";
+import { CampoSenha } from "@/components/campo-senha";
 
 export const dynamic = "force-dynamic";
 
@@ -71,25 +72,23 @@ export default async function TrocarSenha({
           )}
 
           <form action={definirSenha} className="space-y-4">
-            <div>
-              <label htmlFor="novaSenha" className="mb-1 block font-titulo text-sm font-bold">
-                Nova senha
-              </label>
-              <input
-                id="novaSenha" name="novaSenha" type="password" required minLength={8}
-                autoComplete="new-password" placeholder="Mínimo 8 caracteres"
-                className="campo"
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmarSenha" className="mb-1 block font-titulo text-sm font-bold">
-                Repita a senha
-              </label>
-              <input
-                id="confirmarSenha" name="confirmarSenha" type="password" required minLength={8}
-                autoComplete="new-password" className="campo"
-              />
-            </div>
+            <CampoSenha
+              id="novaSenha"
+              name="novaSenha"
+              rotulo="Nova senha"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+            />
+            <CampoSenha
+              id="confirmarSenha"
+              name="confirmarSenha"
+              rotulo="Repita a senha"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
             <button type="submit" className="btn-primario w-full">
               Criar minha senha e começar
             </button>

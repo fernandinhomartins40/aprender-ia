@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ResultadoPerfil } from "@/server/perfil";
+import { CampoSenha } from "@/components/campo-senha";
 
 type Acao = (
   anterior: ResultadoPerfil | null,
@@ -171,25 +172,17 @@ export function FormEmail({
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="senhaEmail"
-          className="mb-1 block font-titulo text-sm font-bold"
-        >
-          Confirme com a sua senha
-        </label>
-        <input
-          id="senhaEmail"
-          name="senhaAtual"
-          type="password"
-          required={temSenha}
-          autoComplete="current-password"
-          className="campo"
-        />
+      <CampoSenha
+        id="senhaEmail"
+        name="senhaAtual"
+        rotulo="Confirme com a sua senha"
+        required={temSenha}
+        autoComplete="current-password"
+      >
         <p className="mt-1 text-sm text-cinza">
           Pedimos a senha porque o e-mail é a sua identidade de login.
         </p>
-      </div>
+      </CampoSenha>
 
       <button type="submit" disabled={pendente} className="btn-primario">
         {pendente ? "Alterando..." : "Alterar e-mail"}
@@ -225,37 +218,26 @@ export function FormSenha({ acao, temSenha }: { acao: Acao; temSenha: boolean })
   return (
     <form action={enviar} className="space-y-4">
       {temSenha && (
-        <div>
-          <label htmlFor="senhaAtual" className="mb-1 block font-titulo text-sm font-bold">
-            Senha atual
-          </label>
-          <input
-            id="senhaAtual"
-            name="senhaAtual"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="campo"
-          />
-        </div>
+        <CampoSenha
+          id="senhaAtual"
+          name="senhaAtual"
+          rotulo="Senha atual"
+          required
+          autoComplete="current-password"
+        />
       )}
 
-      <div>
-        <label htmlFor="novaSenha" className="mb-1 block font-titulo text-sm font-bold">
-          {temSenha ? "Nova senha" : "Defina uma senha"}
-        </label>
-        <input
-          id="novaSenha"
-          name="novaSenha"
-          type="password"
-          required
-          minLength={8}
-          value={nova}
-          onChange={(e) => setNova(e.target.value)}
-          autoComplete="new-password"
-          placeholder="Mínimo 8 caracteres"
-          className="campo"
-        />
+      <CampoSenha
+        id="novaSenha"
+        name="novaSenha"
+        rotulo={temSenha ? "Nova senha" : "Defina uma senha"}
+        required
+        minLength={8}
+        value={nova}
+        onChange={(e) => setNova(e.target.value)}
+        autoComplete="new-password"
+        placeholder="Mínimo 8 caracteres"
+      >
         {forca && (
           <div className="mt-2">
             <div className="h-1.5 overflow-hidden rounded-full bg-borda">
@@ -269,25 +251,16 @@ export function FormSenha({ acao, temSenha }: { acao: Acao; temSenha: boolean })
             </p>
           </div>
         )}
-      </div>
+      </CampoSenha>
 
-      <div>
-        <label
-          htmlFor="confirmarSenha"
-          className="mb-1 block font-titulo text-sm font-bold"
-        >
-          Repita a nova senha
-        </label>
-        <input
-          id="confirmarSenha"
-          name="confirmarSenha"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className="campo"
-        />
-      </div>
+      <CampoSenha
+        id="confirmarSenha"
+        name="confirmarSenha"
+        rotulo="Repita a nova senha"
+        required
+        minLength={8}
+        autoComplete="new-password"
+      />
 
       <button type="submit" disabled={pendente} className="btn-primario">
         {pendente ? "Alterando..." : temSenha ? "Alterar senha" : "Definir senha"}

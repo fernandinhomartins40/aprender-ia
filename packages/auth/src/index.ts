@@ -1,6 +1,5 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma, type Papel } from "@aprender/db";
@@ -8,13 +7,17 @@ import { prisma, type Papel } from "@aprender/db";
 /**
  * Autenticação do Aprender IA.
  *
- * Dois caminhos de entrada:
- *  - e-mail e senha (padrão; muitos professores não querem vincular contas)
- *  - Google (a maioria já tem conta institucional da escola)
+ * Um único caminho de entrada: identificador + senha.
+ *  - o professor que se cadastrou sozinho entra pelo e-mail
+ *  - o aluno cadastrado em lote entra pelo telefone
  *
- * A sessão usa JWT em vez de sessão no banco: o adapter do Prisma cuida
- * do vínculo de contas OAuth, mas as credenciais não gravam sessão —
- * misturar as duas estratégias quebra o login por senha.
+ * Login social foi deliberadamente descartado: a plataforma não usa
+ * autenticação por terceiros. As tabelas Account/Session continuam no
+ * schema porque o PrismaAdapter as exige, mas nenhum provider OAuth
+ * está registrado.
+ *
+ * A sessão usa JWT em vez de sessão no banco: as credenciais não gravam
+ * sessão — misturar as duas estratégias quebra o login por senha.
  */
 
 declare module "next-auth" {
@@ -73,8 +76,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             })
           : await prisma.user.findUnique({ where: { email: identificador } });
 
-        // Conta criada por Google não tem senha: não deixamos passar
-        // com senha vazia, e a mensagem na tela orienta a entrar pelo Google.
+        // Conta sem senha definida não entra: comparar contra um hash
+        // inexistente passaria com senha vazia.
         if (!usuario?.senhaHash) return null;
 
         const confere = await bcrypt.compare(senha, usuario.senhaHash);
@@ -88,16 +91,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
-
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            allowDangerousEmailAccountLinking: true,
-          }),
-        ]
-      : []),
   ],
 
   callbacks: {

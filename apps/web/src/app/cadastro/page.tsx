@@ -4,14 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { CampoSenha } from "@/components/campo-senha";
 
 export default function Cadastro() {
   const router = useRouter();
   const [dados, setDados] = useState({
     nome: "",
     email: "",
+    telefone: "",
     senha: "",
     confirmarSenha: "",
+    codigoTurma: "",
     disciplina: "",
     anoEscolar: "",
     escola: "",
@@ -100,29 +103,67 @@ export default function Cadastro() {
               />
             </div>
 
+            <div>
+              <label htmlFor="telefone" className="mb-1.5 block font-titulo text-sm font-bold">
+                Telefone <span className="font-normal text-cinza">(opcional)</span>
+              </label>
+              <input
+                id="telefone" type="tel" inputMode="tel"
+                value={dados.telefone} onChange={mudar("telefone")}
+                className="campo" placeholder="(11) 98765-4321"
+                autoComplete="tel"
+              />
+              <p className="mt-1 text-sm text-cinza">
+                Com ele você também pode entrar na plataforma, no lugar do e-mail.
+              </p>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="senha" className="mb-1.5 block font-titulo text-sm font-bold">
-                  Senha
-                </label>
-                <input
-                  id="senha" type="password" required minLength={8}
-                  value={dados.senha} onChange={mudar("senha")}
-                  className="campo" placeholder="Mínimo 8 caracteres"
-                  autoComplete="new-password"
-                />
-              </div>
-              <div>
-                <label htmlFor="confirmar" className="mb-1.5 block font-titulo text-sm font-bold">
-                  Repita a senha
-                </label>
-                <input
-                  id="confirmar" type="password" required
-                  value={dados.confirmarSenha} onChange={mudar("confirmarSenha")}
-                  className="campo" placeholder="A mesma senha"
-                  autoComplete="new-password"
-                />
-              </div>
+              <CampoSenha
+                id="senha"
+                rotulo="Senha"
+                required
+                minLength={8}
+                value={dados.senha}
+                onChange={mudar("senha")}
+                placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+              />
+              <CampoSenha
+                id="confirmar"
+                rotulo="Repita a senha"
+                required
+                value={dados.confirmarSenha}
+                onChange={mudar("confirmarSenha")}
+                placeholder="A mesma senha"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="codigoTurma"
+                className="mb-1.5 block font-titulo text-sm font-bold"
+              >
+                Código do curso <span className="font-normal text-cinza">(opcional)</span>
+              </label>
+              <input
+                id="codigoTurma"
+                value={dados.codigoTurma}
+                onChange={(e) =>
+                  setDados((d) => ({ ...d, codigoTurma: e.target.value.toUpperCase() }))
+                }
+                className="campo font-mono tracking-widest"
+                placeholder="Ex: K7M2PQ"
+                maxLength={6}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+              />
+              <p className="mt-1 text-sm text-cinza">
+                Recebeu um código na formação presencial? Digite aqui e você já
+                entra matriculado na turma certa.
+              </p>
             </div>
 
             <fieldset className="rounded-md border border-borda p-4">
@@ -154,19 +195,6 @@ export default function Cadastro() {
               {carregando ? "Criando sua conta..." : "Criar conta e começar"}
             </button>
           </form>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-borda" />
-            <span className="text-sm text-cinza">ou</span>
-            <div className="h-px flex-1 bg-borda" />
-          </div>
-
-          <button
-            onClick={() => signIn("google", { callbackUrl: "/app" })}
-            className="btn-secundario w-full"
-          >
-            Continuar com o Google
-          </button>
 
           <p className="mt-6 text-center text-tinta-clara">
             Já tem conta?{" "}

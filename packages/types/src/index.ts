@@ -4,15 +4,38 @@ import { z } from "zod";
    AUTENTICAÇÃO
    ============================================================ */
 
+/** Telefone brasileiro só com dígitos: 10 (fixo com DDD) a 13 (com país). */
+export const telefoneSchema = z
+  .string()
+  .transform((v) => v.replace(/\D/g, ""))
+  .refine((v) => v.length >= 10 && v.length <= 13, {
+    message: "Telefone deve ter de 10 a 13 dígitos, com DDD",
+  });
+
+/**
+ * Código de matrícula da turma (Cohort.codigo): 6 caracteres de um
+ * alfabeto sem 0/O e 1/I, para não gerar dúvida em quem copia do quadro.
+ */
+export const codigoTurmaSchema = z
+  .string()
+  .transform((v) => v.trim().toUpperCase())
+  .refine((v) => /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/.test(v), {
+    message: "O código do curso tem 6 caracteres (letras e números)",
+  });
+
 export const cadastroSchema = z
   .object({
     nome: z.string().min(3, "Informe seu nome completo").max(120),
     email: z.string().email("E-mail inválido"),
+    // O aluno entra por e-mail OU telefone; guardamos os dois quando houver.
+    telefone: z.union([telefoneSchema, z.literal("")]).optional(),
     senha: z
       .string()
       .min(8, "A senha precisa de ao menos 8 caracteres")
       .max(72, "Senha muito longa"),
     confirmarSenha: z.string(),
+    // Quem recebeu o código no curso presencial já entra matriculado.
+    codigoTurma: z.union([codigoTurmaSchema, z.literal("")]).optional(),
     disciplina: z.string().max(80).optional(),
     anoEscolar: z.string().max(40).optional(),
     escola: z.string().max(160).optional(),
@@ -22,8 +45,9 @@ export const cadastroSchema = z
     path: ["confirmarSenha"],
   });
 
+/** O login aceita e-mail ou telefone no mesmo campo. */
 export const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
+  email: z.string().min(1, "Informe seu e-mail ou telefone"),
   senha: z.string().min(1, "Informe sua senha"),
 });
 

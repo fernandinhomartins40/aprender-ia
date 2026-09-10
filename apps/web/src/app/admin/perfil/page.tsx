@@ -5,7 +5,7 @@ import {
   atualizarEmail,
   atualizarSenha,
   encerrarSessoes,
-  desvincularGoogle,
+  removerLoginExterno,
 } from "@/server/perfil";
 import {
   FormDados,
@@ -63,7 +63,8 @@ export default async function Perfil() {
   }
 
   const temSenha = Boolean(usuario.senhaHash);
-  const temGoogle = usuario.contas.some((c) => c.provider === "google");
+  // Vínculo OAuth herdado: a plataforma não cria mais nenhum.
+  const temLoginExterno = usuario.contas.length > 0;
   const totalAdmins = await prisma.user.count({ where: { papel: "ADMIN" } });
 
   return (
@@ -86,7 +87,9 @@ export default async function Perfil() {
             <p className="text-tinta-clara">{usuario.email}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <span className="selo-verde">{usuario.papel}</span>
-              {temGoogle && <span className="selo-amarelo">Google vinculado</span>}
+              {temLoginExterno && (
+                <span className="selo-amarelo">Login externo herdado</span>
+              )}
               {!temSenha && (
                 <span className="selo-vermelho">Sem senha definida</span>
               )}
@@ -110,8 +113,8 @@ export default async function Perfil() {
             ⚠️ Você ainda não tem senha
           </p>
           <p className="mt-1 text-amarelo-dark">
-            Sua conta entra pelo Google. Defina uma senha abaixo para poder
-            entrar também por e-mail — e para conseguir trocar o e-mail depois.
+            Defina uma senha abaixo para poder entrar na plataforma — e para
+            conseguir trocar o e-mail depois.
           </p>
         </div>
       )}
@@ -149,7 +152,7 @@ export default async function Perfil() {
           descricao={
             temSenha
               ? "Recomendamos trocar a senha se ela foi enviada a você por mensagem."
-              : "Defina uma senha para entrar sem depender do Google."
+              : "Defina uma senha para poder entrar na plataforma."
           }
         >
           <FormSenha acao={atualizarSenha} temSenha={temSenha} />
@@ -163,11 +166,10 @@ export default async function Perfil() {
             <div>
               <p className="font-titulo text-sm font-bold">Sessões de dispositivo</p>
               <p className="mb-3 text-sm text-tinta-clara">
-                Você tem {usuario._count.sessoes} sessão(ões) registrada(s).
-                Encerrar desconecta acessos feitos pelo Google.{" "}
+                Você tem {usuario._count.sessoes} sessão(ões) registrada(s).{" "}
                 <strong>
-                  O acesso por e-mail e senha usa token temporário: para
-                  invalidá-lo de imediato, troque a senha.
+                  O acesso por senha usa token temporário: para invalidá-lo de
+                  imediato, troque a senha.
                 </strong>
               </p>
               <BotaoAcao
@@ -178,18 +180,20 @@ export default async function Perfil() {
               />
             </div>
 
-            {temGoogle && (
+            {temLoginExterno && (
               <div className="border-t border-borda pt-5">
-                <p className="font-titulo text-sm font-bold">Conta Google</p>
+                <p className="font-titulo text-sm font-bold">Login externo herdado</p>
                 <p className="mb-3 text-sm text-tinta-clara">
-                  Desvincular remove a opção de entrar com o Google.
+                  Esta conta ainda tem um vínculo de login por terceiros, de
+                  antes de a plataforma passar a usar apenas senha. Removê-lo
+                  não afeta o seu acesso por e-mail e senha.
                   {!temSenha && " Defina uma senha antes, para não perder o acesso."}
                 </p>
                 <BotaoAcao
-                  acao={desvincularGoogle}
-                  rotulo="Desvincular Google"
-                  rotuloPendente="Desvinculando..."
-                  confirmacao="Desvincular a conta Google desta conta?"
+                  acao={removerLoginExterno}
+                  rotulo="Remover vínculo externo"
+                  rotuloPendente="Removendo..."
+                  confirmacao="Remover o vínculo de login externo desta conta?"
                   variante="perigo"
                 />
               </div>
@@ -213,6 +217,7 @@ export default async function Perfil() {
                 {temSenha ? "Ativo" : "Não configurado"}
               </dd>
             </div>
+
           </dl>
           {totalAdmins === 1 && (
             <p className="mt-4 rounded-md bg-indigo-soft px-4 py-3 text-sm text-indigo-dark">

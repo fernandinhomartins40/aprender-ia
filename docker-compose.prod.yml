@@ -45,8 +45,6 @@ services:
       NEXTAUTH_URL: ${CANONICAL_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_TRUST_HOST: "true"
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       PUBLIC_APP_URL: ${CANONICAL_URL}
     depends_on:
       postgres:

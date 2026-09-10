@@ -42,6 +42,10 @@
     min-height: 44px;
   }
 
+  /* Campo com botão sobreposto à direita (ex.: revelar senha).
+     O padding evita que o texto passe por baixo do ícone. */
+  .campo-com-acao { padding-right: 3rem; }
+
 
   /* Tabela que vira lista de cartões no celular.
      Uma tabela de 6 colunas com formulários dentro é ilegível em 390px

@@ -70,12 +70,12 @@ export async function atualizarEmail(
   }
 
   // Trocar e-mail é mudar a identidade de login: exigimos a senha.
-  // Contas criadas pelo Google não têm senha — nesse caso, orientamos.
+  // Contas antigas sem senha definida precisam criar uma antes.
   if (!usuario.senhaHash) {
     return {
       ok: false,
       mensagem:
-        "Sua conta entra pelo Google. Defina uma senha primeiro, na seção abaixo.",
+        "Sua conta ainda não tem senha. Defina uma primeiro, na seção abaixo.",
     };
   }
   if (!(await conferirSenha(senha, usuario.senhaHash))) {
@@ -126,8 +126,8 @@ export async function atualizarSenha(
   const usuario = await prisma.user.findUnique({ where: { id: admin.id } });
   if (!usuario) return { ok: false, mensagem: "Usuário não encontrado." };
 
-  // Quem já tem senha precisa confirmá-la. Quem entra pelo Google
-  // está definindo a primeira, e aí não há o que confirmar.
+  // Quem já tem senha precisa confirmá-la. Quem ainda não tem está
+  // definindo a primeira, e aí não há o que confirmar.
   if (usuario.senhaHash) {
     if (!(await conferirSenha(atual, usuario.senhaHash))) {
       return { ok: false, mensagem: "Senha atual incorreta." };
@@ -147,7 +147,7 @@ export async function atualizarSenha(
     ok: true,
     mensagem: usuario.senhaHash
       ? "Senha alterada. Ela já vale para o próximo login."
-      : "Senha definida. Agora você pode entrar por e-mail e senha.",
+      : "Senha definida. Agora você já pode entrar normalmente.",
   };
 }
 
@@ -156,12 +156,11 @@ export async function atualizarSenha(
    ============================================================ */
 
 /**
- * Remove as sessões gravadas no banco (contas OAuth).
+ * Remove as sessões gravadas no banco.
  *
  * Ressalva honesta: a sessão principal é JWT, então este botão não
- * invalida um token já emitido antes de expirar. Ele serve para
- * desconectar acessos via Google. A troca de senha, sim, impede
- * novos logins com a credencial antiga.
+ * invalida um token já emitido antes de expirar. A troca de senha,
+ * sim, impede novos logins com a credencial antiga.
  */
 export async function encerrarSessoes(): Promise<ResultadoPerfil> {
   const admin = await exigirAdmin();
@@ -181,10 +180,14 @@ export async function encerrarSessoes(): Promise<ResultadoPerfil> {
 }
 
 /* ============================================================
-   DESVINCULAR CONTA GOOGLE
+   REMOVER VÍNCULOS DE LOGIN EXTERNO
+
+   A plataforma não usa mais autenticação por terceiros. Esta ação
+   existe para limpar vínculos OAuth herdados de contas antigas —
+   nenhuma conta nova cria registro em `accounts`.
    ============================================================ */
 
-export async function desvincularGoogle(): Promise<ResultadoPerfil> {
+export async function removerLoginExterno(): Promise<ResultadoPerfil> {
   const admin = await exigirAdmin();
 
   const usuario = await prisma.user.findUnique({
@@ -192,23 +195,24 @@ export async function desvincularGoogle(): Promise<ResultadoPerfil> {
     select: { senhaHash: true },
   });
 
-  // Sem senha, desvincular o Google deixaria a conta sem nenhuma
-  // forma de entrar. Bloqueamos e explicamos o caminho.
+  // Sem senha, remover o vínculo deixaria a conta sem nenhuma forma
+  // de entrar. Bloqueamos e explicamos o caminho.
   if (!usuario?.senhaHash) {
     return {
       ok: false,
       mensagem:
-        "Defina uma senha antes de desvincular o Google, senão você ficará sem forma de entrar.",
+        "Defina uma senha antes de remover o vínculo, senão você ficará sem forma de entrar.",
     };
   }
 
   const { count } = await prisma.account.deleteMany({
-    where: { userId: admin.id, provider: "google" },
+    where: { userId: admin.id },
   });
 
   revalidatePath("/admin/perfil");
   return {
     ok: count > 0,
-    mensagem: count > 0 ? "Conta Google desvinculada." : "Nenhuma conta Google vinculada.",
+    mensagem:
+      count > 0 ? "Vínculo de login externo removido." : "Nenhum vínculo externo nesta conta.",
   };
 }
