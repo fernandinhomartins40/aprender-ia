@@ -6,6 +6,8 @@ import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 import { lerNumero } from "@/server/configuracoes";
 import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
+import { minhasNotificacoes, marcarComoLidas } from "@/server/notificacoes";
+import { SinoNotificacoes } from "@/components/sino-notificacoes";
 import { Icone3D, type NomeIcone } from "@/components/icone-3d";
 
 const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
@@ -46,6 +48,8 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
       ? avaliarFree(conta, avisarDiasAntes || 7)
       : null;
 
+  const avisos = await minhasNotificacoes();
+
   return (
     <div className="min-h-screen bg-fundo pb-20 md:pb-0">
       <header className="sticky top-0 z-40 border-b border-borda bg-white">
@@ -53,6 +57,11 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
           <Logo href="/app" largura={112} prioridade />
 
           <div className="flex items-center gap-2">
+            <SinoNotificacoes
+              lista={avisos.lista}
+              naoLidas={avisos.naoLidas}
+              aoAbrir={marcarComoLidas}
+            />
             {user.papel === "ADMIN" && (
               <Link href="/admin" className="btn-fantasma text-sm">
                 Administração

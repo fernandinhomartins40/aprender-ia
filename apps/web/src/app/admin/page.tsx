@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import {
   indicadoresAlunos,
   indicadoresFinanceiros,
@@ -8,12 +9,26 @@ import {
 } from "@/server/metricas";
 import { ferramentasMaisUsadas } from "@/server/admin";
 import { contarSolicitacoesPendentes } from "@/server/acesso-free";
+import { filaDeAvisos, enviarAvisos } from "@/server/avisos";
 import { periodoPreset, PRESETS } from "@/lib/periodo";
 import { reais } from "@/lib/dinheiro";
 import { GraficoLinha, GraficoBarras, StatTile, Medidor } from "@/components/graficos";
 import { Icone3D } from "@/components/icone-3d";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Dispara os avisos pendentes.
+ *
+ * Adaptador em vez de usar `enviarAvisos` direto no `action`: aquela função
+ * devolve o resumo do envio, e um `action` de formulário precisa resolver
+ * para void.
+ */
+async function dispararAvisos() {
+  "use server";
+  await enviarAvisos();
+  revalidatePath("/admin");
+}
 
 export default async function VisaoGeral({
   searchParams,
@@ -23,7 +38,7 @@ export default async function VisaoGeral({
   const params = await searchParams;
   const periodo = periodoPreset(params.periodo);
 
-  const [alunos, fin, progresso, series, ferramentas, atividade, pendentes] =
+  const [alunos, fin, progresso, series, ferramentas, atividade, pendentes, avisos] =
     await Promise.all([
       indicadoresAlunos(periodo),
       indicadoresFinanceiros(periodo),
@@ -32,6 +47,7 @@ export default async function VisaoGeral({
       ferramentasMaisUsadas(),
       atividadeRecente(),
       contarSolicitacoesPendentes(),
+      filaDeAvisos(),
     ]);
 
   const maisUsada = ferramentas[0]?.usos ?? 0;
@@ -62,6 +78,28 @@ export default async function VisaoGeral({
             liberado sem a sua aprovação.
           </p>
         </Link>
+      )}
+
+      {/* Avisos que ainda não saíram. A plataforma não dispara sozinha —
+          sem cron na VPS, o envio parte daqui. */}
+      {avisos.freeAVencer + avisos.freeExpirado + avisos.cobrancaVencendo > 0 && (
+        <form action={dispararAvisos} className="mb-6 rounded-lg border-l-4 border-indigo bg-indigo-soft p-4">
+          <p className="font-titulo font-bold text-indigo-dark">
+            {avisos.freeAVencer + avisos.freeExpirado + avisos.cobrancaVencendo} aviso(s)
+            para enviar
+          </p>
+          <p className="mt-1 text-sm text-indigo-dark">
+            {avisos.freeAVencer > 0 && `${avisos.freeAVencer} com acesso a vencer · `}
+            {avisos.freeExpirado > 0 && `${avisos.freeExpirado} com acesso expirado · `}
+            {avisos.cobrancaVencendo > 0 && `${avisos.cobrancaVencendo} com cobrança perto do vencimento`}
+          </p>
+          <button type="submit" className="btn-primario mt-3 text-sm">
+            Enviar avisos agora
+          </button>
+          <p className="mt-2 text-xs text-indigo-dark">
+            Cada pessoa recebe um aviso por prazo — reenviar não duplica.
+          </p>
+        </form>
       )}
 
       {/* Filtro numa linha só, acima de tudo o que ele afeta. */}

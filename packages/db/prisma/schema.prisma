@@ -90,6 +90,8 @@ model User {
   presencas        MeetingAttendance[]
   registrosDiario  DiaryEntry[]
   pagamentos       Payment[]
+  assinaturas      Subscription[]
+  notificacoes     Notification[]
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
   solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
@@ -600,6 +602,120 @@ enum StatusPagamento {
   CANCELADO
 }
 
+/// Periodicidade de um plano pago.
+enum Periodicidade {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+  /// Cobrança única que libera acesso por um número de dias.
+  UNICA
+}
+
+/// Ciclo de vida de uma assinatura.
+///
+/// INADIMPLENTE não é o mesmo que CANCELADA: o vínculo continua de pé e o
+/// aluno volta ao quitar. Só CANCELADA e EXPIRADA encerram a assinatura.
+enum StatusAssinatura {
+  ATIVA
+  INADIMPLENTE
+  CANCELADA
+  EXPIRADA
+}
+
+/// Um plano vendável.
+///
+/// O preço mora aqui e não no código: criar uma promoção não deve exigir
+/// deploy, que é justamente o objetivo do painel.
+model Plan {
+  id        String  @id @default(cuid())
+  nome      String
+  /// Identificador estável para links e relatórios ("anual-2026").
+  slug      String  @unique
+  descricao String? @db.Text
+
+  precoCentavos Int
+  periodicidade Periodicidade @default(MENSAL)
+
+  /// Só para periodicidade UNICA: quantos dias de acesso a compra libera.
+  /// Nulo num plano recorrente, onde o ciclo já define o prazo.
+  diasAcesso Int?
+
+  /// Dias de teste antes da primeira cobrança. 0 = sem teste.
+  diasTeste Int @default(0)
+
+  /// Desligado, o plano para de ser oferecido, mas as assinaturas
+  /// existentes seguem valendo: editar um plano nunca cancela vínculo.
+  ativo    Boolean @default(true)
+  publico  Boolean @default(true)
+  destaque Boolean @default(false)
+  ordem    Int     @default(0)
+
+  /// Uma linha por benefício, exibida na landing.
+  beneficios String[] @default([])
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  assinaturas Subscription[]
+
+  @@index([ativo])
+  @@map("plans")
+}
+
+/// Assinatura de um aluno a um plano.
+///
+/// Os campos `gateway*` existem sem integração ativa: quando um meio de
+/// pagamento entrar, ele grava o próprio identificador aqui sem precisar
+/// de migration. Hoje o administrador lança tudo à mão.
+model Subscription {
+  id     String @id @default(cuid())
+  userId String
+  planId String
+
+  status StatusAssinatura @default(ATIVA)
+
+  /// Preço travado no ato da assinatura: reajustar o plano não reajusta
+  /// quem já assinou. Aumento de preço é decisão explícita, não efeito
+  /// colateral de uma edição.
+  precoCentavos Int
+  periodicidade Periodicidade
+
+  inicioEm   DateTime  @default(now())
+  /// Até quando o que já foi pago dá acesso.
+  cicloFimEm DateTime?
+  /// Vencimento da próxima cobrança. Nulo quando não há mais cobrança.
+  proximaEm  DateTime?
+
+  canceladoEm        DateTime?
+  motivoCancelamento String?
+  /// "aluno" ou "admin" — muda como tratamos o retorno da pessoa.
+  canceladoPor       String?
+
+  /// Cobranças vencidas seguidas. Zera a cada quitação e é o gatilho da
+  /// suspensão por inadimplência.
+  falhasSeguidas Int @default(0)
+
+  gatewayProvedor String?
+  gatewayId       String?
+  gatewayStatus   String?
+
+  observacoes String? @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Sem cascade: apagar um plano com assinatura é erro, não intenção.
+  plan      Plan      @relation(fields: [planId], references: [id])
+  cobrancas Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([proximaEm])
+  @@map("subscriptions")
+}
+
 /// Lançamento financeiro de um aluno.
 ///
 /// O controle é manual: não há integração com meio de pagamento.
@@ -621,14 +737,24 @@ model Payment {
   /// Para cobranças recorrentes: a competência (ex.: "2026-09").
   competencia String?
 
+  /// Assinatura que originou esta cobrança. Nulo em lançamento avulso —
+  /// uma taxa de material, por exemplo, não pertence a nenhum ciclo.
+  subscriptionId String?
+
+  gatewayId String?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// A assinatura sai de cena sem apagar o histórico de cobranças: o que
+  /// já foi pago não pode desaparecer do relatório.
+  assinatura Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
   @@index([vencimentoEm])
+  @@index([subscriptionId])
   @@map("payments")
 }
 
@@ -780,4 +906,141 @@ model CohortMember {
 
   @@unique([cohortId, userId])
   @@map("cohort_members")
+}
+
+// ============================================================
+// CONTEÚDO DA LANDING PAGE
+// ============================================================
+
+/// Uma seção da página inicial, editável pelo painel.
+///
+/// As seções são fixas — cada `chave` corresponde a um bloco que o código
+/// sabe desenhar. O painel edita textos, ordem e visibilidade; não cria
+/// layout novo. Isso é deliberado: um construtor de páginas genérico
+/// custaria dez vezes mais e permitiria quebrar o desenho da página.
+///
+/// `LandingItem` guarda as listas (os cards, os encontros, as
+/// ferramentas), porque essas repetem estrutura e precisam de ordenação
+/// própria.
+model LandingSection {
+  id    String @id @default(cuid())
+  chave String @unique
+
+  /// Nome mostrado ao administrador ("Chamada final"), não ao visitante.
+  rotulo String
+
+  /// Os textos do bloco. Nulos caem no valor embutido no código, então a
+  /// página nunca aparece vazia por falta de conteúdo salvo.
+  titulo    String? @db.Text
+  subtitulo String? @db.Text
+  texto     String? @db.Text
+  /// Rótulo e destino do botão principal do bloco.
+  ctaTexto  String?
+  ctaLink   String?
+  /// Segundo botão, quando o bloco tem dois.
+  cta2Texto String?
+  cta2Link  String?
+  /// Faixa acima do título ("Formação de 40 horas · Rede pública").
+  selo      String?
+  imagem    String?
+  video     String?
+
+  visivel Boolean @default(true)
+  ordem   Int     @default(0)
+
+  atualizadoEm  DateTime @updatedAt
+  atualizadoPor String?
+
+  itens LandingItem[]
+
+  @@map("landing_sections")
+}
+
+/// Item de uma lista da landing: um card, um encontro, uma ferramenta,
+/// um depoimento, uma pergunta do FAQ.
+model LandingItem {
+  id        String @id @default(cuid())
+  sectionId String
+
+  titulo String
+  texto  String? @db.Text
+  /// Segunda linha do item — "Você leva:" nos encontros, a resposta no
+  /// FAQ, o cargo no depoimento.
+  extra  String? @db.Text
+
+  /// Nome do ícone 3D, quando o bloco usa ícone.
+  icone  String?
+  /// Cor de destaque do item, em hex.
+  cor    String?
+  /// Selo curto ("Gratuito", "Com limite").
+  selo   String?
+  imagem String?
+  link   String?
+
+  visivel Boolean @default(true)
+  ordem   Int     @default(0)
+
+  criadoEm DateTime @default(now())
+
+  section LandingSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId, ordem])
+  @@map("landing_items")
+}
+
+// ============================================================
+// NOTIFICAÇÕES
+// ============================================================
+
+/// Como a mensagem saiu (ou tentou sair) da plataforma.
+enum CanalNotificacao {
+  /// Só no painel do aluno.
+  PLATAFORMA
+  EMAIL
+  /// Texto pronto para o administrador enviar pelo WhatsApp — a
+  /// plataforma não envia sozinha.
+  WHATSAPP
+}
+
+enum StatusNotificacao {
+  PENDENTE
+  ENVIADA
+  FALHOU
+  /// Registrada só na plataforma, sem envio externo a fazer.
+  REGISTRADA
+}
+
+/// Uma mensagem para um aluno.
+///
+/// Fica gravada mesmo quando o envio falha: sem isso, "avisei essa pessoa
+/// que o acesso ia vencer?" não tem resposta. O aluno vê `titulo` e
+/// `corpo` no painel; `erro` é interno.
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+
+  canal  CanalNotificacao  @default(PLATAFORMA)
+  status StatusNotificacao @default(PENDENTE)
+
+  /// Assunto estável para agrupar e não repetir ("free.expirando").
+  assunto String
+  titulo  String
+  corpo   String @db.Text
+  link    String?
+
+  /// Quem disparou. Nulo = a própria plataforma (regra automática).
+  autorNome String?
+
+  enviadoEm DateTime?
+  lidoEm    DateTime?
+  erro      String?   @db.Text
+
+  criadoEm DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lidoEm])
+  @@index([assunto])
+  @@index([criadoEm])
+  @@map("notifications")
 }

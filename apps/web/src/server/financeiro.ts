@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma, type Plano, type SituacaoConta, type StatusPagamento } from "@aprender/db";
 import { exigirAdmin } from "./admin";
+import { registrarAcao } from "./auditoria";
+import { notificar } from "./notificacoes";
 
 export type ResultadoFinanceiro = { ok: boolean; mensagem: string };
 
@@ -21,6 +23,12 @@ export async function definirPlano(dados: FormData): Promise<void> {
   // Um admin não rebaixa a si mesmo: ficaria sem acesso ao próprio painel.
   if (userId === admin.id) return;
 
+  const antes = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nome: true, plano: true, premiumAte: true },
+  });
+  if (!antes) return;
+
   await prisma.user.update({
     where: { id: userId },
     data: {
@@ -28,6 +36,14 @@ export async function definirPlano(dados: FormData): Promise<void> {
       // Voltar para FREE limpa o prazo: ele não significa nada sem premium.
       premiumAte: plano === "PREMIUM" && prazo ? new Date(prazo) : null,
     },
+  });
+
+  await registrarAcao({
+    acao: "aluno.plano.alterado",
+    entidade: "User",
+    entidadeId: userId,
+    resumo: `${antes.nome}: plano ${antes.plano} → ${plano}`,
+    dados: { de: antes.plano, para: plano, premiumAte: prazo || null },
   });
 
   revalidatePath("/admin/financeiro");
@@ -43,7 +59,35 @@ export async function alternarSituacao(dados: FormData): Promise<void> {
   if (!userId || !["ATIVO", "SUSPENSO"].includes(situacao)) return;
   if (userId === admin.id) return;
 
+  const alvo = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nome: true, situacao: true },
+  });
+  if (!alvo) return;
+
   await prisma.user.update({ where: { id: userId }, data: { situacao } });
+
+  await registrarAcao({
+    acao: situacao === "SUSPENSO" ? "aluno.suspenso" : "aluno.reativado",
+    entidade: "User",
+    entidadeId: userId,
+    resumo: `${alvo.nome}: conta ${alvo.situacao} → ${situacao}`,
+  });
+
+  // Ser bloqueado sem explicação é a pior experiência possível para quem
+  // estava estudando; reativar também merece aviso.
+  await notificar({
+    userId,
+    assunto: situacao === "SUSPENSO" ? "conta.suspensa" : "conta.reativada",
+    titulo: situacao === "SUSPENSO" ? "Seu acesso foi suspenso" : "Seu acesso foi reativado",
+    corpo:
+      situacao === "SUSPENSO"
+        ? `Olá, ${alvo.nome}.\n\nSeu acesso à plataforma foi suspenso. Todo o seu progresso continua guardado.\n\nFale com a coordenação para entender e resolver.`
+        : `Olá, ${alvo.nome}!\n\nSeu acesso foi reativado. Você pode voltar a estudar de onde parou.`,
+    link: "/app",
+    porEmail: true,
+    autorNome: admin.nome,
+  });
 
   revalidatePath("/admin/financeiro");
   revalidatePath("/admin/alunos");

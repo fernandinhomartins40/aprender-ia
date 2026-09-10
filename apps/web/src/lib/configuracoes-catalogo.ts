@@ -127,6 +127,24 @@ export const CONFIGS: DefinicaoConfig[] = [
     descricao: "Sugerido ao lançar uma cobrança. 9700 = R$ 97,00.",
     padrao: "9700",
   },
+  {
+    chave: "financeiro.avisar_cobranca_dias_antes",
+    tipo: "NUMERO",
+    grupo: "financeiro",
+    rotulo: "Avisar do vencimento quantos dias antes",
+    descricao: "Lembrete de pagamento enviado ao aluno. 0 = não avisar.",
+    padrao: "3",
+  },
+
+  // ---- Notificações ----
+  {
+    chave: "notificacoes.assinatura_email",
+    tipo: "TEXTO",
+    grupo: "notificacoes",
+    rotulo: "Assinatura dos e-mails",
+    descricao: "Linha final das mensagens enviadas aos alunos.",
+    padrao: "Equipe Aprender IA",
+  },
 ];
 
 export const PADROES = new Map(CONFIGS.map((c) => [c.chave, c]));

@@ -30,6 +30,11 @@ const GRUPOS: { chave: string; titulo: string; descricao: string }[] = [
     titulo: "Financeiro",
     descricao: "Valores padrão e o que fazer quando um pagamento atrasa.",
   },
+  {
+    chave: "notificacoes",
+    titulo: "Notificações",
+    descricao: "Como as mensagens automáticas chegam ao aluno.",
+  },
 ];
 
 export default async function Configuracoes() {

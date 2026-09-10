@@ -16,6 +16,7 @@ import {
   reativarFree,
 } from "@/server/acesso-free";
 import { lerNumero } from "@/server/configuracoes";
+import { registrarAcao } from "@/server/auditoria";
 import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { ImportarAlunos } from "@/components/importar-alunos";
 import { NovaTurma } from "@/components/painel-turma";
@@ -43,7 +44,24 @@ async function alterarPapel(dados: FormData) {
   // plataforma sem nenhum administrador ativo.
   if (userId === admin.id) return;
 
+  const antes = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nome: true, papel: true },
+  });
+  if (!antes || antes.papel === papel) return;
+
   await prisma.user.update({ where: { id: userId }, data: { papel } });
+
+  // Conceder ou tirar poder administrativo é a ação mais sensível do
+  // painel; sem registro não há como auditar quem virou admin e quando.
+  await registrarAcao({
+    acao: "aluno.papel.alterado",
+    entidade: "User",
+    entidadeId: userId,
+    resumo: `${antes.nome}: ${antes.papel} → ${papel}`,
+    dados: { de: antes.papel, para: papel },
+  });
+
   revalidatePath("/admin/alunos");
 }
 
