@@ -65,12 +65,20 @@ fi
 echo "==> Construindo imagens..."
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" build --pull
 
-echo "==> Subindo serviços..."
-docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d --remove-orphans
+# ------------------------------------------------------------
+# Banco e migrations ANTES de trocar a aplicação.
+#
+# A ordem importa e já causou incidente: quando o container novo subia
+# primeiro, ele passava a servir código que consulta tabelas e colunas
+# que a migration ainda não tinha criado — e o painel quebrava com erro
+# de servidor. Se a migration falhar aqui, o deploy aborta com a versão
+# ANTIGA no ar, que é o estado seguro.
+#
+# Só o Postgres sobe nesta etapa; a aplicação vem depois.
+# ------------------------------------------------------------
+echo "==> Subindo o banco..."
+docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d postgres
 
-# ------------------------------------------------------------
-# Migrations — depois do banco estar saudável
-# ------------------------------------------------------------
 echo "==> Aguardando o banco ficar pronto..."
 for i in $(seq 1 30); do
   if docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
@@ -120,6 +128,16 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE"   run --rm --en
     echo "    usando $TSX"
     node "$TSX" packages/db/prisma/seed.ts
   ' || echo "AVISO: seed não concluiu; a aplicação segue no ar." >&2
+
+# ------------------------------------------------------------
+# Só agora a aplicação sobe.
+#
+# Banco migrado primeiro, aplicação depois: assim o container novo nunca
+# serve código que consulta tabela ou coluna que ainda não existe. Se
+# algo acima falhou, o deploy já abortou com a versão antiga no ar.
+# ------------------------------------------------------------
+echo "==> Subindo a aplicação..."
+docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d --remove-orphans
 
 # ------------------------------------------------------------
 # Aponta 'current' para esta release

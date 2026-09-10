@@ -20,11 +20,34 @@ import { CONFIGS, PADROES } from "@/lib/configuracoes-catalogo";
    LEITURA
    ============================================================ */
 
+/**
+ * A tabela pode não existir ainda.
+ *
+ * O deploy sobe o container antes de aplicar as migrations, então há uma
+ * janela em que o código novo consulta um banco velho. Uma configuração
+ * ausente tem resposta óbvia — o padrão — e derrubar o painel inteiro por
+ * causa disso é desproporcional. Erro de verdade continua no log.
+ */
+async function tolerandoTabelaAusente<T>(
+  consulta: () => Promise<T>,
+  aoFalhar: T,
+  ondeFoi: string,
+): Promise<T> {
+  try {
+    return await consulta();
+  } catch (e) {
+    console.error(`[configuracoes] ${ondeFoi} falhou; usando padrões.`, e);
+    return aoFalhar;
+  }
+}
+
 /** Todas as configurações, com os padrões preenchendo o que falta. */
 export async function lerConfiguracoes(): Promise<Record<string, string>> {
-  const salvas = await prisma.platformSetting.findMany({
-    select: { chave: true, valor: true },
-  });
+  const salvas = await tolerandoTabelaAusente(
+    () => prisma.platformSetting.findMany({ select: { chave: true, valor: true } }),
+    [] as { chave: string; valor: string }[],
+    "lerConfiguracoes",
+  );
   const mapa: Record<string, string> = {};
   for (const c of CONFIGS) mapa[c.chave] = c.padrao;
   for (const s of salvas) mapa[s.chave] = s.valor;
@@ -32,10 +55,15 @@ export async function lerConfiguracoes(): Promise<Record<string, string>> {
 }
 
 export async function lerTexto(chave: string): Promise<string> {
-  const salva = await prisma.platformSetting.findUnique({
-    where: { chave },
-    select: { valor: true },
-  });
+  const salva = await tolerandoTabelaAusente(
+    () =>
+      prisma.platformSetting.findUnique({
+        where: { chave },
+        select: { valor: true },
+      }),
+    null as { valor: string } | null,
+    `lerTexto(${chave})`,
+  );
   return salva?.valor ?? PADROES.get(chave)?.padrao ?? "";
 }
 
@@ -55,9 +83,14 @@ export async function lerBooleano(chave: string): Promise<boolean> {
 export async function listarConfiguracoesParaTela() {
   await exigirAdmin();
   const valores = await lerConfiguracoes();
-  const salvas = await prisma.platformSetting.findMany({
-    select: { chave: true, atualizadoEm: true, atualizadoPor: true },
-  });
+  const salvas = await tolerandoTabelaAusente(
+    () =>
+      prisma.platformSetting.findMany({
+        select: { chave: true, atualizadoEm: true, atualizadoPor: true },
+      }),
+    [] as { chave: string; atualizadoEm: Date; atualizadoPor: string | null }[],
+    "listarConfiguracoesParaTela",
+  );
   const meta = new Map(salvas.map((s) => [s.chave, s]));
 
   return CONFIGS.map((c) => ({

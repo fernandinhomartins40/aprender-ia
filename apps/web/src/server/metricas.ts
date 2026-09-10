@@ -31,6 +31,18 @@ export async function indicadoresAlunos(periodo: Periodo) {
 
   const soAlunos = { papel: "ALUNO" as const };
 
+  // `ultimoAcessoEm` é coluna nova: enquanto a migration não roda, as três
+  // contagens que dependem dela falham. Zero é uma degradação honesta —
+  // a tela avisa que o dado ainda não está disponível.
+  const contarTolerante = async (consulta: () => Promise<number>) => {
+    try {
+      return await consulta();
+    } catch (e) {
+      console.error("[metricas] contagem indisponível (migration pendente?).", e);
+      return 0;
+    }
+  };
+
   const [
     total,
     novosNoPeriodo,
@@ -46,13 +58,19 @@ export async function indicadoresAlunos(periodo: Periodo) {
     prisma.user.count({
       where: { ...soAlunos, criadoEm: { gte: periodo.desde, lte: periodo.ate } },
     }),
-    prisma.user.count({
-      where: { ...soAlunos, ultimoAcessoEm: { gte: corteInatividade } },
-    }),
-    prisma.user.count({
-      where: { ...soAlunos, ultimoAcessoEm: { lt: corteInatividade } },
-    }),
-    prisma.user.count({ where: { ...soAlunos, ultimoAcessoEm: null } }),
+    contarTolerante(() =>
+      prisma.user.count({
+        where: { ...soAlunos, ultimoAcessoEm: { gte: corteInatividade } },
+      }),
+    ),
+    contarTolerante(() =>
+      prisma.user.count({
+        where: { ...soAlunos, ultimoAcessoEm: { lt: corteInatividade } },
+      }),
+    ),
+    contarTolerante(() =>
+      prisma.user.count({ where: { ...soAlunos, ultimoAcessoEm: null } }),
+    ),
     prisma.user.count({ where: { ...soAlunos, plano: "FREE" } }),
     prisma.user.count({ where: { ...soAlunos, plano: "PREMIUM" } }),
     prisma.user.count({ where: { ...soAlunos, situacao: "SUSPENSO" } }),
@@ -300,15 +318,21 @@ export async function indicadoresProgresso() {
   }));
 
   // Parados: começaram, não terminaram e não acessam há mais de 14 dias.
+  // Depende de `ultimoAcessoEm`, que só existe após a migration.
   const paradosHa = new Date();
   paradosHa.setDate(paradosHa.getDate() - 14);
-  const parados = await prisma.user.count({
-    where: {
-      papel: "ALUNO",
-      ultimoAcessoEm: { lt: paradosHa },
-      matriculas: { some: { progressoPct: { gt: 0, lt: 100 } } },
-    },
-  });
+  let parados = 0;
+  try {
+    parados = await prisma.user.count({
+      where: {
+        papel: "ALUNO",
+        ultimoAcessoEm: { lt: paradosHa },
+        matriculas: { some: { progressoPct: { gt: 0, lt: 100 } } },
+      },
+    });
+  } catch (e) {
+    console.error("[metricas] contagem de parados indisponível.", e);
+  }
 
   return {
     matriculas: total,
@@ -319,19 +343,30 @@ export async function indicadoresProgresso() {
   };
 }
 
-/** Últimas ações administrativas, para o rodapé do dashboard. */
+/**
+ * Últimas ações administrativas, para o rodapé do dashboard.
+ *
+ * A tabela pode não existir ainda: o deploy sobe o container antes de
+ * aplicar as migrations. Uma lista vazia é uma degradação aceitável —
+ * derrubar o painel inteiro por causa do rodapé não é.
+ */
 export async function atividadeRecente(limite = 8) {
   await exigirAdmin();
-  return prisma.adminAuditLog.findMany({
-    orderBy: { criadoEm: "desc" },
-    take: limite,
-    select: {
-      id: true,
-      acao: true,
-      resumo: true,
-      atorNome: true,
-      criadoEm: true,
-      entidade: true,
-    },
-  });
+  try {
+    return await prisma.adminAuditLog.findMany({
+      orderBy: { criadoEm: "desc" },
+      take: limite,
+      select: {
+        id: true,
+        acao: true,
+        resumo: true,
+        atorNome: true,
+        criadoEm: true,
+        entidade: true,
+      },
+    });
+  } catch (e) {
+    console.error("[metricas] atividadeRecente falhou; rodapé vazio.", e);
+    return [];
+  }
 }

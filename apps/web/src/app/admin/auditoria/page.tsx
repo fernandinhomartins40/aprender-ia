@@ -14,11 +14,12 @@ export default async function Auditoria({
   await exigirAdmin();
   const params = await searchParams;
 
-  const { registros, total, paginas, pagina, acoesDisponiveis } = await listarAuditoria({
-    acao: params.acao,
-    entidade: params.entidade,
-    pagina: Number(params.pagina ?? 1) || 1,
-  });
+  const { registros, total, paginas, pagina, acoesDisponiveis, indisponivel } =
+    await listarAuditoria({
+      acao: params.acao,
+      entidade: params.entidade,
+      pagina: Number(params.pagina ?? 1) || 1,
+    });
 
   function comFiltro(extra: Record<string, string | undefined>) {
     const q = new URLSearchParams();
@@ -92,7 +93,20 @@ export default async function Auditoria({
         </div>
       )}
 
-      {registros.length === 0 ? (
+      {indisponivel ? (
+        <div className="card">
+          <div className="rounded-md border-l-4 border-amarelo bg-amarelo-soft p-4">
+            <p className="font-titulo font-bold text-amarelo-dark">
+              Histórico ainda não disponível
+            </p>
+            <p className="mt-1 text-sm text-amarelo-dark">
+              A tabela de auditoria ainda não existe no banco — a migration
+              desta versão não foi aplicada. Rode as migrations no servidor
+              para o registro de ações começar a funcionar.
+            </p>
+          </div>
+        </div>
+      ) : registros.length === 0 ? (
         <div className="card text-center">
           <p className="py-8 text-cinza">
             Nenhuma ação registrada com esse filtro. O histórico começa a partir

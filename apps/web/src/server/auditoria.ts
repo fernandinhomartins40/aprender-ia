@@ -92,38 +92,57 @@ export async function listarAuditoria(filtro: FiltroAuditoria = {}) {
       : {}),
   };
 
-  const [total, registros, acoes] = await Promise.all([
-    prisma.adminAuditLog.count({ where }),
-    prisma.adminAuditLog.findMany({
-      where,
-      orderBy: { criadoEm: "desc" },
-      skip: (pagina - 1) * porPagina,
-      take: porPagina,
-    }),
-    // Para montar o filtro sem inventar uma lista fixa de ações.
-    prisma.adminAuditLog.groupBy({
-      by: ["acao"],
-      _count: { acao: true },
-      orderBy: { _count: { acao: "desc" } },
-      take: 30,
-    }),
-  ]);
+  // A tabela pode não existir ainda (deploy sobe o container antes das
+  // migrations). Uma tela vazia com aviso é melhor que uma tela quebrada.
+  try {
+    const [total, registros, acoes] = await Promise.all([
+      prisma.adminAuditLog.count({ where }),
+      prisma.adminAuditLog.findMany({
+        where,
+        orderBy: { criadoEm: "desc" },
+        skip: (pagina - 1) * porPagina,
+        take: porPagina,
+      }),
+      // Para montar o filtro sem inventar uma lista fixa de ações.
+      prisma.adminAuditLog.groupBy({
+        by: ["acao"],
+        _count: { acao: true },
+        orderBy: { _count: { acao: "desc" } },
+        take: 30,
+      }),
+    ]);
 
-  return {
-    total,
-    registros,
-    paginas: Math.max(1, Math.ceil(total / porPagina)),
-    pagina,
-    acoesDisponiveis: acoes.map((a) => ({ acao: a.acao, usos: a._count.acao })),
-  };
+    return {
+      total,
+      registros,
+      paginas: Math.max(1, Math.ceil(total / porPagina)),
+      pagina,
+      acoesDisponiveis: acoes.map((a) => ({ acao: a.acao, usos: a._count.acao })),
+      indisponivel: false,
+    };
+  } catch (e) {
+    console.error("[auditoria] listagem indisponível (migration pendente?).", e);
+    return {
+      total: 0,
+      registros: [] as Awaited<ReturnType<typeof prisma.adminAuditLog.findMany>>,
+      paginas: 1,
+      pagina: 1,
+      acoesDisponiveis: [] as { acao: string; usos: number }[],
+      indisponivel: true,
+    };
+  }
 }
 
 /** Histórico de um registro específico — usado nas telas de detalhe. */
 export async function historicoDe(entidade: string, entidadeId: string) {
   await exigirAdmin();
-  return prisma.adminAuditLog.findMany({
-    where: { entidade, entidadeId },
-    orderBy: { criadoEm: "desc" },
-    take: 20,
-  });
+  try {
+    return await prisma.adminAuditLog.findMany({
+      where: { entidade, entidadeId },
+      orderBy: { criadoEm: "desc" },
+      take: 20,
+    });
+  } catch {
+    return [];
+  }
 }
