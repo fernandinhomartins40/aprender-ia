@@ -80,3 +80,83 @@ self.addEventListener("fetch", (e) => {
     );
   }
 });
+
+/* ============================================================
+   NOTIFICAÇÕES PUSH
+   ============================================================
+   Estes dois ouvintes são o que faz a notificação existir no aparelho.
+   Sem eles, o servidor podia mandar quanto quisesse: o Push Service
+   entregava ao navegador e a mensagem morria aqui, sem virar aviso na
+   tela. O `push` roda mesmo com o aplicativo fechado — é o navegador que
+   acorda o service worker.
+   ============================================================ */
+
+self.addEventListener("push", (e) => {
+  // Um push sem corpo legível ainda precisa virar aviso: melhor um texto
+  // genérico do que silêncio, porque no Android um push recebido e não
+  // exibido faz o sistema revogar a permissão do site depois de algumas
+  // ocorrências.
+  let dados = {};
+  try {
+    dados = e.data ? e.data.json() : {};
+  } catch {
+    dados = {};
+  }
+
+  const titulo = dados.titulo || "Aprender IA";
+  const corpo = dados.corpo || "Você tem um aviso novo.";
+  const link = dados.link || "/app";
+
+  e.waitUntil(
+    self.registration.showNotification(titulo, {
+      body: corpo,
+      icon: "/icones/icone-192.png",
+      badge: "/icones/icone-96.png",
+      lang: "pt-BR",
+      // A tag agrupa: dois avisos do mesmo assunto não empilham duas
+      // notificações iguais na barra.
+      tag: dados.assunto || "aprender-ia",
+      renotify: true,
+      data: { link },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const link = (e.notification.data && e.notification.data.link) || "/app";
+  const destino = new URL(link, self.location.origin);
+
+  // Se o aplicativo já está aberto, focamos a janela existente em vez de
+  // abrir outra: duas instâncias do mesmo PWA confundem e perdem estado.
+  //
+  // O `navigate` fica dentro de try/catch porque não existe em todo
+  // navegador (o WindowClient do Safari no iOS não implementa) e uma
+  // exceção aqui cancelaria o waitUntil — o toque na notificação não
+  // abriria nada. Sem ele, ao menos focamos a janela; e se nem focar der,
+  // abrimos uma nova.
+  e.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(async (janelas) => {
+        for (const j of janelas) {
+          // Compara a origem, não `includes("/app")`: uma URL de outro
+          // site que contivesse "/app" casaria por engano.
+          if (new URL(j.url).origin !== self.location.origin) continue;
+          if (!("focus" in j)) continue;
+
+          try {
+            if ("navigate" in j) await j.navigate(destino.href);
+          } catch {
+            /* navegador sem navigate: seguimos para o focus */
+          }
+          try {
+            return await j.focus();
+          } catch {
+            break; // não deu para focar: cai no openWindow
+          }
+        }
+        return self.clients.openWindow(destino.href);
+      }),
+  );
+});

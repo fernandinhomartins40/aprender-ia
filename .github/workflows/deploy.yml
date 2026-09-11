@@ -172,6 +172,37 @@ jobs:
             ensure_env "SMTP_PASS" ""
             ensure_env "SMTP_FROM" "Aprender IA <nao-responda@aprenderia.site>"
 
+            # Chaves VAPID das notificações push.
+            #
+            # ensure_env (nunca upsert_env): o navegador amarra cada
+            # inscrição à chave pública com que ela foi criada. Sobrescrever
+            # a cada deploy invalidaria silenciosamente os avisos de todos
+            # os alunos que já autorizaram. Geradas aqui, na VPS, com o
+            # openssl que já existe — a privada nunca passa pelo GitHub.
+            if [ -z "$(get_env "VAPID_PUBLIC_KEY" | tr -d '\r')" ]; then
+              TMP_KEY="$(mktemp)"
+              openssl ecparam -name prime256v1 -genkey -noout -out "$TMP_KEY" 2>/dev/null
+              # Formato exigido pelo Web Push: pública em base64url "raw"
+              # (65 bytes começando em 0x04), privada em base64url (32 bytes).
+              VAPID_PUB="$(openssl ec -in "$TMP_KEY" -pubout -outform DER 2>/dev/null \
+                | tail -c 65 | base64 | tr -d '\n=' | tr '+/' '-_')"
+              # A privada são os 32 bytes do escalar, que no DER vêm logo
+              # após o cabeçalho `30 77 02 01 01 04 20` (7 bytes). Recortar
+              # os 32 PRIMEIROS bytes pegaria o cabeçalho no lugar da
+              # chave: o web-push aceitaria (só confere o tamanho) e
+              # assinaria com uma chave que não corresponde à pública —
+              # todo push seria recusado pelo Push Service, sem erro claro.
+              VAPID_PRIV="$(openssl ec -in "$TMP_KEY" -outform DER 2>/dev/null \
+                | dd bs=1 skip=7 count=32 2>/dev/null | base64 | tr -d '\n=' | tr '+/' '-_')"
+              rm -f "$TMP_KEY"
+              upsert_env "VAPID_PUBLIC_KEY" "$VAPID_PUB"
+              upsert_env "VAPID_PRIVATE_KEY" "$VAPID_PRIV"
+              echo "Par VAPID gerado (pública: ${#VAPID_PUB} chars)."
+            else
+              echo "Par VAPID já existe; preservado."
+            fi
+            ensure_env "VAPID_SUBJECT" "mailto:contato@aprenderia.site"
+
             PG_USER="$(get_env "POSTGRES_USER" | tr -d '\r')"
             PG_PASS="$(get_env "POSTGRES_PASSWORD" | tr -d '\r')"
             PG_DB="$(get_env "POSTGRES_DB" | tr -d '\r')"

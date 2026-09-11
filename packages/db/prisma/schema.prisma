@@ -92,6 +92,7 @@ model User {
   pagamentos       Payment[]
   assinaturas      Subscription[]
   notificacoes     Notification[]
+  inscricoesPush   PushSubscription[]
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
   solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
@@ -1043,4 +1044,41 @@ model Notification {
   @@index([assunto])
   @@index([criadoEm])
   @@map("notifications")
+}
+
+/// Um aparelho autorizado a receber notificação push.
+///
+/// O `endpoint` é a identidade do aparelho: o próprio navegador o gera e
+/// ele é único, então é ele (e não o par usuário+aparelho) que leva a
+/// restrição de unicidade. Uma pessoa costuma ter várias linhas aqui —
+/// celular, tablet, computador — e todas recebem.
+///
+/// `p256dh` e `auth` são as chaves de criptografia que o navegador
+/// entrega no ato da autorização. Sem elas o Push Service aceita a
+/// mensagem mas o aparelho não consegue abrir o conteúdo.
+///
+/// Quando o Push Service responde 404 ou 410, a inscrição morreu (app
+/// desinstalado, permissão revogada) e a linha é apagada: insistir em
+/// endpoint morto só gera erro a cada disparo.
+model PushSubscription {
+  id     String @id @default(cuid())
+  userId String
+
+  endpoint String @db.Text
+  p256dh   String
+  auth     String
+
+  /// Só para o administrador entender de onde vem a inscrição.
+  agente String? @db.Text
+
+  criadoEm     DateTime  @default(now())
+  /// Último envio aceito pelo Push Service. Ajuda a ver inscrição morta
+  /// que ainda não recebeu 410.
+  ultimoEnvioEm DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([endpoint])
+  @@index([userId])
+  @@map("push_subscriptions")
 }

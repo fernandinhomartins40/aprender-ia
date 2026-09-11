@@ -7,7 +7,9 @@ import { exigirAluno } from "@/server/trilha";
 import { lerNumero } from "@/server/configuracoes";
 import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { minhasNotificacoes, marcarComoLidas } from "@/server/notificacoes";
+import { chavePublicaPush } from "@/server/push";
 import { SinoNotificacoes } from "@/components/sino-notificacoes";
+import { AtivarAvisos } from "@/components/ativar-avisos";
 import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
 import { BarraInferior } from "@/components/barra-inferior";
 
@@ -51,6 +53,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
       : null;
 
   const avisos = await minhasNotificacoes();
+  const chavePush = await chavePublicaPush();
 
   return (
     // O respiro inferior soma a altura da barra, o botão central elevado
@@ -124,7 +127,15 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
         </div>
       )}
 
-      <main className="mx-auto max-w-5xl overflow-x-hidden px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl overflow-x-hidden px-5 py-8">
+        {/* Fica dentro do aplicativo, nunca na tela de login: empilhar um
+            pedido de permissão sobre o primeiro acesso faz a pessoa negar
+            por reflexo — e o navegador nunca mais pergunta. */}
+        <div className="mb-6 empty:mb-0">
+          <AtivarAvisos chavePublica={chavePush} />
+        </div>
+        {children}
+      </main>
 
       {/* A barra anterior tinha os 5 destinos lado a lado, sem destaque,
           sem marcar o item atual e sem respeitar a faixa de gestos do

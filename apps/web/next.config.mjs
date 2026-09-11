@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@aprender/ui", "@aprender/types", "@aprender/auth", "@aprender/ai-launcher", "@aprender/db"],
+  // O web-push usa crypto nativo do Node e não sobrevive ao empacotamento
+  // do bundler: precisa ser exigido em tempo de execução pelo servidor.
+  serverExternalPackages: ["web-push"],
   experimental: {
     optimizePackageImports: ["lucide-react"],
     serverActions: {

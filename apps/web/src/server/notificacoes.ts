@@ -7,6 +7,7 @@ import { enviarEmail } from "@aprender/auth/email";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
 import { lerTexto } from "./configuracoes";
+import { enviarPush } from "./push";
 
 /**
  * Notificações da plataforma.
@@ -23,6 +24,13 @@ import { lerTexto } from "./configuracoes";
  *                administrador enviar. É o único canal que alcança o
  *                aluno cadastrado só com telefone, que não tem e-mail
  *                real (o endereço @aluno.aprenderia.site não recebe).
+ *
+ * Além dos canais acima, TODA notificação tenta o push para os aparelhos
+ * que o aluno autorizou. Não é um quarto canal: é a entrega do mesmo
+ * aviso no aparelho, em vez de esperar que a pessoa abra o aplicativo e
+ * olhe o sino. Antes disso, uma mensagem criada no painel ficava parada
+ * no banco até o próximo acesso do aluno — que podia nunca acontecer
+ * antes do prazo que a mensagem avisava.
  */
 
 /* ============================================================
@@ -72,6 +80,16 @@ export async function notificar(
         autorNome: entrada.autorNome ?? null,
       },
       select: { id: true },
+    });
+
+    // O push sai para qualquer canal: o aviso é o mesmo, muda só por onde
+    // ele alcança a pessoa. Falha aqui não interrompe nada — `enviarPush`
+    // já trata os próprios erros e nunca lança.
+    await enviarPush(entrada.userId, {
+      titulo: entrada.titulo,
+      corpo: entrada.corpo,
+      link: entrada.link ?? "/app",
+      assunto: entrada.assunto,
     });
 
     if (!entrada.porEmail) {
