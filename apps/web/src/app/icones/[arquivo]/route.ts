@@ -46,9 +46,9 @@ export async function GET(
   if (alvo.lado !== null) {
     const salvo = await iconePublico(alvo.lado);
     if (salvo) {
-      return new NextResponse(new Uint8Array(salvo), {
+      return new NextResponse(new Uint8Array(salvo.dados), {
         headers: {
-          "Content-Type": "image/png",
+          "Content-Type": salvo.tipo,
           // Curto de propósito: trocar o ícone no painel precisa aparecer
           // em minutos, não depois que o cache do navegador expirar.
           "Cache-Control": "public, max-age=300, must-revalidate",

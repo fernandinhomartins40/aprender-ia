@@ -41,6 +41,7 @@ export function EditorIconePwa({
   const [deslocY, setDeslocY] = useState(0);
   const [gerados, setGerados] = useState<Record<string, string>>({});
   const [aviso, setAviso] = useState("");
+  const [peso, setPeso] = useState("");
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const arrastando = useRef<{ x: number; y: number } | null>(null);
@@ -49,6 +50,7 @@ export function EditorIconePwa({
   // impressão de que o ajuste atual foi aplicado.
   useEffect(() => {
     setGerados({});
+    setPeso("");
   }, [origem, zoom, deslocX, deslocY]);
 
   function aoEscolher(e: React.ChangeEvent<HTMLInputElement>) {
@@ -101,8 +103,42 @@ export function EditorIconePwa({
     const sy = Math.max(0, Math.min(img.naturalHeight - recorte, centroY - recorte / 2));
 
     ctx.drawImage(img, sx, sy, recorte, recorte, 0, 0, lado, lado);
-    // PNG mantém a transparência; JPEG pintaria o fundo de preto.
-    return canvas.toDataURL("image/png");
+
+    // WebP com qualidade 0,9: mantém transparência como o PNG e pesa
+    // cerca de um quinto. Sete PNGs de 512px somavam bem mais que o
+    // limite de corpo das Server Actions, e o envio falhava inteiro.
+    // Todo navegador que roda este editor suporta WebP; o `startsWith`
+    // abaixo confirma, e cai para PNG se algum não suportar.
+    const webp = canvas.toDataURL("image/webp", 0.9);
+    return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/png");
+  }
+
+  /**
+   * A imagem original, reduzida para guardar.
+   *
+   * Ela é salva junto para permitir reenquadrar depois sem reenviar o
+   * arquivo. Mas o original pode ter 8 MB, e somado aos sete tamanhos
+   * estourava o limite de corpo da Server Action — foi o que fez o
+   * primeiro envio falhar. 1024px é folgado para recortar um ícone de
+   * 512px e pesa uma fração disso.
+   */
+  function origemReduzida(): string | null {
+    const img = imgRef.current;
+    if (!img || !img.naturalWidth) return null;
+
+    const maior = Math.max(img.naturalWidth, img.naturalHeight);
+    if (maior <= 1024) return origem;
+
+    const escala = 1024 / maior;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * escala);
+    canvas.height = Math.round(img.naturalHeight * escala);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return origem;
+
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/webp", 0.9);
   }
 
   function gerar() {
@@ -115,8 +151,12 @@ export function EditorIconePwa({
       }
       novos[t.chave] = d;
     }
+
+    const total = Object.values(novos).reduce((s, v) => s + v.length, 0);
+    const emMB = (total / 1_048_576).toFixed(1);
     setGerados(novos);
     setAviso("");
+    setPeso(emMB);
   }
 
   // ---- Arrastar para enquadrar ----
@@ -271,7 +311,9 @@ export function EditorIconePwa({
           </div>
 
           <form action={enviar} className="mt-5 flex flex-wrap items-center gap-3">
-            <input type="hidden" name="origem" value={origem ?? ""} />
+            {/* A original vai reduzida: inteira, somada aos sete tamanhos,
+                estourava o limite de corpo da Server Action. */}
+            <input type="hidden" name="origem" value={prontos ? (origemReduzida() ?? "") : ""} />
             {tamanhos.map((t) => (
               <input key={t.chave} type="hidden" name={t.chave} value={gerados[t.chave] ?? ""} />
             ))}
@@ -282,8 +324,10 @@ export function EditorIconePwa({
             >
               {pendente ? "Salvando…" : "Salvar ícones"}
             </button>
-            {!prontos && (
+            {!prontos ? (
               <span className="text-sm text-cinza">Gere os tamanhos primeiro.</span>
+            ) : (
+              peso && <span className="text-sm text-cinza">{peso} MB no total</span>
             )}
           </form>
 

@@ -102,9 +102,10 @@ export async function salvarIconesPwa(
     if (!valor.startsWith("data:image/")) {
       return { ok: false, mensagem: `Faltou gerar o tamanho de ${t.rotulo}.` };
     }
-    // 1,5 MB por tamanho é folgado para um PNG de 512px e barra um
-    // envio que encheria a coluna de texto sem querer.
-    if (valor.length > 1_500_000) {
+    // 600 KB por tamanho: em WebP, um ícone de 512px fica bem abaixo
+    // disso. O teto existe para barrar um envio que encheria a coluna de
+    // texto sem querer.
+    if (valor.length > 600_000) {
       return { ok: false, mensagem: `A imagem de ${t.rotulo} ficou grande demais.` };
     }
     aGravar.push({ chave: t.chave, valor });
@@ -183,7 +184,9 @@ export async function restaurarIconesPwa(): Promise<void> {
  * Sem `exigirAdmin`: esta leitura atende o navegador de qualquer pessoa
  * que instala o aplicativo.
  */
-export async function iconePublico(lado: number): Promise<Buffer | null> {
+export async function iconePublico(
+  lado: number,
+): Promise<{ dados: Buffer; tipo: string } | null> {
   try {
     const r = await prisma.platformSetting.findUnique({
       where: { chave: `pwa.icone_${lado}` },
@@ -191,8 +194,14 @@ export async function iconePublico(lado: number): Promise<Buffer | null> {
     });
     if (!r?.valor) return null;
 
-    const base64 = r.valor.split(",")[1];
-    return base64 ? Buffer.from(base64, "base64") : null;
+    // A data URL carrega o próprio tipo ("data:image/webp;base64,..."):
+    // servir WebP com cabeçalho de PNG faria alguns sistemas recusarem o
+    // ícone na instalação.
+    const [cabecalho, base64] = r.valor.split(",");
+    if (!base64) return null;
+
+    const tipo = cabecalho?.match(/^data:([^;]+)/)?.[1] ?? "image/png";
+    return { dados: Buffer.from(base64, "base64"), tipo };
   } catch {
     return null;
   }
