@@ -101,9 +101,10 @@ export default async function Home() {
       {/* ---------- Cabeçalho ---------- */}
       <header className="sticky top-0 z-50 bg-white">
         {/* A logo cresceu e o respiro vertical encolheu na mesma medida,
-            para a altura do cabeçalho continuar em 78px. */}
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-[5px]">
-          <Logo largura={132} prioridade />
+            para a altura do cabeçalho continuar em 78px. No celular ela é
+            menor: cada pixel do topo conta para a dobra caber na tela. */}
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-[5px] sm:gap-4 sm:px-5">
+          <Logo largura={132} prioridade className="h-auto w-[104px] sm:w-[132px]" />
 
           <nav aria-label="Seções do site" className="hidden lg:block">
             <ul className="flex items-center gap-7">
@@ -199,7 +200,7 @@ export default async function Home() {
               Os 660px pedidos para o desktop ficam presos a um teto de 85%
               da janela: num iPad em paisagem (690px de altura) a medida
               fixa empurrava a dobra para fora da tela. */}
-          <div className="relative mx-auto grid max-w-7xl items-center gap-4 px-5 py-5 sm:gap-6 sm:py-7 lg:min-h-[min(660px,85vh)] lg:grid-cols-[1fr,1.05fr] lg:gap-6 lg:py-14">
+          <div className="relative mx-auto grid max-w-7xl items-center gap-2 px-5 py-3 sm:gap-6 sm:py-7 lg:min-h-[min(660px,calc(100vh-79px))] lg:grid-cols-[1fr,1.05fr] lg:gap-6 lg:py-10 xl:py-14">
             <div className="max-w-xl">
               {hero.selo && (
                 <span className="inline-flex items-center rounded-full bg-indigo px-4 py-1.5 text-xs font-bold text-white">
@@ -209,12 +210,19 @@ export default async function Home() {
 
               {/* Medidas menores no celular e folga só a partir do desktop:
                   é o que faz a dobra inteira caber na tela sem rolagem. */}
-              <h1 className="mt-4 font-titulo text-[28px] font-extrabold leading-[1.1] text-tinta sm:mt-6 sm:text-4xl lg:text-6xl">
+              {/* O salto para 6xl só no xl: num iPad em paisagem (1024px de
+                  largura por 690 de altura) o título gigante empurrava a
+                  dobra para fora da tela. */}
+              <h1 className="mt-4 font-titulo text-[28px] font-extrabold leading-[1.1] text-tinta sm:mt-6 sm:text-4xl lg:text-5xl xl:text-6xl">
                 <TituloComDestaque texto={hero.titulo} corDestaque="var(--indigo)" />
               </h1>
 
+              {/* No celular o subtítulo fica em 3 linhas (`line-clamp`): o
+                  texto completo ocupava 5 e empurrava o mascote para fora
+                  da tela. A frase inteira continua no HTML, para busca e
+                  leitor de tela. */}
               {hero.subtitulo && (
-                <p className="mt-3 text-sm leading-relaxed text-tinta-clara sm:mt-5 sm:text-base lg:text-lg">
+                <p className="mt-2.5 line-clamp-3 text-[13px] leading-relaxed text-tinta-clara sm:mt-5 sm:line-clamp-none sm:text-base lg:text-lg">
                   {hero.subtitulo}
                 </p>
               )}
@@ -243,14 +251,14 @@ export default async function Home() {
                   empilhada eles sozinhos comiam 150px de altura e empurravam
                   o mascote para fora da tela. */}
               {itensDe(hero).length > 0 && (
-                <ul className="mt-4 grid grid-cols-3 gap-2 sm:mt-8 sm:gap-4">
+                <ul className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-8 sm:gap-4">
                   {itensDe(hero).map((s) => (
                     <li
                       key={s.id}
                       className="flex flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left"
                     >
                       {s.icone && <SeloIcone nome={s.icone} cor={s.cor || "#4F46E5"} />}
-                      <span className="text-[11px] font-semibold leading-tight text-tinta-clara sm:text-sm">
+                      <span className="text-[10px] font-semibold leading-tight text-tinta-clara sm:text-sm">
                         {s.titulo}
                       </span>
                     </li>
@@ -272,7 +280,7 @@ export default async function Home() {
                 height={1200}
                 priority
                 sizes="(max-width: 768px) 80vw, (max-width: 1280px) 55vw, 46vw"
-                className="h-auto w-[78%] max-w-[300px] sm:max-w-[380px] lg:w-full lg:max-w-[620px]"
+                className="h-auto w-[50%] max-w-[175px] sm:w-[78%] sm:max-w-[380px] lg:w-full lg:max-w-[620px]"
               />
             </div>
           </div>
