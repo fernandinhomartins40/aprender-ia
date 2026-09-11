@@ -8,6 +8,7 @@
  */
 import { PrismaClient, TipoLicao } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { BANCO_PROMPTS } from "./banco-prompts";
 
 const prisma = new PrismaClient();
 
@@ -600,6 +601,46 @@ async function main() {
     }
     console.log(`  módulo: ${m.titulo} — ${m.licoes.length} lições`);
   }
+
+  // ---- Banco de prompts ----
+  //
+  // Os prompts avulsos da apostila: os dos 12 capítulos, os do Anexo A
+  // (por disciplina) e os 6 do Guia de Bolso. Antes disto a biblioteca
+  // tinha 3 itens, e todos eram subproduto das lições de PROMPT — o
+  // Anexo A inteiro e as emergências não existiam na plataforma.
+  //
+  // `lessonId` fica nulo: são de consulta, não pertencem a uma lição.
+  // A chave de idempotência é o título, que o gerador garante único.
+  let novosPrompts = 0;
+  for (const p of BANCO_PROMPTS) {
+    const existente = await prisma.promptTemplate.findFirst({
+      where: { titulo: p.titulo, lessonId: null },
+      select: { id: true },
+    });
+
+    const dados = {
+      titulo: p.titulo,
+      corpo: p.corpo,
+      // Os prompts da apostila trazem [VARIÁVEL] no corpo; o CardPrompt
+      // extrai sozinho quando `variaveis` vem vazio, e é o que queremos:
+      // declarar à mão 102 conjuntos de campos seria manutenção dupla.
+      variaveis: [],
+      categoria: p.categoria,
+      disciplina: p.disciplina,
+      dica: `Da apostila — ${p.origem}.`,
+      ferramentasSugeridas: ["gemini", "deepseek", "chatgpt"],
+    };
+
+    if (existente) {
+      await prisma.promptTemplate.update({ where: { id: existente.id }, data: dados });
+    } else {
+      await prisma.promptTemplate.create({ data: dados });
+      novosPrompts++;
+    }
+  }
+  console.log(
+    `  banco de prompts: ${BANCO_PROMPTS.length} (${novosPrompts} novos)`,
+  );
 
   // ---- Conquistas ----
   for (const c of CONQUISTAS) {

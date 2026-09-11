@@ -334,6 +334,13 @@ model Module {
   icone     String?
   cor       String? // cor do encontro (#6366F1, #0EA5E9, ...)
 
+  /// Módulo do plano pago. O bloqueio do curso continua existindo em
+  /// `Course.pago`; este desce o controle um nível, para que a trilha
+  /// AVANÇADA conviva com os encontros gratuitos no mesmo curso.
+  pago  Boolean @default(false)
+  /// Selo curto na trilha ("Extra", "Avançado"). Nulo nos encontros.
+  faixa String?
+
   course Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   licoes Lesson[]
 
@@ -350,6 +357,15 @@ enum TipoLicao {
   DESAFIO
   QUIZ
   CHECKPOINT
+  /// Abre cada encontro: uma pergunta que liga o conteúdo à dor real
+  /// antes da teoria. Na apostila são 4, um por encontro.
+  AQUECIMENTO
+  /// O cursista faz agora, no próprio celular — o formato existe para
+  /// quem não tem computador em casa nem laboratório na escola.
+  NO_CELULAR
+  /// Guia de Bolso (Cap. 12): prompt de emergência para o imprevisto
+  /// da rotina, consultado na hora do aperto.
+  EMERGENCIA
 }
 
 model Lesson {

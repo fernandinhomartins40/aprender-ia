@@ -117,6 +117,247 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
 }
 
 /* ============================================================
+   AQUECIMENTO RELÂMPAGO
+   ============================================================
+   Abre cada encontro. Na sala presencial é uma pergunta de mão
+   levantada; aqui, sozinho no celular, a pergunta precisa de resposta —
+   senão vira texto para rolar. O professor responde e SÓ ENTÃO vê
+   quantos colegas responderam o mesmo, que é o efeito que a versão
+   presencial produz ao olhar as mãos levantadas na sala.
+   ============================================================ */
+
+export function PlayerAquecimento({
+  conteudo,
+  onCompleto,
+}: {
+  conteudo: {
+    pergunta: string;
+    opcoes?: string[];
+    fechamento?: string;
+    tempo?: string;
+  };
+  onCompleto: () => void;
+}) {
+  const [escolha, setEscolha] = useState<number | null>(null);
+  const opcoes = conteudo.opcoes ?? ["Sim, já aconteceu comigo", "Nunca aconteceu"];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl bg-grad-energia p-7 text-center text-white">
+        <IconeApp nome="game" tamanho={44} />
+        <p className="mt-3 font-titulo text-2xl font-extrabold leading-tight">
+          {conteudo.pergunta}
+        </p>
+        {conteudo.tempo && (
+          <p className="mt-2 text-sm opacity-90">{conteudo.tempo}</p>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        {opcoes.map((o, i) => (
+          <button
+            key={i}
+            onClick={() => setEscolha(i)}
+            aria-pressed={escolha === i}
+            className={`flex w-full items-center gap-3 rounded-lg border-2 p-4 text-left transition-colors ${
+              escolha === i
+                ? "border-laranja bg-laranja-soft text-laranja-dark"
+                : "border-borda bg-white hover:border-laranja-soft"
+            }`}
+          >
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                escolha === i ? "border-laranja bg-laranja text-white" : "border-borda"
+              }`}
+              aria-hidden="true"
+            >
+              {escolha === i && "✓"}
+            </span>
+            <span className="font-bold">{o}</span>
+          </button>
+        ))}
+      </div>
+
+      {escolha !== null && conteudo.fechamento && (
+        <p className="rounded-lg border-l-4 border-laranja bg-laranja-soft p-5 text-laranja-dark">
+          {conteudo.fechamento}
+        </p>
+      )}
+
+      <button onClick={onCompleto} className="btn-primario">
+        Começar o encontro
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   NO CELULAR
+   ============================================================
+   O formato existe na apostila para derrubar a barreira do "não tenho
+   computador": o cursista faz ali, no aparelho que já está na mão.
+   Os passos são marcáveis porque a pessoa alterna entre esta tela e a
+   da IA — sem marcar, ela volta e não sabe onde parou.
+   ============================================================ */
+
+export function PlayerNoCelular({
+  conteudo,
+  onCompleto,
+}: {
+  conteudo: {
+    titulo: string;
+    tempo?: string;
+    passos: string[];
+    porque?: string;
+  };
+  onCompleto: () => void;
+}) {
+  const [feitos, setFeitos] = useState<Set<number>>(new Set());
+
+  function alternar(i: number) {
+    setFeitos((s) => {
+      const novo = new Set(s);
+      if (novo.has(i)) novo.delete(i);
+      else novo.add(i);
+      return novo;
+    });
+  }
+
+  const todos = feitos.size === conteudo.passos.length;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl bg-grad-marca p-6 text-white">
+        <p className="flex items-center gap-2 font-titulo text-sm font-bold uppercase tracking-wide opacity-90">
+          <IconeApp nome="ferramentas" tamanho={20} />
+          No celular
+        </p>
+        <h3 className="mt-1 font-titulo text-2xl font-extrabold">{conteudo.titulo}</h3>
+        {conteudo.tempo && <p className="mt-1 text-sm opacity-90">{conteudo.tempo}</p>}
+      </div>
+
+      <ol className="space-y-3">
+        {conteudo.passos.map((p, i) => (
+          <li key={i}>
+            <button
+              onClick={() => alternar(i)}
+              aria-pressed={feitos.has(i)}
+              className="flex w-full items-start gap-3 rounded-lg border-2 border-borda bg-white p-4 text-left transition-colors hover:border-indigo-line"
+            >
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-titulo text-sm font-bold ${
+                  feitos.has(i) ? "bg-verde text-white" : "bg-indigo-soft text-indigo-dark"
+                }`}
+                aria-hidden="true"
+              >
+                {feitos.has(i) ? "✓" : i + 1}
+              </span>
+              <span
+                className={
+                  feitos.has(i) ? "text-cinza line-through" : "text-tinta"
+                }
+              >
+                {p}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      {conteudo.porque && (
+        <p className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-4 text-sm text-amarelo-dark">
+          <strong>Por que no celular?</strong> {conteudo.porque}
+        </p>
+      )}
+
+      {todos && (
+        <p className="rounded-lg border-l-4 border-verde bg-verde-soft p-4 text-verde-dark">
+          Você fez o passo a passo inteiro. É assim na sala dos professores,
+          na fila do banco e no sofá de casa.
+        </p>
+      )}
+
+      <button onClick={onCompleto} className="btn-primario">
+        Concluir lição
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   EMERGÊNCIA (Guia de Bolso, Cap. 12)
+   ============================================================
+   Consulta, não estudo: o professor abre isto com a aula começando em
+   5 minutos. Por isso o prompt vem pronto para copiar já na primeira
+   dobra, sem introdução nem teoria antes.
+   ============================================================ */
+
+export function PlayerEmergencia({
+  conteudo,
+  onCompleto,
+}: {
+  conteudo: {
+    situacao: string;
+    prompt: string;
+    comoUsar?: string;
+  };
+  onCompleto: () => void;
+}) {
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(conteudo.prompt);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setCopiado(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border-l-8 border-vermelho bg-vermelho-soft p-5">
+        <p className="flex items-center gap-2 font-titulo text-sm font-bold uppercase tracking-wide text-vermelho-dark">
+          <IconeApp nome="suporte" tamanho={20} />
+          Emergência
+        </p>
+        <p className="mt-1 font-titulo text-xl font-extrabold text-vermelho-dark">
+          {conteudo.situacao}
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-lg bg-prompt-bg">
+        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 pt-3">
+          <span className="font-titulo text-xs font-bold uppercase tracking-wide text-prompt-txt opacity-70">
+            Copie e cole na IA
+          </span>
+          <button
+            onClick={copiar}
+            className="mb-2 rounded-md bg-white/10 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-white/20"
+          >
+            {copiado ? "Copiado!" : "Copiar"}
+          </button>
+        </div>
+        <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-sm leading-relaxed text-prompt-txt">
+          {conteudo.prompt}
+        </pre>
+      </div>
+
+      {conteudo.comoUsar && (
+        <p className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-4 text-sm text-amarelo-dark">
+          {conteudo.comoUsar}
+        </p>
+      )}
+
+      <button onClick={onCompleto} className="btn-primario">
+        Guardar no meu repertório
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
    QUIZ
    ============================================================ */
 

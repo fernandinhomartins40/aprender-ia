@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import {
   PlayerTeoria, PlayerQuiz, PlayerDuelo, PlayerCacaErro,
   PlayerPrompt, PlayerDesafio, PlayerCaso, PlayerCheckpoint,
+  PlayerAquecimento, PlayerNoCelular, PlayerEmergencia,
   type Analisar,
 } from "./players";
 
@@ -77,6 +78,12 @@ export function LicaoCliente({
       );
     case "QUIZ":
       return <PlayerQuiz perguntas={conteudo.perguntas ?? []} onCompleto={finalizar} />;
+    case "AQUECIMENTO":
+      return <PlayerAquecimento conteudo={conteudo} onCompleto={finalizar} />;
+    case "NO_CELULAR":
+      return <PlayerNoCelular conteudo={conteudo} onCompleto={finalizar} />;
+    case "EMERGENCIA":
+      return <PlayerEmergencia conteudo={conteudo} onCompleto={finalizar} />;
     case "DUELO":
       return (
         <PlayerDuelo
