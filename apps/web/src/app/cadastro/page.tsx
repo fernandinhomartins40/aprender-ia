@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { CampoSenha } from "@/components/campo-senha";
+import { Logo } from "@/components/logo";
 
 export default function Cadastro() {
   const router = useRouter();
@@ -60,9 +61,9 @@ export default function Cadastro() {
     <main className="flex min-h-screen items-center justify-center bg-grad-capa px-5 py-12">
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
-          <Link href="/" className="font-titulo text-2xl font-extrabold text-tinta">
-            Aprender<span className="text-laranja">IA</span>
-          </Link>
+          {/* A marca é a logo, não o nome escrito: em texto ela perdia as
+              cores e o desenho, e ficava diferente do resto do site. */}
+          <Logo largura={132} prioridade />
           <h1 className="mt-6 font-titulo text-3xl font-extrabold">
             Comece sua formação
           </h1>

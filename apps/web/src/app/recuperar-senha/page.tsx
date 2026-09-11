@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 export default function RecuperarSenha() {
   const [identificador, setIdentificador] = useState("");
@@ -38,9 +39,9 @@ export default function RecuperarSenha() {
     <main className="flex min-h-screen items-center justify-center bg-grad-capa px-5 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="font-titulo text-2xl font-extrabold text-tinta">
-            Aprender<span className="text-laranja">IA</span>
-          </Link>
+          {/* A marca é a logo, não o nome escrito: em texto ela perdia as
+              cores e o desenho, e ficava diferente do resto do site. */}
+          <Logo largura={132} prioridade />
           <h1 className="mt-6 font-titulo text-3xl font-extrabold">
             Esqueceu a senha?
           </h1>

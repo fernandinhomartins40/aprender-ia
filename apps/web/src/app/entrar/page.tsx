@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { CampoSenha } from "@/components/campo-senha";
+import { Logo } from "@/components/logo";
 
 /**
  * Chave do identificador lembrado.
@@ -98,9 +99,9 @@ function FormularioEntrar() {
     <main className="flex min-h-screen items-center justify-center bg-grad-capa px-5 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="font-titulo text-2xl font-extrabold text-tinta">
-            Aprender<span className="text-laranja">IA</span>
-          </Link>
+          {/* A marca é a logo, não o nome escrito: em texto ela perdia as
+              cores e o desenho, e ficava diferente do resto do site. */}
+          <Logo largura={132} prioridade />
           <h1 className="mt-6 font-titulo text-3xl font-extrabold">Que bom te ver de novo</h1>
           <p className="mt-2 text-tinta-clara">Continue de onde você parou.</p>
         </div>
@@ -203,6 +204,18 @@ function FormularioEntrar() {
               className="inline-block py-2 text-tinta-clara hover:text-indigo hover:underline"
             >
               Esqueci minha senha
+            </Link>
+          </p>
+
+          {/* Caminho para a tela do aplicativo. Ela fica dentro do `scope`
+              `/app` do manifest, onde o navegador oferece a instalação —
+              esta página, fora do `scope`, nunca mostraria o convite. */}
+          <p className="mt-1 text-center">
+            <Link
+              href="/app/entrar"
+              className="inline-flex min-h-[44px] items-center gap-1.5 font-bold text-indigo hover:underline"
+            >
+              Instalar o aplicativo no celular
             </Link>
           </p>
 

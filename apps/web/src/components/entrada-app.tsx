@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { CampoSenha } from "@/components/campo-senha";
+import { ConviteInstalar } from "@/components/convite-instalar";
 
 /**
  * Abertura e login do aplicativo.
@@ -129,6 +130,12 @@ export function EntradaApp({ proximo }: { proximo: string }) {
           <p className="mt-1 text-center text-sm text-white/80">
             Entre para continuar de onde parou.
           </p>
+
+          {/* Fica aqui, e não em `/entrar`, porque só dentro do `scope`
+              `/app` o navegador considera a página instalável. */}
+          <div className="mt-5 w-full max-w-sm">
+            <ConviteInstalar />
+          </div>
         </div>
 
         <div className="flex-1 rounded-t-3xl bg-white px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-7">
