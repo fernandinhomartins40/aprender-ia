@@ -16,6 +16,7 @@
     "@aprender/types": "workspace:*",
     "@aprender/ui": "workspace:*",
     "@auth/prisma-adapter": "^2.7.4",
+    "@tabler/icons-react": "^3.46.0",
     "@tanstack/react-query": "^5.62.11",
     "bcryptjs": "^2.4.3",
     "framer-motion": "^11.15.0",

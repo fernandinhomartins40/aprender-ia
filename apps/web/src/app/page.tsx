@@ -338,12 +338,18 @@ export default async function Home() {
 
       {/* ---------- Faixa: mais que cursos ---------- */}
       {plataforma && (
-        <section id="plataforma" className="mx-auto max-w-7xl px-5 pb-16 sm:pb-20">
+        // `pt-12` reserva a folga por onde o mascote transborda: quem sai da
+        // faixa não empurra o que está em volta, e sem isso ele seria
+        // cortado pela seção anterior.
+        <section id="plataforma" className="mx-auto max-w-7xl px-5 pb-16 pt-12 sm:pb-20">
           {/* Faixa baixa e larga: o robô ocupa pouco, o texto tem largura
               suficiente para o título caber em duas linhas e os cartões
               ficam com a metade direita. Proporções apertadas aqui faziam
-              o título quebrar em três linhas e esticavam a faixa. */}
-          <div className="overflow-hidden rounded-[32px] bg-grad-escuro px-6 py-8 sm:px-8 lg:px-10 lg:py-7">
+              o título quebrar em três linhas e esticavam a faixa.
+
+              Sem `overflow-hidden`: é o transbordo do mascote que dá o
+              efeito da referência. */}
+          <div className="relative rounded-[32px] bg-grad-escuro px-6 py-8 sm:px-8 lg:px-10 lg:py-7">
             <div className="grid items-center gap-8 lg:grid-cols-[200px,minmax(0,1fr),minmax(0,1.15fr)] lg:gap-8">
               {plataforma.imagem && (
                 <Image
@@ -352,7 +358,8 @@ export default async function Home() {
                   aria-hidden
                   width={280}
                   height={280}
-                  className="mx-auto h-auto w-36 lg:w-full"
+                  // A margem negativa faz o robô subir para fora da faixa.
+                  className="relative mx-auto h-auto w-36 lg:-mt-16 lg:w-full"
                 />
               )}
 
@@ -671,41 +678,64 @@ export default async function Home() {
 
       {/* ---------- Chamada final ---------- */}
       {chamadaFinal && (
-        <section className="mx-auto max-w-7xl px-5 pb-16 sm:pb-20">
-          <div className="overflow-hidden rounded-3xl bg-grad-chamada px-6 py-10 sm:px-10">
-            <div className="grid items-center gap-8 lg:grid-cols-[1.1fr,1fr,auto]">
-              <h2 className="font-titulo text-3xl font-extrabold leading-tight text-white sm:text-4xl">
-                <TituloComDestaque texto={chamadaFinal.titulo} corDestaque="#FDE68A" />
-              </h2>
+        // `pt-14` reserva, acima da faixa, o espaço por onde o mascote e a
+        // frase transbordam. Sem essa folga eles seriam cortados pela seção
+        // anterior, já que quem transborda não empurra o que está em volta.
+        <section className="mx-auto max-w-7xl px-5 pb-16 pt-14 sm:pb-20">
+          {/* Sem `overflow-hidden` aqui, ao contrário das outras faixas: é
+              justamente o transbordo que dá o efeito da referência. */}
+          <div className="relative rounded-[32px] bg-grad-chamada px-6 py-9 sm:px-10">
+            <div className="grid items-center gap-6 lg:grid-cols-[1.05fr,1fr,auto]">
+              {/* O título é lettering manuscrito com grifo — nenhuma fonte
+                  da web reproduz. O texto real fica no `alt`. */}
+              <Image
+                src="/landing/frase-proximo-passo.webp"
+                alt={chamadaFinal.titulo.replace(/\n/g, " ")}
+                width={1100}
+                height={383}
+                className="h-auto w-full max-w-sm lg:max-w-md"
+              />
 
               <div>
                 {chamadaFinal.subtitulo && (
-                  <p className="text-white/90">{chamadaFinal.subtitulo}</p>
+                  <p className="text-sm text-white/90">{chamadaFinal.subtitulo}</p>
                 )}
                 {chamadaFinal.ctaTexto && (
                   <Link
                     href={chamadaFinal.ctaLink || "/cadastro"}
-                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-titulo font-bold text-indigo transition-colors hover:bg-indigo-soft"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-titulo font-bold text-indigo transition-colors hover:bg-indigo-soft"
                   >
                     {chamadaFinal.ctaTexto}
                     <span aria-hidden>→</span>
                   </Link>
                 )}
                 {chamadaFinal.texto && (
-                  <p className="mt-4 text-sm text-white/80">{chamadaFinal.texto}</p>
+                  <p className="mt-3 text-[13px] text-white/80">{chamadaFinal.texto}</p>
                 )}
               </div>
 
-              {chamadaFinal.imagem && (
+              {/* Mascote e frase sobem para fora da faixa. A margem negativa
+                  é o que produz o transbordo; `relative` os mantém acima do
+                  fundo colorido. */}
+              <div className="relative hidden items-end gap-3 lg:flex">
+                {chamadaFinal.imagem && (
+                  <Image
+                    src={chamadaFinal.imagem}
+                    alt=""
+                    aria-hidden
+                    width={400}
+                    height={400}
+                    className="-mt-20 h-auto w-48 drop-shadow-xl"
+                  />
+                )}
                 <Image
-                  src={chamadaFinal.imagem}
-                  alt=""
-                  aria-hidden
-                  width={280}
-                  height={280}
-                  className="mx-auto hidden h-auto w-44 lg:block"
+                  src="/landing/frase-aprender.webp"
+                  alt="Aprender transforma realidades!"
+                  width={1100}
+                  height={1072}
+                  className="-mt-10 h-auto w-28"
                 />
-              )}
+              </div>
             </div>
           </div>
         </section>
