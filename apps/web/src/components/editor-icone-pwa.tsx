@@ -392,10 +392,14 @@ export function EditorIconePwa({
                   key={t.chave}
                   className="flex items-center gap-3 rounded-xl border border-borda bg-white p-3"
                 >
+                  {/* A imagem não leva borda arredondada: arredondar aqui
+                      cortava a arte e dava a impressão de que o ícone tinha
+                      saído estragado. Cada sistema aplica a própria máscara
+                      ao exibir; a prévia mostra o arquivo como ele é. */}
                   <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-fundo">
                     {atual ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={atual} alt="" aria-hidden className="h-12 w-12 rounded-lg" />
+                      <img src={atual} alt="" aria-hidden className="h-12 w-12" />
                     ) : (
                       <span className="text-xs text-cinza">—</span>
                     )}

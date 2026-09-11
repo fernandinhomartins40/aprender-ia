@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { CampoSenha } from "@/components/campo-senha";
 import { ConviteInstalar } from "@/components/convite-instalar";
+import { Logo } from "@/components/logo";
 
 /**
  * Abertura e login do aplicativo.
@@ -116,14 +117,10 @@ export function EntradaApp({ proximo }: { proximo: string }) {
         }`}
       >
         <div className="flex flex-col items-center px-6 pb-6 pt-[calc(2.5rem+env(safe-area-inset-top))]">
-          <Image
-            src="/icones/icone-192.png"
-            alt=""
-            aria-hidden
-            width={80}
-            height={80}
-            className="h-auto w-16"
-          />
+          {/* A marca é a logo, não o ícone do aplicativo: o quadradinho
+              serve para a tela inicial do aparelho, mas aqui, onde há
+              espaço, quem identifica a plataforma é o logotipo escrito. */}
+          <Logo href={null} largura={190} prioridade className="h-auto w-44" />
           <h1 className="mt-4 text-center font-titulo text-2xl font-extrabold text-white">
             Que bom te ver
           </h1>
