@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { IconeApp } from "./icone-app";
+import { iconeGamificacao } from "@/lib/icones-gamificacao";
 
 export type ResultadoConclusao = {
   xpGanho: number;
@@ -109,7 +110,7 @@ export function FeedbackConclusao({
         <div className="mx-auto mt-4 max-w-lg rounded-xl border border-amarelo bg-amarelo-soft p-4 text-left">
           <p className="font-titulo font-bold text-amarelo-dark">Nova conquista</p>
           {resultado.novasConquistas.map((c) => (
-            <p key={c.titulo} className="mt-1 text-amarelo-dark">{c.icone} {c.titulo}</p>
+            <p key={c.titulo} className="mt-1 flex items-center gap-2 text-amarelo-dark"><IconeApp nome={iconeGamificacao(c.icone)} tamanho={26} />{c.titulo}</p>
           ))}
         </div>
       )}

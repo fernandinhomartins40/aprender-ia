@@ -1,5 +1,7 @@
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
+import { IconeApp } from "@/components/icone-app";
+import { iconeGamificacao } from "@/lib/icones-gamificacao";
 
 export const dynamic = "force-dynamic";
 
@@ -35,14 +37,11 @@ export default async function Conquistas() {
               key={c.id}
               className={`card text-center ${tem ? "border-conquista" : "opacity-60"}`}
             >
-              {/* O banco guarda um emoji em `icone` (🌱, 🚀, 🎓), não um
-                  nome de arquivo: o componente de ícone caía sempre no
-                  padrão e todas as conquistas apareciam iguais. */}
               <div
                 aria-hidden
-                className={`flex justify-center text-6xl leading-none ${tem ? "" : "grayscale"}`}
+                className={`flex justify-center ${tem ? "" : "grayscale opacity-70"}`}
               >
-                {secreta ? "❔" : (c.icone || "🏅")}
+                <IconeApp nome={secreta ? "favoritos" : iconeGamificacao(c.icone)} tamanho={72} prioridade={tem} />
               </div>
               <p className="mt-3 font-titulo font-bold">{secreta ? "Conquista secreta" : c.titulo}</p>
               <p className="mt-1 text-sm text-tinta-clara">{secreta ? "Continue avançando para revelar este marco." : c.descricao}</p>

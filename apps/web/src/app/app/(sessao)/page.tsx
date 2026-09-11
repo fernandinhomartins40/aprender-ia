@@ -109,8 +109,8 @@ export default async function PainelAluno() {
           <p className="mt-1 text-sm text-tinta-clara">XP acumulado</p>
         </div>
         <div className="card text-center">
-          <p className="font-titulo text-3xl font-extrabold text-streak">
-            {resumo.ofensiva > 0 ? `🔥 ${resumo.ofensiva}` : "0"}
+          <p className="flex items-center justify-center gap-1 font-titulo text-3xl font-extrabold text-streak">
+            {resumo.ofensiva > 0 && <IconeApp nome="progresso" tamanho={34} />}{resumo.ofensiva}
           </p>
           <p className="mt-1 text-sm text-tinta-clara">
             {resumo.ofensiva === 1 ? "dia seguido" : "dias seguidos"}

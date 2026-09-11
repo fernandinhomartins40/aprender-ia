@@ -424,8 +424,8 @@ export function PlayerQuiz({
             >
               <span className="font-titulo font-bold uppercase text-cinza">{o.id}</span>
               <span className="flex-1">{o.texto}</span>
-              {revelado && o.correta && <span aria-hidden="true">✅</span>}
-              {revelado && escolhida && !o.correta && <span aria-hidden="true">❌</span>}
+              {revelado && o.correta && <IconeApp nome="conquistas" tamanho={22} />}
+              {revelado && escolhida && !o.correta && <IconeApp nome="seguranca" tamanho={22} />}
             </button>
           );
         })}
@@ -487,9 +487,7 @@ export function PlayerDuelo({
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-lg border-2 border-vermelho-soft bg-vermelho-soft p-5">
-          <p className="font-titulo font-bold text-vermelho-dark">
-            ❌ O que quase todo mundo escreve
-          </p>
+          <p className="flex items-center gap-2 font-titulo font-bold text-vermelho-dark"><IconeApp nome="seguranca" tamanho={24} />O que quase todo mundo escreve</p>
           <pre className="mt-3 whitespace-pre-wrap rounded-md bg-prompt-bg p-4 font-mono text-sm text-prompt-txt">
             {conteudo.promptRuim}
           </pre>
@@ -497,9 +495,7 @@ export function PlayerDuelo({
         </div>
 
         <div className="rounded-lg border-2 border-verde-soft bg-verde-soft p-5">
-          <p className="font-titulo font-bold text-verde-dark">
-            ✅ O mesmo pedido com P.T.C.F.
-          </p>
+          <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark"><IconeApp nome="conquistas" tamanho={24} />O mesmo pedido com P.T.C.F.</p>
           <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-prompt-bg p-4 font-mono text-sm text-prompt-txt">
             {conteudo.promptBom}
           </pre>

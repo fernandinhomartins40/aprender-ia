@@ -1,5 +1,6 @@
 import { TituloPagina, Secao } from "@/components/pagina-admin";
 import { dadosGamificacaoAdmin, salvarMissao, alternarMissao, salvarXpLicao, salvarConquista } from "@/server/missoes";
+import { iconeGamificacao } from "@/lib/icones-gamificacao";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function GamificacaoAdmin() {
           <select name="criterio" className="campo"><option value="licoes">Lições concluídas</option><option value="prompts">Prompts praticados</option><option value="sequencia">Dias de sequência</option><option value="tipos_atividade">Tipos diferentes explorados</option></select>
           <input name="alvo" type="number" min="1" defaultValue="1" className="campo" aria-label="Meta numérica" />
           <input name="recompensaTitulo" className="campo" placeholder="Título/recompensa visual" />
-          <input name="icone" className="campo" defaultValue="metas" placeholder="Nome do ícone 3D" />
+          <select name="icone" className="campo" defaultValue="metas" aria-label="Ícone da missão"><option value="metas">Metas</option><option value="desafios">Desafios</option><option value="progresso">Progresso</option><option value="recompensas">Recompensas</option><option value="conquistas">Conquistas</option></select>
           <select name="lessonId" className="campo"><option value="">Sem atividade específica</option>{licoes.map((l) => <option key={l.id} value={l.id}>{l.module.titulo} · {l.titulo}</option>)}</select>
           <input name="iniciaEm" type="datetime-local" className="campo" aria-label="Início opcional" />
           <input name="terminaEm" type="datetime-local" className="campo" aria-label="Término opcional" />
@@ -45,7 +46,7 @@ export default async function GamificacaoAdmin() {
                   <select name="criterio" defaultValue={m.criterio} className="campo"><option value="licoes">Lições concluídas</option><option value="prompts">Prompts praticados</option><option value="sequencia">Dias de sequência</option><option value="tipos_atividade">Tipos diferentes</option></select>
                   <input name="alvo" type="number" min="1" defaultValue={m.alvo} className="campo" />
                   <input name="recompensaTitulo" defaultValue={m.recompensaTitulo ?? ""} className="campo" placeholder="Título/recompensa" />
-                  <input name="icone" defaultValue={m.icone} className="campo" />
+                  <select name="icone" defaultValue={iconeGamificacao(m.icone, "metas")} className="campo"><option value="metas">Metas</option><option value="desafios">Desafios</option><option value="progresso">Progresso</option><option value="recompensas">Recompensas</option><option value="conquistas">Conquistas</option></select>
                   <select name="lessonId" defaultValue={m.lessonId ?? ""} className="campo"><option value="">Sem atividade específica</option>{licoes.map((l) => <option key={l.id} value={l.id}>{l.module.titulo} · {l.titulo}</option>)}</select>
                   <input name="iniciaEm" type="datetime-local" defaultValue={m.iniciaEm ? m.iniciaEm.toISOString().slice(0, 16) : ""} className="campo" aria-label="Início opcional" />
                   <input name="terminaEm" type="datetime-local" defaultValue={m.terminaEm ? m.terminaEm.toISOString().slice(0, 16) : ""} className="campo" aria-label="Término opcional" />
@@ -65,7 +66,7 @@ export default async function GamificacaoAdmin() {
           <input name="descricao" className="campo" placeholder="Como ela é conquistada" required />
           <select name="criterioTipo" className="campo"><option value="licoes">Lições concluídas</option><option value="prompts">Prompts praticados</option><option value="ofensiva">Dias de sequência</option><option value="modulo">Módulos concluídos</option><option value="curso">Percentual da trilha</option></select>
           <input name="criterioValor" type="number" min="1" defaultValue="1" className="campo" aria-label="Meta para desbloquear" />
-          <input name="icone" defaultValue="🏅" className="campo" aria-label="Ícone" />
+          <select name="icone" defaultValue="conquistas" className="campo" aria-label="Ícone"><option value="conquistas">Conquistas</option><option value="progresso">Progresso</option><option value="recompensas">Recompensas</option><option value="metas">Metas</option><option value="certificados">Certificados</option><option value="calendario">Calendário</option></select>
           <input name="recompensaTitulo" className="campo" placeholder="Título/recompensa recebida" />
           <label className="flex items-center gap-2"><input type="checkbox" name="oculto" /> Oculta até desbloquear</label>
           <button className="btn-primario">Criar conquista</button>
@@ -76,7 +77,7 @@ export default async function GamificacaoAdmin() {
             return (
             <form key={c.id} action={salvarConquista} className="rounded-xl border border-borda p-4">
               <input type="hidden" name="id" value={c.id} />
-              <div className="grid gap-2"><input name="titulo" defaultValue={c.titulo} className="campo" /><textarea name="descricao" defaultValue={c.descricao} className="campo" /><div className="grid grid-cols-2 gap-2"><select name="criterioTipo" defaultValue={criterio.tipo ?? "licoes"} className="campo"><option value="licoes">Lições</option><option value="prompts">Prompts</option><option value="ofensiva">Sequência</option><option value="modulo">Módulos</option><option value="curso">Trilha (%)</option></select><input name="criterioValor" type="number" min="1" defaultValue={criterio.valor ?? 1} className="campo" /></div><div className="grid grid-cols-2 gap-2"><input name="icone" defaultValue={c.icone} className="campo" /><input name="recompensaTitulo" defaultValue={c.recompensaTitulo ?? ""} className="campo" placeholder="Título recebido" /></div><label className="flex items-center gap-2"><input type="checkbox" name="oculto" defaultChecked={c.oculto} /> Oculta até desbloquear</label><button className="btn-secundario">Salvar conquista</button></div>
+              <div className="grid gap-2"><input name="titulo" defaultValue={c.titulo} className="campo" /><textarea name="descricao" defaultValue={c.descricao} className="campo" /><div className="grid grid-cols-2 gap-2"><select name="criterioTipo" defaultValue={criterio.tipo ?? "licoes"} className="campo"><option value="licoes">Lições</option><option value="prompts">Prompts</option><option value="ofensiva">Sequência</option><option value="modulo">Módulos</option><option value="curso">Trilha (%)</option></select><input name="criterioValor" type="number" min="1" defaultValue={criterio.valor ?? 1} className="campo" /></div><div className="grid grid-cols-2 gap-2"><select name="icone" defaultValue={iconeGamificacao(c.icone)} className="campo"><option value="conquistas">Conquistas</option><option value="progresso">Progresso</option><option value="recompensas">Recompensas</option><option value="metas">Metas</option><option value="certificados">Certificados</option><option value="calendario">Calendário</option></select><input name="recompensaTitulo" defaultValue={c.recompensaTitulo ?? ""} className="campo" placeholder="Título recebido" /></div><label className="flex items-center gap-2"><input type="checkbox" name="oculto" defaultChecked={c.oculto} /> Oculta até desbloquear</label><button className="btn-secundario">Salvar conquista</button></div>
             </form>
           );})}
         </div>

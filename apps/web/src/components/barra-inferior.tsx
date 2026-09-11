@@ -26,14 +26,14 @@ const ESQUERDA: Posicao[] = [
 ];
 
 const DIREITA: Posicao[] = [
-  { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
+  { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
 ];
 
 /** O que não coube nas posições fixas. */
 const SECUNDARIOS: Posicao[] = [
   { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
+  { href: "/app/prompts", rotulo: "Banco de prompts", icone: "prompt" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
-  { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
   { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
   { href: "/app/acesso", rotulo: "Meu acesso", icone: "seguranca" },
 ];
@@ -53,6 +53,7 @@ export function BarraInferior({ aoSair }: { aoSair: React.ReactNode }) {
   // Um destino secundário ativo acende o "Mais": sem isso, estando no
   // Diário, nenhuma das cinco posições ficaria marcada.
   const emSecundario = SECUNDARIOS.some((s) => caminho.startsWith(s.href));
+  const estudando = caminho === "/app/continuar" || caminho.startsWith("/app/licao/");
 
   return (
     <>
@@ -108,14 +109,15 @@ export function BarraInferior({ aoSair }: { aoSair: React.ReactNode }) {
               é o que o aluno vem fazer, e isso merece o polegar. */}
           <li className="flex-1">
             <Link
-              href="/app/trilha"
+              href="/app/continuar"
+              aria-current={estudando ? "page" : undefined}
               aria-label="Continuar estudando"
-              className="flex h-full flex-col items-center justify-end gap-1 pb-1.5"
+              className={`flex h-full flex-col items-center justify-end gap-1 pb-1.5 ${estudando ? "text-indigo" : "text-tinta-clara"}`}
             >
-              <span className="-mt-6 inline-flex h-14 w-14 items-center justify-center rounded-full bg-indigo shadow-cor">
+              <span className="-mt-6 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/50 bg-indigo/90 shadow-[0_10px_22px_rgba(79,70,229,0.32),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-md transition duration-200 motion-reduce:transition-none hover:scale-105 active:scale-95">
                 <IconeApp nome="progresso" tamanho={30} />
               </span>
-              <span className="text-[10px] font-bold text-indigo">Estudar</span>
+              <span className="text-[10px] font-bold">Continuar</span>
             </Link>
           </li>
 
@@ -134,11 +136,7 @@ export function BarraInferior({ aoSair }: { aoSair: React.ReactNode }) {
                 emSecundario || maisAberto ? "text-indigo" : "text-cinza"
               }`}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
+              <IconeApp nome="organizar" tamanho={26} />
               <span className="text-[10px] font-bold">Mais</span>
             </button>
           </li>

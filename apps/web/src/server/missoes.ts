@@ -190,7 +190,7 @@ export async function salvarConquista(dados: FormData): Promise<void> {
   const payload = {
     titulo,
     descricao: String(dados.get("descricao") ?? "").trim(),
-    icone: String(dados.get("icone") ?? "🏅").trim() || "🏅",
+    icone: String(dados.get("icone") ?? "conquistas").trim() || "conquistas",
     criterio,
     oculto: String(dados.get("oculto") ?? "") === "on",
     recompensaTitulo: String(dados.get("recompensaTitulo") ?? "").trim() || null,

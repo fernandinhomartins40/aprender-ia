@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Veredito } from "@/server/acesso";
+import { IconeApp, type NomeIconeApp } from "./icone-app";
 
 const TITULO: Record<string, string> = {
   "curso-pago-plano-free": "Este curso faz parte do plano completo",
@@ -9,12 +10,12 @@ const TITULO: Record<string, string> = {
   "free-revogado": "Seu acesso gratuito foi encerrado",
 };
 
-const ICONE: Record<string, string> = {
-  "curso-pago-plano-free": "🔒",
-  "conta-suspensa": "⏸️",
-  "premium-expirado": "⏳",
-  "free-expirado": "⏳",
-  "free-revogado": "🔒",
+const ICONE: Record<string, NomeIconeApp> = {
+  "curso-pago-plano-free": "seguranca",
+  "conta-suspensa": "seguranca",
+  "premium-expirado": "calendario",
+  "free-expirado": "calendario",
+  "free-revogado": "seguranca",
 };
 
 /** Motivos em que pedir um novo acesso gratuito faz sentido. */
@@ -42,8 +43,8 @@ export function AcessoBloqueado({
   return (
     <div className="mx-auto max-w-xl">
       <div className="card text-center">
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-amarelo-soft text-4xl">
-          {ICONE[veredito.motivo] ?? "🔒"}
+        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-amarelo-soft">
+          <IconeApp nome={ICONE[veredito.motivo] ?? "seguranca"} tamanho={64} prioridade />
         </div>
 
         <h1 className="font-titulo text-2xl font-extrabold">

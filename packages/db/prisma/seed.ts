@@ -665,12 +665,12 @@ const MODULOS = [
 void MODULOS_INICIAIS;
 
 const CONQUISTAS = [
-  { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira lição", icone: "🌱", criterio: { tipo: "licoes", valor: 1 }, ordem: 0, recompensaTitulo: "Iniciante em IA" },
-  { chave: "primeiro-prompt", titulo: "Mão na massa", descricao: "Executou seu primeiro prompt numa IA", icone: "⚡", criterio: { tipo: "prompts", valor: 1 }, ordem: 1, recompensaTitulo: "Professor que experimenta" },
-  { chave: "cinco-licoes", titulo: "Pegando o ritmo", descricao: "Concluiu 5 lições", icone: "🔥", criterio: { tipo: "licoes", valor: 5 }, ordem: 2, recompensaTitulo: "Ritmo de aprendizagem" },
-  { chave: "encontro-1", titulo: "Encontro 1 completo", descricao: "Terminou o primeiro encontro", icone: "🚀", criterio: { tipo: "modulo", valor: 1 }, ordem: 3, recompensaTitulo: "Explorador de possibilidades" },
-  { chave: "ofensiva-3", titulo: "Três dias seguidos", descricao: "Manteve a ofensiva por 3 dias", icone: "📅", criterio: { tipo: "ofensiva", valor: 3 }, ordem: 4, recompensaTitulo: "Professor consistente" },
-  { chave: "curso-completo", titulo: "Formação concluída", descricao: "Completou todos os encontros", icone: "🎓", criterio: { tipo: "curso", valor: 100 }, ordem: 5, recompensaTitulo: "Educador com IA" },
+  { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira lição", icone: "conquistas", criterio: { tipo: "licoes", valor: 1 }, ordem: 0, recompensaTitulo: "Iniciante em IA" },
+  { chave: "primeiro-prompt", titulo: "Mão na massa", descricao: "Executou seu primeiro prompt numa IA", icone: "prompt", criterio: { tipo: "prompts", valor: 1 }, ordem: 1, recompensaTitulo: "Professor que experimenta" },
+  { chave: "cinco-licoes", titulo: "Pegando o ritmo", descricao: "Concluiu 5 lições", icone: "progresso", criterio: { tipo: "licoes", valor: 5 }, ordem: 2, recompensaTitulo: "Ritmo de aprendizagem" },
+  { chave: "encontro-1", titulo: "Encontro 1 completo", descricao: "Terminou o primeiro encontro", icone: "recompensas", criterio: { tipo: "modulo", valor: 1 }, ordem: 3, recompensaTitulo: "Explorador de possibilidades" },
+  { chave: "ofensiva-3", titulo: "Três dias seguidos", descricao: "Manteve a ofensiva por 3 dias", icone: "calendario", criterio: { tipo: "ofensiva", valor: 3 }, ordem: 4, recompensaTitulo: "Professor consistente" },
+  { chave: "curso-completo", titulo: "Formação concluída", descricao: "Completou todos os encontros", icone: "certificados", criterio: { tipo: "curso", valor: 100 }, ordem: 5, recompensaTitulo: "Educador com IA" },
 ];
 
 const MISSOES = [

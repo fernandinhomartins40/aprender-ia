@@ -29,6 +29,7 @@ export function SinoNotificacoes({
   aoAbrir: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
+  const idGaveta = "gaveta-avisos";
   // Some assim que o painel abre, sem esperar a resposta do servidor: o
   // contador é informação da interface, não estado do banco.
   const [contador, setContador] = useState(naoLidas);
@@ -50,6 +51,7 @@ export function SinoNotificacoes({
           contador > 0 ? `Notificações: ${contador} não lida(s)` : "Notificações"
         }
         aria-expanded={aberto}
+        aria-controls={idGaveta}
         className="relative rounded-md border-2 border-borda px-3 py-1.5 text-sm font-bold text-tinta-clara hover:border-indigo"
       >
         Avisos
@@ -70,9 +72,16 @@ export function SinoNotificacoes({
             className="fixed inset-0 z-40 cursor-default"
           />
 
-          <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg border-2 border-borda bg-white shadow-lg">
-            <div className="border-b border-borda px-4 py-3">
+          <section
+            id={idGaveta}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Seus avisos"
+            className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+4.75rem)] z-50 flex max-h-[calc(100dvh-env(safe-area-inset-top)-6rem)] flex-col overflow-hidden rounded-2xl border-2 border-borda bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-96 sm:w-80 sm:rounded-lg"
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-borda px-4 py-3">
               <p className="font-titulo font-bold">Seus avisos</p>
+              <button type="button" onClick={() => setAberto(false)} className="min-h-11 min-w-11 rounded-lg text-lg font-bold text-tinta-clara hover:bg-fundo hover:text-tinta" aria-label="Fechar avisos">×</button>
             </div>
 
             {lista.length === 0 ? (
@@ -80,12 +89,12 @@ export function SinoNotificacoes({
                 Nenhum aviso por enquanto.
               </p>
             ) : (
-              <ul>
+              <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {lista.map((n) => (
                   <li key={n.id} className="border-b border-borda last:border-0">
-                    <div className={`px-4 py-3 ${n.lidoEm ? "" : "bg-indigo-soft/40"}`}>
+                    <div className={`min-w-0 px-4 py-3 ${n.lidoEm ? "" : "bg-indigo-soft/40"}`}>
                       <p className="font-titulo text-sm font-bold">{n.titulo}</p>
-                      <p className="mt-1 whitespace-pre-line text-sm text-tinta-clara">
+                      <p className="mt-1 break-words whitespace-pre-line text-sm text-tinta-clara">
                         {n.corpo}
                       </p>
                       <p className="mt-1.5 text-xs text-cinza">
@@ -104,12 +113,12 @@ export function SinoNotificacoes({
                 ))}
               </ul>
             )}
-            <div className="border-t border-borda p-3 text-center">
+            <div className="shrink-0 border-t border-borda bg-white p-3 text-center">
               <Link href="/app/notificacoes" onClick={() => setAberto(false)} className="font-titulo text-sm font-bold text-indigo">
                 Ver central e preferências
               </Link>
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>
