@@ -42,7 +42,10 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
       freeRevogadoEm: true,
     },
   });
-  if (conta?.precisaTrocarSenha) redirect("/trocar-senha");
+  // Dentro do escopo `/app`: a tela equivalente em `/trocar-senha` fica
+  // fora dele e expulsava do aplicativo instalado quem tinha senha
+  // provisória — logo no primeiro acesso.
+  if (conta?.precisaTrocarSenha) redirect("/app/trocar-senha");
 
   // Aviso de prazo: um acesso que expira sem avisar é uma porta que
   // fecha na cara de quem estava estudando. Só aparece na janela
@@ -72,14 +75,19 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
               aoAbrir={marcarComoLidas}
             />
             {user.papel === "ADMIN" && (
-              <Link href="/admin" className="btn-fantasma text-sm">
+              <Link href="/admin" target="_blank" rel="noopener" className="btn-fantasma text-sm">
                 Administração
               </Link>
             )}
             <form
               action={async () => {
                 "use server";
-                await signOut({ redirectTo: "/" });
+                // Dentro do escopo `/app`: sair mandava para `/`, que é a
+              // landing e fica FORA do escopo do PWA. No aplicativo
+              // instalado isso abria a barra do navegador e acabava com a
+              // experiência de aplicativo. `/app/entrar` é a tela de
+              // login do próprio app.
+              await signOut({ redirectTo: "/app/entrar" });
               }}
             >
               <button type="submit" className="btn-fantasma text-sm">
@@ -151,7 +159,12 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
           <form
             action={async () => {
               "use server";
-              await signOut({ redirectTo: "/" });
+              // Dentro do escopo `/app`: sair mandava para `/`, que é a
+              // landing e fica FORA do escopo do PWA. No aplicativo
+              // instalado isso abria a barra do navegador e acabava com a
+              // experiência de aplicativo. `/app/entrar` é a tela de
+              // login do próprio app.
+              await signOut({ redirectTo: "/app/entrar" });
             }}
           >
             <button

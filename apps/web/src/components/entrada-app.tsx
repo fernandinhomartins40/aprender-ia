@@ -191,15 +191,24 @@ export function EntradaApp({ proximo }: { proximo: string }) {
               {carregando ? "Entrando…" : "Entrar"}
             </button>
 
+            {/* Estas duas telas vivem fora do `scope` `/app` do manifest.
+                Navegar para elas dentro do aplicativo instalado trocava a
+                janela do app pelo navegador e a pessoa não voltava. Em aba
+                nova, o aplicativo continua aberto atrás: ela resolve a
+                senha ou o cadastro e volta para cá. */}
             <div className="flex flex-col items-center gap-3 pt-2 text-sm">
               <Link
                 href="/recuperar-senha"
+                target="_blank"
+                rel="noopener"
                 className="inline-flex min-h-[44px] items-center font-bold text-indigo"
               >
                 Esqueci minha senha
               </Link>
               <Link
                 href="/cadastro"
+                target="_blank"
+                rel="noopener"
                 className="inline-flex min-h-[44px] items-center text-tinta-clara"
               >
                 Ainda não tenho conta

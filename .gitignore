@@ -27,6 +27,10 @@ public/sw.js.map
 *.sqlite
 postgres-data/
 
+# Python (os scripts de geração de assets)
+__pycache__/
+*.pyc
+
 # Testes
 coverage/
 playwright-report/
