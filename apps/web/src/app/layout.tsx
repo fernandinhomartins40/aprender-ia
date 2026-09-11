@@ -39,9 +39,40 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/**
+ * Captura do evento de instalação.
+ *
+ * O Chrome dispara `beforeinstallprompt` UMA vez, durante a carga da
+ * página. Um ouvinte registrado dentro de `useEffect` chega tarde: o
+ * React só hidrata depois, o evento já passou e não se repete — era por
+ * isso que o convite de instalação nunca aparecia no Android.
+ *
+ * Este script roda antes da hidratação, guarda o evento em `window` e
+ * avisa quem montar depois com um evento próprio. O componente do convite
+ * lê o que já foi guardado e também escuta o aviso.
+ */
+const CAPTURA_INSTALACAO = `
+(function(){
+  window.__aprenderiaInstalar = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    window.__aprenderiaInstalar = e;
+    window.dispatchEvent(new CustomEvent('aprenderia:instalavel'));
+  });
+  window.addEventListener('appinstalled', function(){
+    window.__aprenderiaInstalar = null;
+    window.dispatchEvent(new CustomEvent('aprenderia:instalado'));
+  });
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
+      <head>
+        {/* Antes de qualquer JavaScript da aplicação: ver comentário acima. */}
+        <script dangerouslySetInnerHTML={{ __html: CAPTURA_INSTALACAO }} />
+      </head>
       <body>
         <Provedores>{children}</Provedores>
       </body>

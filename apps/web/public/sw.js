@@ -47,6 +47,15 @@ self.addEventListener("fetch", (e) => {
     url.pathname.startsWith("/admin") ||
     url.pathname.startsWith("/app")
   ) {
+    // Uma exceção: abrir o aplicativo instalado sem rede. O `start_url`
+    // fica em `/app/entrar`, e sem tratar a navegação aqui o PWA abria na
+    // tela de erro do navegador — o que, dentro de um aplicativo em tela
+    // cheia, parece que o aplicativo quebrou. Respondemos a página
+    // offline, sem cachear nada de `/app`: a rede continua sendo a única
+    // fonte do conteúdo autenticado.
+    if (e.request.mode === "navigate") {
+      e.respondWith(fetch(e.request).catch(() => caches.match("/offline")));
+    }
     return;
   }
 

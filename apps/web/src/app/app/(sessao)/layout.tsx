@@ -10,6 +10,7 @@ import { minhasNotificacoes, marcarComoLidas } from "@/server/notificacoes";
 import { chavePublicaPush } from "@/server/push";
 import { SinoNotificacoes } from "@/components/sino-notificacoes";
 import { AtivarAvisos } from "@/components/ativar-avisos";
+import { ConviteInstalar } from "@/components/convite-instalar";
 import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
 import { BarraInferior } from "@/components/barra-inferior";
 
@@ -131,7 +132,11 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
         {/* Fica dentro do aplicativo, nunca na tela de login: empilhar um
             pedido de permissão sobre o primeiro acesso faz a pessoa negar
             por reflexo — e o navegador nunca mais pergunta. */}
-        <div className="mb-6 empty:mb-0">
+        {/* Quem já entrou também precisa poder instalar: antes o convite
+            só existia na tela de login, então quem tinha sessão salva
+            nunca via oferta nenhuma. */}
+        <div className="mb-6 space-y-4 empty:mb-0">
+          <ConviteInstalar />
           <AtivarAvisos chavePublica={chavePush} />
         </div>
         {children}

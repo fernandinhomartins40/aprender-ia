@@ -3,7 +3,7 @@
   "short_name": "Aprender IA",
   "description": "Trilha prática para professores da rede pública usarem Inteligência Artificial na rotina escolar.",
   "id": "/app",
-  "start_url": "/app",
+  "start_url": "/app/entrar",
   "scope": "/app",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],

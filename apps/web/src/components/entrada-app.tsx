@@ -134,7 +134,7 @@ export function EntradaApp({ proximo }: { proximo: string }) {
           {/* Fica aqui, e não em `/entrar`, porque só dentro do `scope`
               `/app` o navegador considera a página instalável. */}
           <div className="mt-5 w-full max-w-sm">
-            <ConviteInstalar />
+            <ConviteInstalar tom="claro" />
           </div>
         </div>
 
