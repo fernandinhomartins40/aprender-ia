@@ -8,14 +8,15 @@ import { lerNumero } from "@/server/configuracoes";
 import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { minhasNotificacoes, marcarComoLidas } from "@/server/notificacoes";
 import { SinoNotificacoes } from "@/components/sino-notificacoes";
-import { Icone3D, type NomeIcone } from "@/components/icone-3d";
+import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
 
-const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
-  { href: "/app", rotulo: "Início", icone: "star" },
-  { href: "/app/trilha", rotulo: "Trilha", icone: "flag" },
-  { href: "/app/prompts", rotulo: "Prompts", icone: "bulb" },
-  { href: "/app/diario", rotulo: "Diário", icone: "notebook" },
-  { href: "/app/conquistas", rotulo: "Conquistas", icone: "medal" },
+// Ícones 3D autorais, como no painel administrativo.
+const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
+  { href: "/app", rotulo: "Início", icone: "inicio" },
+  { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
+  { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
+  { href: "/app/diario", rotulo: "Diário", icone: "documentos" },
+  { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
 ];
 
 function dataLonga(d: Date): string {
@@ -89,7 +90,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
                   href={m.href}
                   className="inline-flex items-center gap-2 rounded-t-md px-4 py-2.5 font-titulo text-sm font-bold text-tinta-clara transition-colors hover:bg-indigo-soft hover:text-indigo-dark"
                 >
-                  <Icone3D nome={m.icone} tamanho={22} />
+                  <IconeApp nome={m.icone} tamanho={22} />
                   {m.rotulo}
                 </Link>
               </li>
@@ -130,7 +131,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
                 href={m.href}
                 className="flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-cinza transition-colors hover:text-indigo"
               >
-                <Icone3D nome={m.icone} tamanho={26} />
+                <IconeApp nome={m.icone} tamanho={26} />
                 <span className="font-titulo text-[11px] font-bold">{m.rotulo}</span>
               </Link>
             </li>

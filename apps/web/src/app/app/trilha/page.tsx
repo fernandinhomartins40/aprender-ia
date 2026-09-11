@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { exigirAluno, carregarTrilha } from "@/server/trilha";
-import { Icone3D, ICONE_POR_TIPO, ICONE_POR_ENCONTRO } from "@/components/icone-3d";
+import { IconeApp } from "@/components/icone-app";
+import { ICONE_POR_TIPO, ICONE_POR_ENCONTRO } from "@/lib/icones-trilha";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 
 export const dynamic = "force-dynamic";
@@ -54,8 +55,8 @@ export default async function Trilha() {
                 className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                 style={{ background: m.cor + "1A" }}
               >
-                <Icone3D
-                  nome={ICONE_POR_ENCONTRO[iModulo] ?? "rocket"}
+                <IconeApp
+                  nome={ICONE_POR_ENCONTRO[iModulo] ?? "trilhas"}
                   tamanho={38}
                 />
               </span>
@@ -94,9 +95,9 @@ export default async function Trilha() {
                       {concluida ? (
                         <span className="font-titulo text-lg font-bold text-white">✓</span>
                       ) : bloqueada ? (
-                        <Icone3D nome="lock" tamanho={22} className="opacity-50" />
+                        <IconeApp nome="seguranca" tamanho={22} className="opacity-50" />
                       ) : (
-                        <Icone3D nome={ICONE_POR_TIPO[l.tipo] ?? "star"} tamanho={28} />
+                        <IconeApp nome={ICONE_POR_TIPO[l.tipo] ?? "aulas"} tamanho={28} />
                       )}
                     </span>
                     <div className="min-w-0 flex-1">

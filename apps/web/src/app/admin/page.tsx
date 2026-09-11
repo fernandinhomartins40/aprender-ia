@@ -13,7 +13,7 @@ import { filaDeAvisos, enviarAvisos } from "@/server/avisos";
 import { periodoPreset, PRESETS } from "@/lib/periodo";
 import { reais } from "@/lib/dinheiro";
 import { GraficoLinha, GraficoBarras, StatTile, Medidor } from "@/components/graficos";
-import { Icone3D } from "@/components/icone-3d";
+import { IconeApp } from "@/components/icone-app";
 
 export const dynamic = "force-dynamic";
 
@@ -358,13 +358,13 @@ export default async function VisaoGeral({
       <h2 className="mb-3 mt-10 font-titulo text-xl font-extrabold">Gerenciar</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { href: "/admin/alunos", icone: "heart" as const, titulo: "Alunos e turmas", texto: "Cadastro, turmas e progresso" },
-          { href: "/admin/financeiro", icone: "gift" as const, titulo: "Financeiro", texto: "Cobranças, planos e inadimplência" },
-          { href: "/admin/cursos", icone: "notebook" as const, titulo: "Cursos", texto: "Módulos, lições e publicação" },
-          { href: "/admin/configuracoes", icone: "setting" as const, titulo: "Configurações", texto: "Regras de acesso e parâmetros" },
+          { href: "/admin/alunos", icone: "estudantes" as const, titulo: "Alunos e turmas", texto: "Cadastro, turmas e progresso" },
+          { href: "/admin/financeiro", icone: "marketplace" as const, titulo: "Financeiro", texto: "Cobranças, planos e inadimplência" },
+          { href: "/admin/cursos", icone: "cursos" as const, titulo: "Cursos", texto: "Módulos, lições e publicação" },
+          { href: "/admin/configuracoes", icone: "configuracoes" as const, titulo: "Configurações", texto: "Regras de acesso e parâmetros" },
         ].map((c) => (
           <Link key={c.href} href={c.href} className="card transition-shadow hover:shadow-lg">
-            <Icone3D nome={c.icone} tamanho={40} />
+            <IconeApp nome={c.icone} tamanho={40} />
             <h3 className="mt-2 font-titulo font-bold">{c.titulo}</h3>
             <p className="mt-1 text-sm text-tinta-clara">{c.texto}</p>
           </Link>

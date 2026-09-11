@@ -2,25 +2,28 @@ import Link from "next/link";
 import { signOut } from "@aprender/auth";
 import { Logo } from "@/components/logo";
 import { exigirAdmin } from "@/server/admin";
-import { Icone3D, type NomeIcone } from "@/components/icone-3d";
+import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
 
-const MENU: { href: string; rotulo: string; icone: NomeIcone }[] = [
-  { href: "/admin", rotulo: "Visão geral", icone: "chart" },
+// Os ícones 3D autorais servem os painéis; a landing usa os do Tabler,
+// que combinam com o desenho dela. Os nomes aqui vêm dos arquivos em
+// `public/icones-app`, então um nome inexistente não compila.
+const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
+  { href: "/admin", rotulo: "Visão geral", icone: "estatisticas" },
   // Alunos e turmas moram na mesma tela: o aluno é cadastrado dentro de
   // uma turma, e separá-los obrigava a ir e voltar no meio do cadastro.
-  { href: "/admin/alunos", rotulo: "Alunos e turmas", icone: "heart" },
-  { href: "/admin/turmas", rotulo: "Cronogramas", icone: "crown" },
-  { href: "/admin/cursos", rotulo: "Cursos", icone: "notebook" },
-  { href: "/admin/landing", rotulo: "Página inicial", icone: "star" },
-  { href: "/admin/planos", rotulo: "Planos", icone: "medal" },
-  { href: "/admin/assinaturas", rotulo: "Assinaturas", icone: "trophy" },
-  { href: "/admin/financeiro", rotulo: "Financeiro", icone: "gift" },
-  { href: "/admin/solicitacoes", rotulo: "Solicitações", icone: "mail" },
-  { href: "/admin/notificacoes", rotulo: "Notificações", icone: "message" },
-  { href: "/admin/relatorios", rotulo: "Relatórios", icone: "bookmark" },
-  { href: "/admin/configuracoes", rotulo: "Configurações", icone: "setting" },
-  { href: "/admin/auditoria", rotulo: "Histórico", icone: "shield" },
-  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "lock" },
+  { href: "/admin/alunos", rotulo: "Alunos e turmas", icone: "estudantes" },
+  { href: "/admin/turmas", rotulo: "Cronogramas", icone: "calendario" },
+  { href: "/admin/cursos", rotulo: "Cursos", icone: "cursos" },
+  { href: "/admin/landing", rotulo: "Página inicial", icone: "inicio" },
+  { href: "/admin/planos", rotulo: "Planos", icone: "planos" },
+  { href: "/admin/assinaturas", rotulo: "Assinaturas", icone: "certificados" },
+  { href: "/admin/financeiro", rotulo: "Financeiro", icone: "marketplace" },
+  { href: "/admin/solicitacoes", rotulo: "Solicitações", icone: "mensagens" },
+  { href: "/admin/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
+  { href: "/admin/relatorios", rotulo: "Relatórios", icone: "relatorios" },
+  { href: "/admin/configuracoes", rotulo: "Configurações", icone: "configuracoes" },
+  { href: "/admin/auditoria", rotulo: "Histórico", icone: "historico" },
+  { href: "/admin/perfil", rotulo: "Meu perfil", icone: "perfil" },
 ];
 
 export default async function LayoutAdmin({
@@ -72,7 +75,7 @@ export default async function LayoutAdmin({
                   href={m.href}
                   className="inline-flex items-center gap-2 whitespace-nowrap rounded-t-md px-4 py-2.5 font-titulo text-sm font-bold text-tinta-clara transition-colors hover:bg-indigo-soft hover:text-indigo-dark"
                 >
-                  <Icone3D nome={m.icone} tamanho={22} />
+                  <IconeApp nome={m.icone} tamanho={22} />
                   {m.rotulo}
                 </Link>
               </li>
