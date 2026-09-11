@@ -121,9 +121,19 @@ export async function catalogoIcones(): Promise<{
 
   const icones: IconeManifest[] = [];
 
+  // 152, 167 e 180 são os tamanhos do iOS. Eles existem no painel e são
+  // servidos como `apple-touch-<lado>.png`, declarados no <head> pelo
+  // layout — não entram no manifest.
+  //
+  // Entravam por um descuido meu: este laço monta o nome como
+  // `icone-<lado>.png`, que para esses três não existe na rota. O
+  // manifest passou a apontar para dois endereços 404, e ícone quebrado
+  // no manifest pode reprovar a instalabilidade inteira — justamente o
+  // que este trabalho veio consertar.
+  const SO_DO_IOS = new Set([152, 167, 180]);
+
   for (const t of comuns) {
-    // O de 180 é do iOS e não entra no manifest do Android.
-    if (t.lado === 180) continue;
+    if (SO_DO_IOS.has(t.lado)) continue;
     icones.push({
       arquivo: `icone-${t.lado}.png`,
       lado: t.lado,
