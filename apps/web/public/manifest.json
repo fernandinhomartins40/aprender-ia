@@ -2,7 +2,7 @@
   "name": "Aprender IA — Formação para professores",
   "short_name": "Aprender IA",
   "description": "Trilha prática para professores da rede pública usarem Inteligência Artificial na rotina escolar.",
-  "id": "/app",
+  "id": "/app/entrar",
   "start_url": "/app/entrar",
   "scope": "/app",
   "display": "standalone",

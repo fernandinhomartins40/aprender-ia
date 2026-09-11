@@ -8,8 +8,12 @@ Cada destino tem uma exigência diferente, e ignorá-las é o que produz
 
   favicon.ico   16/32/48px. Acima disso o navegador prefere o PNG do
                 manifest, então carregar 256px aqui só pesaria o arquivo.
-  maskable      O Android recorta num círculo: precisa de 20% de margem
-                de segurança e fundo sólido, senão o capelo é decepado.
+  maskable      O Android recorta num círculo: precisa de margem de
+                segurança e fundo sólido, senão o capelo é decepado. O
+                fundo vai na COR DA MARCA, não em branco — com branco, o
+                que sobrava depois do recorte era um círculo quase todo
+                branco com o desenho pequeno no meio, que no aparelho
+                parecia um favicon perdido numa folha em branco.
   apple-touch   O iOS ignora transparência e pinta o vazio de preto —
                 por isso vai com fundo branco.
 
@@ -29,6 +33,9 @@ PUBLICO = RAIZ / "apps/web/public"
 ICONES = PUBLICO / "icones"
 
 BRANCO = (255, 255, 255, 255)
+# #4F46E5 — o mesmo theme_color/background_color do manifest, para o ícone
+# não destoar da abertura do aplicativo.
+MARCA = (79, 70, 229, 255)
 
 
 def em_quadrado(arte: Image.Image, lado: int, margem: float = 0.02, fundo=None):
@@ -55,7 +62,11 @@ def main() -> None:
 
     em_quadrado(arte, 192, 0.04).save(ICONES / "icone-192.png")
     em_quadrado(arte, 512, 0.04).save(ICONES / "icone-512.png")
-    em_quadrado(arte, 512, 0.20, BRANCO).save(ICONES / "icone-maskable-512.png")
+    # 0.19 de margem deixa a arte em 62% do lado: dentro da zona segura do
+    # recorte circular (~80%) e grande o bastante para não sumir. O de
+    # 192px faltava: o manifest o declarava, mas nada o gerava.
+    em_quadrado(arte, 192, 0.19, MARCA).save(ICONES / "icone-maskable-192.png")
+    em_quadrado(arte, 512, 0.19, MARCA).save(ICONES / "icone-maskable-512.png")
     em_quadrado(arte, 180, 0.06, BRANCO).save(ICONES / "apple-touch-icon.png")
 
     em_quadrado(arte, 32).save(PUBLICO / "favicon-32.png")
@@ -67,7 +78,8 @@ def main() -> None:
     for nome in [
         "favicon.ico", "favicon-32.png", "favicon-96.png",
         "icones/icone-192.png", "icones/icone-512.png",
-        "icones/icone-maskable-512.png", "icones/apple-touch-icon.png",
+        "icones/icone-maskable-192.png", "icones/icone-maskable-512.png",
+        "icones/apple-touch-icon.png",
     ]:
         print(f"{nome:34} {(PUBLICO / nome).stat().st_size / 1024:6.1f} KB")
 
