@@ -339,8 +339,12 @@ export default async function Home() {
       {/* ---------- Faixa: mais que cursos ---------- */}
       {plataforma && (
         <section id="plataforma" className="mx-auto max-w-7xl px-5 pb-16 sm:pb-20">
-          <div className="overflow-hidden rounded-3xl bg-grad-escuro px-6 py-10 sm:px-10 lg:px-12">
-            <div className="grid items-center gap-10 lg:grid-cols-[auto,1fr,1fr]">
+          {/* Faixa baixa e larga: o robô ocupa pouco, o texto tem largura
+              suficiente para o título caber em duas linhas e os cartões
+              ficam com a metade direita. Proporções apertadas aqui faziam
+              o título quebrar em três linhas e esticavam a faixa. */}
+          <div className="overflow-hidden rounded-[32px] bg-grad-escuro px-6 py-8 sm:px-8 lg:px-10 lg:py-7">
+            <div className="grid items-center gap-8 lg:grid-cols-[200px,minmax(0,1fr),minmax(0,1.15fr)] lg:gap-8">
               {plataforma.imagem && (
                 <Image
                   src={plataforma.imagem}
@@ -348,16 +352,18 @@ export default async function Home() {
                   aria-hidden
                   width={280}
                   height={280}
-                  className="mx-auto h-auto w-40 lg:w-56"
+                  className="mx-auto h-auto w-36 lg:w-full"
                 />
               )}
 
               <div>
-                <h2 className="font-titulo text-2xl font-extrabold leading-tight text-white sm:text-3xl">
+                {/* `text-balance` distribui as linhas: sem ele, "completa."
+                    caía sozinha numa terceira linha. */}
+                <h2 className="text-balance font-titulo text-2xl font-extrabold leading-tight text-white">
                   {comQuebras(plataforma.titulo)}
                 </h2>
                 {plataforma.texto && (
-                  <p className="mt-4 text-sm leading-relaxed text-white/80">
+                  <p className="mt-3 text-[13px] leading-relaxed text-white/75">
                     {plataforma.texto}
                   </p>
                 )}
@@ -368,12 +374,19 @@ export default async function Home() {
                   {itensDe(plataforma).map((p) => (
                     <li
                       key={p.id}
-                      className="flex items-center gap-3 rounded-xl bg-white/95 p-3.5"
+                      className="flex items-center gap-3 rounded-2xl bg-white p-4"
                     >
                       {p.icone && (
-                        <IconePlano nome={p.icone} cor={p.cor || "#4F46E5"} tamanho={38} />
+                        <IconePlano
+                          nome={p.icone}
+                          cor={p.cor || "#4F46E5"}
+                          tamanho={40}
+                          // Fundo suave com a figura sólida colorida: dentro
+                          // do cartão branco é a figura que carrega a cor.
+                          preenchido={false}
+                        />
                       )}
-                      <span className="text-sm font-bold leading-tight text-tinta">
+                      <span className="text-[13px] font-bold leading-snug text-tinta">
                         {p.titulo}
                       </span>
                     </li>
