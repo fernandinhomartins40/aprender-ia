@@ -117,47 +117,26 @@ export function EditorIconePwa({
   }
 
   /**
-   * A cor de fundo do ícone recortável, tirada da própria arte.
+   * Versão recortável: a arte ocupando o quadro inteiro.
    *
-   * O Android recorta um círculo do maskable, e o que sobra nos cantos
-   * precisa de cor sólida. Usar uma cor fixa da marca destoava de arte
-   * com fundo próprio (a nossa é azul-escuro), então amostramos os quatro
-   * cantos do recorte e usamos a mediana: se a arte tem fundo, ele
-   * continua; se é transparente, cai no roxo da marca.
-   */
-  function corDeFundo(ctx: CanvasRenderingContext2D, lado: number): string {
-    const pontos = [
-      [2, 2],
-      [lado - 3, 2],
-      [2, lado - 3],
-      [lado - 3, lado - 3],
-    ] as const;
-
-    const amostras: number[][] = [];
-    for (const [x, y] of pontos) {
-      try {
-        const d = ctx.getImageData(x, y, 1, 1).data;
-        if ((d[3] ?? 0) > 200) amostras.push([d[0] ?? 0, d[1] ?? 0, d[2] ?? 0]);
-      } catch {
-        /* canvas "sujo" por imagem de outra origem: usa o padrão */
-      }
-    }
-
-    if (amostras.length === 0) return "#4F46E5"; // roxo da marca
-
-    const mediana = (i: number) => {
-      const v = amostras.map((a) => a[i] ?? 0).sort((x, y) => x - y);
-      return v[Math.floor(v.length / 2)] ?? 0;
-    };
-    return `rgb(${mediana(0)},${mediana(1)},${mediana(2)})`;
-  }
-
-  /**
-   * Versão recortável: a arte reduzida sobre fundo sólido.
+   * O Android corta um círculo inscrito no quadrado. A tentação é
+   * encolher a arte e preencher a sobra com uma cor — foi o que fiz
+   * antes, e sai errado por dois motivos.
    *
-   * O Android corta um círculo inscrito no quadrado, e a zona garantida é
-   * cerca de 80% do lado. A arte entra em 62% para caber com folga — sem
-   * isso, o que a pessoa enquadrou aparece decepado na tela inicial.
+   * O primeiro é visual: a arte fica pequena no meio de uma moldura
+   * larga, e é essa miniatura que o sistema mostra na instalação.
+   *
+   * O segundo só apareceu medindo. Para escolher a cor da moldura eu
+   * amostrava os cantos da imagem. Numa arte com fundo degradê — como a
+   * nossa, um céu estrelado — os quatro cantos dão cores distintas
+   * (medido: de rgb(1,4,58) a rgb(30,2,157)), e a cor escolhida diferia
+   * em até 158 da borda adjacente. Resultado: uma faixa nítida no lugar
+   * de uma emenda invisível. Não existe cor sólida que resolva isso.
+   *
+   * Então não há moldura. A arte enviada é quadrada e já traz a própria
+   * margem, e o que o círculo apara são os cantos do fundo — fundo, não
+   * conteúdo. O enquadramento que a pessoa escolheu, com o círculo
+   * tracejado à vista, é exatamente o que vai para a tela inicial.
    */
   function recortarMaskable(lado: number): string | null {
     const img = imgRef.current;
@@ -174,30 +153,15 @@ export function EditorIconePwa({
     const sx = Math.max(0, Math.min(img.naturalWidth - recorte, centroX - recorte / 2));
     const sy = Math.max(0, Math.min(img.naturalHeight - recorte, centroY - recorte / 2));
 
-    // 1) Canvas auxiliar com o recorte cheio, só para amostrar a cor dos
-    //    cantos — é a cor que vai preencher o que o círculo não cobre.
-    const interno = document.createElement("canvas");
-    interno.width = lado;
-    interno.height = lado;
-    const ictx = interno.getContext("2d");
-    if (!ictx) return null;
-    ictx.imageSmoothingQuality = "high";
-    ictx.drawImage(img, sx, sy, recorte, recorte, 0, 0, lado, lado);
-
-    // 2) Canvas final: fundo sólido + arte reduzida à zona segura.
     const canvas = document.createElement("canvas");
     canvas.width = lado;
     canvas.height = lado;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    ctx.fillStyle = corDeFundo(ictx, lado);
-    ctx.fillRect(0, 0, lado, lado);
-
-    const util = Math.round(lado * 0.62);
-    const margem = Math.round((lado - util) / 2);
+    // A arte ocupa o quadro inteiro: sem moldura, sem redução.
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, sx, sy, recorte, recorte, margem, margem, util, util);
+    ctx.drawImage(img, sx, sy, recorte, recorte, 0, 0, lado, lado);
 
     const webp = canvas.toDataURL("image/webp", 0.9);
     return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/png");
