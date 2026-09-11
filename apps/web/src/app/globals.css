@@ -61,12 +61,25 @@
     min-height: 44px;          /* alvo de toque acessível */
     padding: 0 20px;
   }
+  .btn:not(:disabled):active { transform: translateY(1px) scale(.985); }
   .btn-primario { @apply btn bg-indigo text-white hover:bg-indigo-dark shadow-cor; }
   .btn-secundario { @apply btn bg-white text-indigo border-2 border-indigo-line hover:border-indigo; }
   .btn-energia { @apply btn bg-laranja text-white hover:bg-laranja-dark; }
   .btn-fantasma { @apply btn text-tinta-clara hover:bg-indigo-soft; }
 
   .card { @apply min-w-0 bg-superficie rounded-lg border border-borda shadow-md p-5 sm:p-6; }
+
+  .feedback-entrada { animation: feedback-entrada .32s cubic-bezier(.2,.8,.2,1) both; }
+  .feedback-erro { animation: feedback-erro .34s ease-out both; }
+  .progresso-vivo { position: relative; overflow: hidden; }
+  .progresso-vivo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 15%, rgb(255 255 255 / .45), transparent 75%);
+    transform: translateX(-110%);
+    animation: brilho-progresso 1.4s ease-out .15s 1;
+  }
 
   .campo {
     @apply w-full rounded-md border-2 border-borda bg-white px-4 py-3 text-base
@@ -107,6 +120,26 @@
   .selo-vermelho { @apply selo bg-vermelho-soft text-vermelho-dark; }
   .selo-indigo { @apply selo bg-indigo-soft text-indigo-dark; }
   .selo-cinza { @apply selo bg-borda text-tinta-clara; }
+}
+
+@keyframes feedback-entrada {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes feedback-erro {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-4px); }
+  65% { transform: translateX(4px); }
+}
+@keyframes brilho-progresso { to { transform: translateX(110%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 /* ============================================================

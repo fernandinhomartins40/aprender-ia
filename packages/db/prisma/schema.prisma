@@ -93,6 +93,7 @@ model User {
   assinaturas      Subscription[]
   notificacoes     Notification[]
   inscricoesPush   PushSubscription[]
+  preferenciasNotificacao NotificationPreference?
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
   solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
@@ -1096,6 +1097,24 @@ model Notification {
   @@index([assunto])
   @@index([criadoEm])
   @@map("notifications")
+}
+
+/// Preferências opcionais de engajamento. Avisos essenciais de acesso,
+/// segurança e cobrança não passam por estes interruptores.
+model NotificationPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  lembretesEstudo Boolean @default(true)
+  novosDesafios   Boolean @default(true)
+  conquistas      Boolean @default(true)
+  missoes         Boolean @default(true)
+
+  atualizadoEm DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }
 
 /// Um aparelho autorizado a receber notificação push.

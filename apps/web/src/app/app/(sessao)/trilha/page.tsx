@@ -10,6 +10,7 @@ const NOME_TIPO: Record<string, string> = {
   TEORIA: "Leitura", QUIZ: "Quiz", DUELO: "Duelo de prompts",
   CACA_ERRO: "Caça ao erro", PROMPT: "Prática com IA",
   DESAFIO: "Desafio", CASO: "Estudo de caso", CHECKPOINT: "Checkpoint",
+  AQUECIMENTO: "Aquecimento", NO_CELULAR: "Prática no celular", EMERGENCIA: "Guia de emergência",
 };
 
 export default async function Trilha() {
@@ -41,7 +42,7 @@ export default async function Trilha() {
         </p>
         <div className="mt-4 h-3 overflow-hidden rounded-full bg-borda">
           <div
-            className="h-full rounded-full bg-grad-marca transition-all duration-500"
+            className="progresso-vivo h-full rounded-full bg-grad-marca transition-all duration-500"
             style={{ width: `${trilha.progressoPct}%` }}
           />
         </div>

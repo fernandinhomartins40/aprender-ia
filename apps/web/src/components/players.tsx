@@ -71,14 +71,14 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
             );
           case "atencao":
             return (
-              <div key={i} className="rounded-lg border-l-4 border-vermelho bg-vermelho-soft p-5">
+              <div key={i} className="feedback-entrada rounded-lg border-l-4 border-vermelho bg-vermelho-soft p-5">
                 <p className="flex items-center gap-2 font-titulo font-bold text-vermelho-dark"><IconeApp nome="seguranca" tamanho={22} />{b.titulo}</p>
                 <p className="mt-2 text-vermelho-dark">{b.texto}</p>
               </div>
             );
           case "dica":
             return (
-              <div key={i} className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
+              <div key={i} className="feedback-entrada rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
                 <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><IconeApp nome="ideias" tamanho={22} />{b.titulo}</p>
                 <p className="mt-2 text-amarelo-dark">{b.texto}</p>
               </div>
@@ -377,6 +377,7 @@ export function PlayerQuiz({
   const [atual, setAtual] = useState(0);
   const [escolha, setEscolha] = useState<string | null>(null);
   const [revelado, setRevelado] = useState(false);
+  const [acertosSeguidos, setAcertosSeguidos] = useState(0);
 
   const p = perguntas[atual]!;
   const ultima = atual === perguntas.length - 1;
@@ -387,6 +388,11 @@ export function PlayerQuiz({
     setAtual((a) => a + 1);
     setEscolha(null);
     setRevelado(false);
+  }
+
+  function confirmar() {
+    setRevelado(true);
+    setAcertosSeguidos((atual) => escolha === correta ? atual + 1 : 0);
   }
 
   return (
@@ -424,17 +430,20 @@ export function PlayerQuiz({
       </div>
 
       {revelado && (
-        <div className="mt-5 rounded-lg border-l-4 border-indigo bg-indigo-soft p-4">
-          <p className="font-titulo font-bold text-indigo-dark">
-            {escolha === correta ? "Isso mesmo." : "Não foi dessa vez — veja por quê:"}
+        <div className={`mt-5 rounded-lg border-l-4 p-4 feedback-entrada ${escolha === correta ? "border-verde bg-verde-soft" : "border-vermelho bg-vermelho-soft feedback-erro"}`}>
+          <p className={`font-titulo font-bold ${escolha === correta ? "text-verde-dark" : "text-vermelho-dark"}`}>
+            {escolha === correta ? "Resposta correta — raciocínio confirmado." : "Ainda não — use a explicação para ajustar o raciocínio:"}
           </p>
-          <p className="mt-1 text-indigo-dark">{p.explicacao}</p>
+          <p className={`mt-1 ${escolha === correta ? "text-verde-dark" : "text-vermelho-dark"}`}>{p.explicacao}</p>
+          {escolha === correta && acertosSeguidos >= 2 && (
+            <p className="mt-2 font-semibold text-verde-dark">Sequência de {acertosSeguidos} acertos nesta atividade.</p>
+          )}
         </div>
       )}
 
       <div className="mt-6">
         {!revelado ? (
-          <button disabled={!escolha} onClick={() => setRevelado(true)} className="btn-primario">
+          <button disabled={!escolha} onClick={confirmar} className="btn-primario">
             Confirmar resposta
           </button>
         ) : (
@@ -626,11 +635,11 @@ export function PlayerCacaErro({
 
       {revelado && (
         <>
-          <div className="rounded-lg border-l-4 border-vermelho bg-vermelho-soft p-5">
-            <p className="font-titulo font-bold text-vermelho-dark">
-              {acertou ? "Você encontrou." : "Repare bem:"}
+          <div className={`rounded-lg border-l-4 p-5 feedback-entrada ${acertou ? "border-verde bg-verde-soft" : "border-vermelho bg-vermelho-soft feedback-erro"}`}>
+            <p className={`font-titulo font-bold ${acertou ? "text-verde-dark" : "text-vermelho-dark"}`}>
+              {acertou ? "Você encontrou o ponto crítico." : "Vale olhar mais uma vez:"}
             </p>
-            <p className="mt-2 text-vermelho-dark">{conteudo.gabarito}</p>
+            <p className={`mt-2 ${acertou ? "text-verde-dark" : "text-vermelho-dark"}`}>{conteudo.gabarito}</p>
           </div>
           <div className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
             <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><IconeApp nome="ideias" tamanho={22} />A lição</p>

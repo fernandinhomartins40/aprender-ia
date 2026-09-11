@@ -145,6 +145,44 @@ export const CONFIGS: DefinicaoConfig[] = [
     descricao: "Linha final das mensagens enviadas aos alunos.",
     padrao: "Equipe Aprender IA",
   },
+  {
+    chave: "engajamento.max_por_dia",
+    tipo: "NUMERO",
+    grupo: "notificacoes",
+    rotulo: "Máximo de lembretes automáticos por dia",
+    descricao: "Limite por aluno. 0 desativa lembretes automáticos; avisos essenciais não entram nesta conta.",
+    padrao: "1",
+  },
+  {
+    chave: "engajamento.hora_inicio",
+    tipo: "NUMERO",
+    grupo: "notificacoes",
+    rotulo: "Primeira hora permitida",
+    descricao: "Hora de Brasília, de 0 a 23.",
+    padrao: "9",
+  },
+  {
+    chave: "engajamento.hora_fim",
+    tipo: "NUMERO",
+    grupo: "notificacoes",
+    rotulo: "Última hora permitida",
+    descricao: "Hora de Brasília, de 0 a 23.",
+    padrao: "20",
+  },
+  {
+    chave: "engajamento.inatividade_leve_dias",
+    tipo: "NUMERO",
+    grupo: "notificacoes",
+    rotulo: "Dias para lembrete leve",
+    padrao: "3",
+  },
+  {
+    chave: "engajamento.inatividade_longa_dias",
+    tipo: "NUMERO",
+    grupo: "notificacoes",
+    rotulo: "Dias para reengajamento",
+    padrao: "10",
+  },
 ];
 
 export const PADROES = new Map(CONFIGS.map((c) => [c.chave, c]));

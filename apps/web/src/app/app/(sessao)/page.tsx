@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { exigirAluno, carregarTrilha, resumoAluno } from "@/server/trilha";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
+import { IconeApp } from "@/components/icone-app";
+import { nivelDoXp, xpAteProximoNivel } from "@/lib/gamificacao";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,10 @@ export default async function PainelAluno() {
   const proxima = trilha?.modulos
     .flatMap((m) => m.licoes.map((l) => ({ ...l, cor: m.cor })))
     .find((l) => l.status === "DISPONIVEL" || l.status === "EM_ANDAMENTO");
+  const nivel = nivelDoXp(trilha?.xpTotal ?? 0);
+  const faltamNivel = xpAteProximoNivel(trilha?.xpTotal ?? 0);
+  const metaSemanal = 2;
+  const missaoConcluida = resumo.licoesNaSemana >= metaSemanal;
 
   return (
     <div>
@@ -52,6 +58,37 @@ export default async function PainelAluno() {
           </p>
         </Link>
       )}
+
+      <section className="mt-6 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+        <div className="card overflow-hidden bg-gradient-to-br from-indigo-soft via-white to-white">
+          <div className="flex items-center gap-4">
+            <div className="rounded-2xl bg-white p-2 shadow-md">
+              <IconeApp nome="progresso" tamanho={58} prioridade />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-indigo-dark">Nível {nivel.numero}</p>
+              <h2 className="font-titulo text-xl font-extrabold">{nivel.titulo}</h2>
+              <p className="mt-1 text-sm text-tinta-clara">Faltam {faltamNivel} XP para o próximo nível.</p>
+            </div>
+          </div>
+          <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white" aria-label={`${nivel.progressoPct}% do nível`}>
+            <div className="progresso-vivo h-full rounded-full bg-grad-marca transition-[width] duration-700" style={{ width: `${nivel.progressoPct}%` }} />
+          </div>
+        </div>
+
+        <div className={`card ${missaoConcluida ? "border-verde bg-verde-soft" : "border-amarelo bg-amarelo-soft"}`}>
+          <div className="flex items-center gap-3">
+            <IconeApp nome={missaoConcluida ? "conquistas" : "metas"} tamanho={44} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-tinta-clara">Missão da semana</p>
+              <p className="font-titulo font-bold">Concluir {metaSemanal} atividades</p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-tinta-clara">
+            {missaoConcluida ? "Concluída — consistência construída com progresso real." : `${resumo.licoesNaSemana} de ${metaSemanal} concluídas nesta semana.`}
+          </p>
+        </div>
+      </section>
 
       {/* ---- Números ---- */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -121,6 +158,23 @@ export default async function PainelAluno() {
                     }}
                   />
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {resumo.conquistasRecentes.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-titulo text-xl font-extrabold">Conquistas recentes</h2>
+            <Link href="/app/conquistas" className="text-sm font-bold text-indigo">Ver todas</Link>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {resumo.conquistasRecentes.map((c) => (
+              <div key={`${c.titulo}-${c.conquistadoEm.toISOString()}`} className="card flex items-center gap-3 p-4">
+                <span className="text-3xl" aria-hidden="true">{c.icone}</span>
+                <p className="font-titulo text-sm font-bold">{c.titulo}</p>
               </div>
             ))}
           </div>

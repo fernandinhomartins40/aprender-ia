@@ -183,7 +183,12 @@ export async function carregarLicao(userId: string, lessonId: string) {
 
 /** Estatísticas do painel do aluno. */
 export async function resumoAluno(userId: string) {
-  const [ofensiva, execucoes, conquistas, diario] = await Promise.all([
+  const inicioSemana = new Date();
+  const dia = inicioSemana.getDay();
+  inicioSemana.setDate(inicioSemana.getDate() - ((dia + 6) % 7));
+  inicioSemana.setHours(0, 0, 0, 0);
+
+  const [ofensiva, execucoes, conquistas, diario, licoesNaSemana, recentes] = await Promise.all([
     prisma.streak.findUnique({ where: { userId } }),
     prisma.promptRun.count({ where: { userId } }),
     prisma.userAchievement.count({ where: { userId } }),
@@ -191,6 +196,15 @@ export async function resumoAluno(userId: string) {
       where: { userId },
       orderBy: { registradoEm: "desc" },
       take: 5,
+    }),
+    prisma.lessonProgress.count({
+      where: { enrollment: { userId }, status: "CONCLUIDA", concluidoEm: { gte: inicioSemana } },
+    }),
+    prisma.userAchievement.findMany({
+      where: { userId },
+      orderBy: { conquistadoEm: "desc" },
+      take: 3,
+      include: { achievement: { select: { titulo: true, icone: true } } },
     }),
   ]);
 
@@ -208,6 +222,8 @@ export async function resumoAluno(userId: string) {
     execucoes,
     conquistas,
     diario,
+    licoesNaSemana,
+    conquistasRecentes: recentes.map((r) => ({ ...r.achievement, conquistadoEm: r.conquistadoEm })),
     minutosEconomizados: Math.max(0, antes - agora),
   };
 }

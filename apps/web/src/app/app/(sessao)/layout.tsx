@@ -21,6 +21,7 @@ const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
   { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
   { href: "/app/diario", rotulo: "Diário", icone: "documentos" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
+  { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
 ];
 
 function dataLonga(d: Date): string {

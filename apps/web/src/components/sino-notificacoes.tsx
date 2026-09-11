@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export type NotificacaoDoAluno = {
@@ -103,6 +104,11 @@ export function SinoNotificacoes({
                 ))}
               </ul>
             )}
+            <div className="border-t border-borda p-3 text-center">
+              <Link href="/app/notificacoes" onClick={() => setAberto(false)} className="font-titulo text-sm font-bold text-indigo">
+                Ver central e preferências
+              </Link>
+            </div>
           </div>
         </>
       )}

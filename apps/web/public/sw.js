@@ -140,8 +140,12 @@ self.addEventListener("push", (e) => {
   const corpo = dados.corpo || "Você tem um aviso novo.";
   const link = dados.link || "/app";
 
-  e.waitUntil(
-    self.registration.showNotification(titulo, {
+  e.waitUntil((async () => {
+    if (dados.silenciosaSeAberto) {
+      const abertas = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      if (abertas.some((janela) => janela.visibilityState === "visible")) return;
+    }
+    return self.registration.showNotification(titulo, {
       body: corpo,
       icon: "/icones/icone-192.png",
       badge: "/icones/icone-96.png",
@@ -151,14 +155,15 @@ self.addEventListener("push", (e) => {
       tag: dados.assunto || "aprender-ia",
       renotify: true,
       data: { link },
-    }),
-  );
+    });
+  })());
 });
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const link = (e.notification.data && e.notification.data.link) || "/app";
-  const destino = new URL(link, self.location.origin);
+  let destino = new URL(link, self.location.origin);
+  if (destino.origin !== self.location.origin) destino = new URL("/app", self.location.origin);
 
   // Se o aplicativo já está aberto, focamos a janela existente em vez de
   // abrir outra: duas instâncias do mesmo PWA confundem e perdem estado.

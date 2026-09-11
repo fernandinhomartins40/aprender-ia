@@ -139,6 +139,21 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE"   run --rm --en
 echo "==> Subindo a aplicação..."
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d --remove-orphans
 
+# Reengajamento diário às 9h de Brasília (a VPS opera em UTC). A rota
+# aplica preferências, horário permitido, deduplicação e limite diário;
+# o cron apenas acorda o motor. A instalação é idempotente e preserva os
+# demais jobs da máquina.
+if command -v crontab >/dev/null 2>&1; then
+  CRON_TMP=$(mktemp)
+  crontab -l 2>/dev/null | grep -v '# aprenderia-engajamento$' > "$CRON_TMP" || true
+  printf '%s\n' "0 12 * * * SECRET=\$(grep '^CRON_SECRET=' '$ENV_FILE' | cut -d= -f2-); curl -fsS -X POST -H \"Authorization: Bearer \$SECRET\" 'http://127.0.0.1:${DEPLOY_PORT}/api/engajamento' >/dev/null 2>&1 # aprenderia-engajamento" >> "$CRON_TMP"
+  crontab "$CRON_TMP"
+  rm -f "$CRON_TMP"
+  echo "==> Reengajamento diário agendado."
+else
+  echo "AVISO: crontab indisponível; rota de engajamento criada, mas sem agendamento." >&2
+fi
+
 # ------------------------------------------------------------
 # Aponta 'current' para esta release
 # ------------------------------------------------------------

@@ -56,7 +56,7 @@ export type ResultadoPush = {
  */
 export async function enviarPush(
   userId: string,
-  conteudo: { titulo: string; corpo: string; link?: string | null; assunto?: string },
+  conteudo: { titulo: string; corpo: string; link?: string | null; assunto?: string; silenciosaSeAberto?: boolean },
 ): Promise<ResultadoPush> {
   if (!pronto()) {
     return {
@@ -87,6 +87,7 @@ export async function enviarPush(
     corpo: conteudo.corpo,
     link: conteudo.link ?? "/app",
     assunto: conteudo.assunto ?? "aprender-ia",
+    silenciosaSeAberto: conteudo.silenciosaSeAberto ?? false,
   });
 
   let enviadas = 0;

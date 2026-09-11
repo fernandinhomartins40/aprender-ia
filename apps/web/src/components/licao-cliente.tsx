@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   PlayerTeoria, PlayerQuiz, PlayerDuelo, PlayerCacaErro,
   PlayerPrompt, PlayerDesafio, PlayerCaso, PlayerCheckpoint,
   PlayerAquecimento, PlayerNoCelular, PlayerEmergencia,
   type Analisar,
 } from "./players";
+import { FeedbackConclusao, type ResultadoConclusao } from "./feedback-conclusao";
 
 export function LicaoCliente({
   tipo,
@@ -30,22 +31,27 @@ export function LicaoCliente({
   } | null;
   lessonId: string;
   proximaId?: string | null;
-  concluir: (d: FormData) => Promise<void>;
+  concluir: (d: FormData) => Promise<ResultadoConclusao | null>;
   registrar: (d: FormData) => Promise<void>;
   /** Analisa o texto escrito nas atividades de resposta aberta. */
   analisar: Analisar;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
+  const [resultado, setResultado] = useState<ResultadoConclusao | null>(null);
 
   function finalizar() {
     const d = new FormData();
     d.set("lessonId", lessonId);
     iniciar(async () => {
-      await concluir(d);
-      router.push(proximaId ? `/app/licao/${proximaId}` : "/app/trilha");
-      router.refresh();
+      const salvo = await concluir(d);
+      if (salvo) setResultado(salvo);
     });
+  }
+
+  function continuar() {
+    router.push(proximaId ? `/app/licao/${proximaId}` : "/app/trilha");
+    router.refresh();
   }
 
   function aoExecutar(ferramenta: string, promptFinal: string, valores: Record<string, string>) {
@@ -64,6 +70,10 @@ export function LicaoCliente({
         <p className="text-lg text-tinta-clara">Salvando seu progresso...</p>
       </div>
     );
+  }
+
+  if (resultado) {
+    return <FeedbackConclusao resultado={resultado} aoContinuar={continuar} />;
   }
 
   switch (tipo) {

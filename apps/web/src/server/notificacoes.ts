@@ -7,7 +7,15 @@ import { enviarEmail } from "@aprender/auth/email";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
 import { lerTexto } from "./configuracoes";
+import { lerNumero } from "./configuracoes";
 import { enviarPush } from "./push";
+
+export type CategoriaNotificacao =
+  | "ESSENCIAL"
+  | "ESTUDO"
+  | "DESAFIO"
+  | "CONQUISTA"
+  | "MISSAO";
 
 /**
  * Notificações da plataforma.
@@ -47,6 +55,10 @@ export type NovaNotificacao = {
   porEmail?: boolean;
   /// Nome de quem disparou; ausente = regra automática da plataforma.
   autorNome?: string | null;
+  categoria?: CategoriaNotificacao;
+  dedupeHoras?: number;
+  automatica?: boolean;
+  enviarPushAgora?: boolean;
 };
 
 /**
@@ -60,6 +72,54 @@ export async function notificar(
   entrada: NovaNotificacao,
 ): Promise<{ registrada: boolean; emailEntregue: boolean }> {
   try {
+    const categoria = entrada.categoria ?? "ESSENCIAL";
+
+    if (categoria !== "ESSENCIAL") {
+      const preferencias = await prisma.notificationPreference.findUnique({
+        where: { userId: entrada.userId },
+      });
+      const habilitada =
+        categoria === "ESTUDO" ? preferencias?.lembretesEstudo !== false
+          : categoria === "DESAFIO" ? preferencias?.novosDesafios !== false
+            : categoria === "CONQUISTA" ? preferencias?.conquistas !== false
+              : preferencias?.missoes !== false;
+      if (!habilitada) return { registrada: false, emailEntregue: false };
+    }
+
+    if (entrada.dedupeHoras && entrada.dedupeHoras > 0) {
+      const desde = new Date(Date.now() - entrada.dedupeHoras * 3_600_000);
+      const repetida = await prisma.notification.findFirst({
+        where: { userId: entrada.userId, assunto: entrada.assunto, criadoEm: { gte: desde } },
+        select: { id: true },
+      });
+      if (repetida) return { registrada: false, emailEntregue: false };
+    }
+
+    if (entrada.automatica) {
+      const [maxDia, horaInicio, horaFim] = await Promise.all([
+        lerNumero("engajamento.max_por_dia"),
+        lerNumero("engajamento.hora_inicio"),
+        lerNumero("engajamento.hora_fim"),
+      ]);
+      const hora = Number(new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false,
+      }).format(new Date()));
+      if (hora < Math.min(23, horaInicio) || hora >= Math.min(24, horaFim)) {
+        return { registrada: false, emailEntregue: false };
+      }
+      const inicioDia = new Date();
+      inicioDia.setHours(0, 0, 0, 0);
+      const hoje = await prisma.notification.count({
+        where: {
+          userId: entrada.userId,
+          criadoEm: { gte: inicioDia },
+          autorNome: null,
+          assunto: { startsWith: "engajamento." },
+        },
+      });
+      if (maxDia >= 0 && hoje >= maxDia) return { registrada: false, emailEntregue: false };
+    }
+
     const alvo = await prisma.user.findUnique({
       where: { id: entrada.userId },
       select: { email: true, nome: true },
@@ -85,12 +145,15 @@ export async function notificar(
     // O push sai para qualquer canal: o aviso é o mesmo, muda só por onde
     // ele alcança a pessoa. Falha aqui não interrompe nada — `enviarPush`
     // já trata os próprios erros e nunca lança.
-    await enviarPush(entrada.userId, {
-      titulo: entrada.titulo,
-      corpo: entrada.corpo,
-      link: entrada.link ?? "/app",
-      assunto: entrada.assunto,
-    });
+    if (entrada.enviarPushAgora !== false) {
+      await enviarPush(entrada.userId, {
+        titulo: entrada.titulo,
+        corpo: entrada.corpo,
+        link: entrada.link ?? "/app",
+        assunto: entrada.assunto,
+        silenciosaSeAberto: entrada.automatica === true,
+      });
+    }
 
     if (!entrada.porEmail) {
       revalidatePath("/app");
@@ -330,7 +393,7 @@ export async function listarNotificacoes(pagina = 1): Promise<{
 }
 
 /** As notificações do aluno logado, para o sino do painel. */
-export async function minhasNotificacoes(): Promise<{
+export async function minhasNotificacoes(limite = 20): Promise<{
   lista: { id: string; titulo: string; corpo: string; link: string | null; lidoEm: Date | null; criadoEm: Date }[];
   naoLidas: number;
 }> {
@@ -342,7 +405,7 @@ export async function minhasNotificacoes(): Promise<{
       prisma.notification.findMany({
         where: { userId: sessao.user.id },
         orderBy: { criadoEm: "desc" },
-        take: 20,
+        take: Math.min(100, Math.max(1, limite)),
         select: {
           id: true, titulo: true, corpo: true, link: true,
           lidoEm: true, criadoEm: true,
@@ -371,6 +434,47 @@ export async function marcarComoLidas(): Promise<void> {
   } catch (e) {
     console.error("[notificacoes] falha ao marcar como lidas:", e);
   }
+}
+
+export async function marcarNotificacaoComoLida(dados: FormData): Promise<void> {
+  const sessao = await auth();
+  if (!sessao?.user) return;
+  const id = String(dados.get("id") ?? "");
+  if (!id) return;
+  await prisma.notification.updateMany({
+    where: { id, userId: sessao.user.id },
+    data: { lidoEm: new Date() },
+  });
+  revalidatePath("/app/notificacoes");
+}
+
+export async function minhasPreferenciasNotificacao() {
+  const sessao = await auth();
+  if (!sessao?.user) return null;
+  return prisma.notificationPreference.findUnique({ where: { userId: sessao.user.id } });
+}
+
+export async function salvarPreferenciasNotificacao(dados: FormData): Promise<void> {
+  const sessao = await auth();
+  if (!sessao?.user) return;
+  const valor = (chave: string) => String(dados.get(chave) ?? "") === "on";
+  await prisma.notificationPreference.upsert({
+    where: { userId: sessao.user.id },
+    create: {
+      userId: sessao.user.id,
+      lembretesEstudo: valor("lembretesEstudo"),
+      novosDesafios: valor("novosDesafios"),
+      conquistas: valor("conquistas"),
+      missoes: valor("missoes"),
+    },
+    update: {
+      lembretesEstudo: valor("lembretesEstudo"),
+      novosDesafios: valor("novosDesafios"),
+      conquistas: valor("conquistas"),
+      missoes: valor("missoes"),
+    },
+  });
+  revalidatePath("/app/notificacoes");
 }
 
 /* ============================================================

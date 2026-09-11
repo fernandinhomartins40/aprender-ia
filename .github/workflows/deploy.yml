@@ -154,6 +154,7 @@ jobs:
             ensure_env "POSTGRES_DB" "aprenderia"
             ensure_random_hex "POSTGRES_PASSWORD" 32
             ensure_random_hex "NEXTAUTH_SECRET" 32
+            ensure_random_hex "CRON_SECRET" 24
 
             upsert_env "NODE_ENV" "production"
             upsert_env "DEPLOY_PORT" "$DEPLOY_PORT"

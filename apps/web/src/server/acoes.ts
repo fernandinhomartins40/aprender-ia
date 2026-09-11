@@ -5,6 +5,8 @@ import { prisma } from "@aprender/db";
 import { exigirAluno, garantirMatricula } from "./trilha";
 import { verificarAcessoCurso } from "./acesso";
 import { analisarPtcf, type Analise } from "@/lib/motor-ptcf";
+import { nivelDoXp } from "@/lib/gamificacao";
+import { notificar } from "./notificacoes";
 
 /* ============================================================
    OFENSIVA (streak)
@@ -78,7 +80,7 @@ async function conferirConquistas(userId: string) {
   });
   const conquistados = new Set(jaTem.map((c) => c.achievementId));
 
-  const novas: string[] = [];
+  const novas: { titulo: string; icone: string }[] = [];
 
   for (const c of todas) {
     if (conquistados.has(c.id)) continue;
@@ -120,7 +122,7 @@ async function conferirConquistas(userId: string) {
       await prisma.userAchievement.create({
         data: { userId, achievementId: c.id },
       });
-      novas.push(c.titulo);
+      novas.push({ titulo: c.titulo, icone: c.icone });
     }
   }
 
@@ -151,23 +153,25 @@ export async function concluirLicao(dados: FormData) {
   const user = await exigirAluno();
   const lessonId = String(dados.get("lessonId") ?? "");
   const anotacoes = String(dados.get("anotacoes") ?? "").trim() || null;
-  if (!lessonId) return;
+  if (!lessonId) return null;
 
   const matricula = await matriculaComAcesso(user.id);
-  if (!matricula) return;
+  if (!matricula) return null;
 
   const licao = await prisma.lesson.findUnique({
     where: { id: lessonId },
-    select: { xpRecompensa: true },
+    select: { xpRecompensa: true, tipo: true, moduleId: true, module: { select: { titulo: true } } },
   });
-  if (!licao) return;
+  if (!licao) return null;
 
   const jaFeita = await prisma.lessonProgress.findUnique({
     where: { enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId } },
   });
 
   // Refazer uma lição não dá XP de novo — mas atualiza as anotações.
-  const xp = jaFeita?.status === "CONCLUIDA" ? jaFeita.xpGanho : licao.xpRecompensa;
+  const repetida = jaFeita?.status === "CONCLUIDA";
+  const xp = repetida ? jaFeita.xpGanho : licao.xpRecompensa;
+  const nivelAntes = nivelDoXp(matricula.xpTotal);
 
   await prisma.lessonProgress.upsert({
     where: { enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId } },
@@ -188,6 +192,12 @@ export async function concluirLicao(dados: FormData) {
       concluidoEm: new Date(),
       tentativas: 1,
     },
+  });
+
+  // Um lembrete para esta lição perde a relevância assim que ela termina.
+  await prisma.notification.updateMany({
+    where: { userId: user.id, link: `/app/licao/${lessonId}`, lidoEm: null },
+    data: { lidoEm: new Date() },
   });
 
   // Recalcula o progresso do curso
@@ -213,11 +223,75 @@ export async function concluirLicao(dados: FormData) {
     },
   });
 
-  await atualizarOfensiva(user.id);
-  await conferirConquistas(user.id);
+  const ofensiva = await atualizarOfensiva(user.id);
+  const novasConquistas = await conferirConquistas(user.id);
+
+  const inicioSemana = new Date();
+  inicioSemana.setDate(inicioSemana.getDate() - ((inicioSemana.getDay() + 6) % 7));
+  inicioSemana.setHours(0, 0, 0, 0);
+  const [totalModulo, feitasModulo, licoesNaSemana] = await Promise.all([
+    prisma.lesson.count({ where: { moduleId: licao.moduleId } }),
+    prisma.lessonProgress.count({
+      where: {
+        enrollmentId: matricula.id,
+        status: "CONCLUIDA",
+        lesson: { moduleId: licao.moduleId },
+      },
+    }),
+    prisma.lessonProgress.count({
+      where: { enrollment: { userId: user.id }, status: "CONCLUIDA", concluidoEm: { gte: inicioSemana } },
+    }),
+  ]);
+  const encontroConcluido = !repetida && totalModulo > 0 && feitasModulo === totalModulo;
+  const xpTotal = somaXp._sum.xpGanho ?? 0;
+  const nivel = nivelDoXp(xpTotal);
+
+  if (novasConquistas.length > 0) {
+    await notificar({
+      userId: user.id,
+      assunto: `conquista.${lessonId}`,
+      titulo: novasConquistas.length === 1 ? "Nova conquista desbloqueada" : "Novas conquistas desbloqueadas",
+      corpo: novasConquistas.map((c) => c.titulo).join(" · "),
+      link: "/app/conquistas",
+      categoria: "CONQUISTA",
+      dedupeHoras: 720,
+      enviarPushAgora: false,
+    });
+  }
+
+  if (encontroConcluido) {
+    await notificar({
+      userId: user.id,
+      assunto: `progresso.encontro.${licao.moduleId}`,
+      titulo: `${licao.module.titulo} concluído`,
+      corpo: "Seu progresso foi salvo e a próxima etapa da trilha já está disponível.",
+      link: "/app/trilha",
+      categoria: "ESTUDO",
+      dedupeHoras: 8_760,
+      enviarPushAgora: false,
+    });
+  }
 
   revalidatePath("/app");
   revalidatePath("/app/trilha");
+  revalidatePath("/app/conquistas");
+
+  return {
+    xpGanho: repetida ? 0 : licao.xpRecompensa,
+    xpTotal,
+    progressoPct: pct,
+    nivelAntes: nivelAntes.numero,
+    nivel: nivel.numero,
+    nivelTitulo: nivel.titulo,
+    proximoNivelXp: nivel.proximoXp,
+    ofensiva: ofensiva.diasSeguidos,
+    novasConquistas,
+    encontroConcluido,
+    encontroTitulo: encontroConcluido ? licao.module.titulo : null,
+    trilhaConcluida: pct >= 100,
+    tipoLicao: licao.tipo,
+    missaoSemanalConcluida: !repetida && licoesNaSemana === 2,
+  };
 }
 
 /* ============================================================
