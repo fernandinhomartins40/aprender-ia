@@ -3,10 +3,16 @@ import { auth } from "@aprender/auth";
 import { prisma, type StatusLicao } from "@aprender/db";
 import { avaliarAcesso, SELECT_ACESSO, type Veredito } from "./acesso";
 
-/** Garante sessão e devolve o usuário. */
+/**
+ * Garante sessão e devolve o usuário.
+ *
+ * Sem sessão, manda para a entrada do aplicativo — e não para `/entrar`,
+ * que é o formulário da landing. Dentro do PWA instalado, aquela tela
+ * vinha com cabeçalho e rodapé de site.
+ */
 export async function exigirAluno() {
   const sessao = await auth();
-  if (!sessao?.user) redirect("/entrar?proximo=/app");
+  if (!sessao?.user) redirect("/app/entrar?proximo=/app");
   return sessao.user;
 }
 

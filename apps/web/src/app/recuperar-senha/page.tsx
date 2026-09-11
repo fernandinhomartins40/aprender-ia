@@ -92,7 +92,7 @@ export default function RecuperarSenha() {
               )}
 
               <p className="mt-6 text-center text-tinta-clara">
-                <Link href="/entrar" className="font-bold text-indigo hover:underline">
+                <Link href="/entrar" className="inline-flex min-h-[44px] items-center font-bold text-indigo hover:underline">
                   Voltar para o login
                 </Link>
               </p>
@@ -138,7 +138,7 @@ export default function RecuperarSenha() {
 
               <p className="mt-6 text-center text-tinta-clara">
                 Lembrou a senha?{" "}
-                <Link href="/entrar" className="font-bold text-indigo hover:underline">
+                <Link href="/entrar" className="inline-flex min-h-[44px] items-center font-bold text-indigo hover:underline">
                   Entrar
                 </Link>
               </p>

@@ -9,6 +9,7 @@ import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { minhasNotificacoes, marcarComoLidas } from "@/server/notificacoes";
 import { SinoNotificacoes } from "@/components/sino-notificacoes";
 import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
+import { BarraInferior } from "@/components/barra-inferior";
 
 // Ícones 3D autorais, como no painel administrativo.
 const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
@@ -52,7 +53,10 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
   const avisos = await minhasNotificacoes();
 
   return (
-    <div className="min-h-screen bg-fundo pb-20 md:pb-0">
+    // O respiro inferior soma a altura da barra, o botão central elevado
+    // e a faixa de gestos do aparelho: sem os três, o último cartão da
+    // página fica escondido atrás da navegação.
+    <div className="min-h-screen bg-fundo pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
       <header className="sticky top-0 z-40 border-b border-borda bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3">
           <Logo href="/app" largura={112} prioridade />
@@ -122,22 +126,28 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
 
       <main className="mx-auto max-w-5xl overflow-x-hidden px-5 py-8">{children}</main>
 
-      {/* barra inferior no celular — onde o polegar alcança */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-borda bg-white md:hidden">
-        <ul className="flex">
-          {MENU.map((m) => (
-            <li key={m.href} className="flex-1">
-              <Link
-                href={m.href}
-                className="flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-cinza transition-colors hover:text-indigo"
-              >
-                <IconeApp nome={m.icone} tamanho={26} />
-                <span className="font-titulo text-[11px] font-bold">{m.rotulo}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* A barra anterior tinha os 5 destinos lado a lado, sem destaque,
+          sem marcar o item atual e sem respeitar a faixa de gestos do
+          iPhone. Esta tem ação central elevada, estado ativo e área
+          segura — e o botão "Mais" abriga o que não cabe em 5 posições. */}
+      <BarraInferior
+        aoSair={
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+          >
+            <button
+              type="submit"
+              className="flex min-h-[52px] w-full items-center gap-3 rounded-xl px-3 font-semibold text-vermelho-dark"
+            >
+              <IconeApp nome="seguranca" tamanho={28} />
+              Sair da conta
+            </button>
+          </form>
+        }
+      />
     </div>
   );
 }

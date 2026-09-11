@@ -20,6 +20,38 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  /* ---- Barras de rolagem ----
+     A padrão do Windows é larga e cinza-sistema, destoando do desenho.
+     Aqui ela fica fina e discreta, escurecendo ao passar o mouse.
+
+     Só no ponteiro: em toque a barra é transitória e desenhada pelo
+     próprio sistema, e estilizá-la lá costuma piorar — vira um traço
+     fixo ocupando espaço numa tela que já é estreita. */
+  @media (hover: hover) and (pointer: fine) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--borda) transparent;
+    }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--borda);
+      border-radius: 999px;
+      /* A borda transparente afina o polegar sem estreitar a área de
+         clique, que continua com os 10px inteiros. */
+      border: 3px solid transparent;
+      background-clip: content-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cinza-claro); background-clip: content-box; }
+    ::-webkit-scrollbar-corner { background: transparent; }
+  }
+
+  /* Rolagem com inércia dentro de áreas roláveis no iOS. */
+  .overflow-x-auto, .overflow-y-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
 }
 
 @layer components {

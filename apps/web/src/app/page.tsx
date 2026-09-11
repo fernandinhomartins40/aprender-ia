@@ -146,13 +146,13 @@ export default async function Home() {
             </Link>
             <Link
               href="/entrar"
-              className="rounded-full border-2 border-indigo-line px-5 py-2 text-sm font-bold text-indigo transition-colors hover:border-indigo"
+              className="inline-flex min-h-[44px] items-center rounded-full border-2 border-indigo-line px-5 text-sm font-bold text-indigo transition-colors hover:border-indigo"
             >
               Entrar
             </Link>
             <Link
               href="/cadastro"
-              className="rounded-full bg-indigo px-5 py-2 text-sm font-bold text-white shadow-cor transition-colors hover:bg-indigo-dark"
+              className="inline-flex min-h-[44px] items-center rounded-full bg-indigo px-5 text-sm font-bold text-white shadow-cor transition-colors hover:bg-indigo-dark"
             >
               <span className="hidden sm:inline">Criar minha conta gratuita</span>
               <span className="sm:hidden">Criar conta</span>
@@ -428,7 +428,7 @@ export default async function Home() {
             {trilhas.ctaTexto && (
               <Link
                 href={trilhas.ctaLink || "/cadastro"}
-                className="font-titulo text-sm font-bold text-indigo underline-offset-4 hover:underline"
+                className="inline-flex min-h-[44px] items-center font-titulo text-sm font-bold text-indigo underline-offset-4 hover:underline"
               >
                 {trilhas.ctaTexto} <span aria-hidden>→</span>
               </Link>
@@ -763,7 +763,12 @@ export default async function Home() {
               <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-tinta-clara">
                 {LINKS_RODAPE.map((l) => (
                   <li key={l.rotulo}>
-                    <Link href={l.href} className="hover:text-indigo hover:underline">
+                    {/* min-h-[44px]: medidos, estes links tinham 19px de
+                        altura — metade do alvo que um dedo acerta. */}
+                    <Link
+                      href={l.href}
+                      className="inline-flex min-h-[44px] items-center hover:text-indigo hover:underline"
+                    >
                       {l.rotulo}
                     </Link>
                   </li>

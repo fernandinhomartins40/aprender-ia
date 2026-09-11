@@ -208,7 +208,12 @@ function FormularioEntrar() {
 
           <p className="mt-1 text-center text-tinta-clara">
             Ainda não tem conta?{" "}
-            <Link href="/cadastro" className="font-bold text-indigo hover:underline">
+            {/* min-h-[44px]: o link tinha 22px de altura, metade do alvo
+                que um dedo acerta com segurança. */}
+            <Link
+              href="/cadastro"
+              className="inline-flex min-h-[44px] items-center font-bold text-indigo hover:underline"
+            >
               Criar conta gratuita
             </Link>
           </p>

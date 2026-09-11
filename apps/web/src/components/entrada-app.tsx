@@ -1,0 +1,206 @@
+"use client";
+
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { CampoSenha } from "@/components/campo-senha";
+
+/**
+ * Abertura e login do aplicativo.
+ *
+ * A marca aparece por um instante e sai — é o tempo de a pessoa
+ * reconhecer onde está, não uma espera imposta. `prefers-reduced-motion`
+ * pula a animação por completo.
+ *
+ * O formulário é desenhado para o polegar: campos altos, um por linha,
+ * botão da largura da tela. Nada de duas colunas nem de cabeçalho de
+ * site, que é o que fazia a tela de login parecer uma página web dentro
+ * do aplicativo.
+ */
+
+const DURACAO_ABERTURA = 1100;
+const CHAVE_IDENTIFICADOR = "aprenderia:identificador";
+
+export function EntradaApp({ proximo }: { proximo: string }) {
+  const router = useRouter();
+  const [abrindo, setAbrindo] = useState(true);
+
+  const [identificador, setIdentificador] = useState("");
+  const [senha, setSenha] = useState("");
+  const [manterConectado, setManterConectado] = useState(true);
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
+  useEffect(() => {
+    const semMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (semMovimento) {
+      setAbrindo(false);
+      return;
+    }
+    const t = setTimeout(() => setAbrindo(false), DURACAO_ABERTURA);
+    return () => clearTimeout(t);
+  }, []);
+
+  // O identificador salvo no aparelho poupa digitação a cada abertura.
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(CHAVE_IDENTIFICADOR);
+      if (salvo) setIdentificador(salvo);
+    } catch {
+      /* navegador com armazenamento bloqueado: segue sem preencher */
+    }
+  }, []);
+
+  async function entrar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro("");
+    setCarregando(true);
+
+    try {
+      localStorage.setItem(CHAVE_IDENTIFICADOR, identificador);
+    } catch {
+      /* não impede o login */
+    }
+
+    // O signIn fica dentro do try: uma promessa rejeitada fora dele
+    // abortaria a função antes de `setCarregando(false)` e o botão
+    // ficaria preso em "Entrando…".
+    try {
+      const r = await signIn("credentials", {
+        email: identificador,
+        senha,
+        manterConectado: String(manterConectado),
+        redirect: false,
+      });
+
+      if (r?.error) {
+        setErro("E-mail/telefone ou senha incorretos.");
+        setCarregando(false);
+        return;
+      }
+
+      router.push(proximo);
+      router.refresh();
+    } catch {
+      setErro("Não conseguimos falar com o servidor. Verifique sua conexão.");
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-grad-marca">
+      {/* ---- Abertura ---- */}
+      <div
+        aria-hidden={!abrindo}
+        className={`absolute inset-0 z-10 flex items-center justify-center bg-grad-marca transition-opacity duration-500 ${
+          abrindo ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <Image
+          src="/icones/icone-192.png"
+          alt=""
+          width={120}
+          height={120}
+          priority
+          className={`h-auto w-28 ${abrindo ? "animate-pulsar" : ""}`}
+        />
+      </div>
+
+      {/* ---- Login ---- */}
+      <div
+        className={`flex flex-1 flex-col transition-opacity duration-500 ${
+          abrindo ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <div className="flex flex-col items-center px-6 pb-6 pt-[calc(2.5rem+env(safe-area-inset-top))]">
+          <Image
+            src="/icones/icone-192.png"
+            alt=""
+            aria-hidden
+            width={80}
+            height={80}
+            className="h-auto w-16"
+          />
+          <h1 className="mt-4 text-center font-titulo text-2xl font-extrabold text-white">
+            Que bom te ver
+          </h1>
+          <p className="mt-1 text-center text-sm text-white/80">
+            Entre para continuar de onde parou.
+          </p>
+        </div>
+
+        <div className="flex-1 rounded-t-3xl bg-white px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-7">
+          <form onSubmit={entrar} className="mx-auto max-w-sm space-y-4">
+            {erro && (
+              <p
+                role="alert"
+                className="rounded-xl bg-vermelho-soft px-4 py-3 text-sm font-semibold text-vermelho-dark"
+              >
+                {erro}
+              </p>
+            )}
+
+            <label className="block">
+              <span className="mb-1.5 block font-titulo text-sm font-bold text-tinta-clara">
+                E-mail ou telefone
+              </span>
+              <input
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value)}
+                required
+                autoComplete="username"
+                inputMode="email"
+                placeholder="seu@email.com"
+                className="campo h-14 w-full text-base"
+              />
+            </label>
+
+            {/* O componente traz o próprio rótulo e o botão de revelar. */}
+            <CampoSenha
+              rotulo="Senha"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            <label className="flex items-center gap-2.5 py-1 text-sm font-semibold text-tinta-clara">
+              <input
+                type="checkbox"
+                checked={manterConectado}
+                onChange={(e) => setManterConectado(e.target.checked)}
+                className="h-5 w-5"
+              />
+              Manter conectado neste aparelho
+            </label>
+
+            <button
+              type="submit"
+              disabled={carregando}
+              className="btn-primario h-14 w-full text-base"
+            >
+              {carregando ? "Entrando…" : "Entrar"}
+            </button>
+
+            <div className="flex flex-col items-center gap-3 pt-2 text-sm">
+              <Link
+                href="/recuperar-senha"
+                className="inline-flex min-h-[44px] items-center font-bold text-indigo"
+              >
+                Esqueci minha senha
+              </Link>
+              <Link
+                href="/cadastro"
+                className="inline-flex min-h-[44px] items-center text-tinta-clara"
+              >
+                Ainda não tenho conta
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

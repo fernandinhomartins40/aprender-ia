@@ -35,19 +35,25 @@ export default async function Turmas() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Turmas</h1>
-        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
-          Cada turma tem cronograma, local e código de matrícula próprios. Para
-          cadastrar alunos, use{" "}
-          <Link href="/admin/alunos" className="font-bold text-indigo hover:underline">
-            Alunos e turmas
-          </Link>
-          .
-        </p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Turmas</h1>
+          <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
+            Cada turma tem cronograma, local e código de matrícula próprios. Para
+            cadastrar alunos, use{" "}
+            <Link href="/admin/alunos" className="font-bold text-indigo hover:underline">
+              Alunos e turmas
+            </Link>
+            .
+          </p>
+        </div>
+        {/* Página própria em vez do formulário recolhido: o cadastro tem
+            cronograma, local e encontros, e merece uma rota para onde se
+            possa mandar um link. */}
+        <Link href="/admin/turmas/nova" className="btn-primario text-sm">
+          Nova turma
+        </Link>
       </div>
-
-      <NovaTurma acao={salvarTurma} cursos={cursos} instrutores={instrutores} />
 
       {turmas.length === 0 ? (
         <div className="card text-center">

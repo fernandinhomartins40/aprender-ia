@@ -18,7 +18,14 @@ export const metadata: Metadata = {
       { url: "/favicon-96.png", type: "image/png", sizes: "96x96" },
       { url: "/icones/icone-192.png", type: "image/png", sizes: "192x192" },
     ],
-    apple: [{ url: "/icones/apple-touch-icon.png", sizes: "180x180" }],
+    // O iOS escolhe pelo tamanho: iPhone usa 180, iPad 152 ou 167. Com um
+    // só declarado, ele reescala e o ícone sai borrado no aparelho que
+    // não bate.
+    apple: [
+      { url: "/icones/apple-touch-152.png", sizes: "152x152" },
+      { url: "/icones/apple-touch-167.png", sizes: "167x167" },
+      { url: "/icones/apple-touch-180.png", sizes: "180x180" },
+    ],
   },
 };
 
@@ -27,6 +34,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  // Estende o conteúdo sob a barra de status no iOS instalado; as telas
+  // do aplicativo usam `env(safe-area-inset-*)` para não ficar por baixo.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

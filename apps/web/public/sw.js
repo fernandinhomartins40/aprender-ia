@@ -37,8 +37,18 @@ self.addEventListener("fetch", (e) => {
 
   if (e.request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
-  // Rotas que nunca devem vir do cache
-  if (url.pathname.startsWith("/api") || url.pathname.startsWith("/admin")) return;
+
+  // Rotas que nunca vêm do cache. `/app` entrou aqui: o comentário no
+  // topo sempre disse "nunca cacheamos rotas autenticadas", mas o painel
+  // do ALUNO não estava na lista — só o do administrador. Progresso de
+  // lição servido do cache mostraria a trilha desatualizada.
+  if (
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/admin") ||
+    url.pathname.startsWith("/app")
+  ) {
+    return;
+  }
 
   // Nunca interceptamos a autenticação: uma resposta vinda do cache aqui
   // deixa o formulário de login pendurado.
