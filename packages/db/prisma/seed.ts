@@ -665,12 +665,19 @@ const MODULOS = [
 void MODULOS_INICIAIS;
 
 const CONQUISTAS = [
-  { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira lição", icone: "🌱", criterio: { tipo: "licoes", valor: 1 }, ordem: 0 },
-  { chave: "primeiro-prompt", titulo: "Mão na massa", descricao: "Executou seu primeiro prompt numa IA", icone: "⚡", criterio: { tipo: "prompts", valor: 1 }, ordem: 1 },
-  { chave: "cinco-licoes", titulo: "Pegando o ritmo", descricao: "Concluiu 5 lições", icone: "🔥", criterio: { tipo: "licoes", valor: 5 }, ordem: 2 },
-  { chave: "encontro-1", titulo: "Encontro 1 completo", descricao: "Terminou o primeiro encontro", icone: "🚀", criterio: { tipo: "modulo", valor: 1 }, ordem: 3 },
-  { chave: "ofensiva-3", titulo: "Três dias seguidos", descricao: "Manteve a ofensiva por 3 dias", icone: "📅", criterio: { tipo: "ofensiva", valor: 3 }, ordem: 4 },
-  { chave: "curso-completo", titulo: "Formação concluída", descricao: "Completou todos os encontros", icone: "🎓", criterio: { tipo: "curso", valor: 100 }, ordem: 5 },
+  { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira lição", icone: "🌱", criterio: { tipo: "licoes", valor: 1 }, ordem: 0, recompensaTitulo: "Iniciante em IA" },
+  { chave: "primeiro-prompt", titulo: "Mão na massa", descricao: "Executou seu primeiro prompt numa IA", icone: "⚡", criterio: { tipo: "prompts", valor: 1 }, ordem: 1, recompensaTitulo: "Professor que experimenta" },
+  { chave: "cinco-licoes", titulo: "Pegando o ritmo", descricao: "Concluiu 5 lições", icone: "🔥", criterio: { tipo: "licoes", valor: 5 }, ordem: 2, recompensaTitulo: "Ritmo de aprendizagem" },
+  { chave: "encontro-1", titulo: "Encontro 1 completo", descricao: "Terminou o primeiro encontro", icone: "🚀", criterio: { tipo: "modulo", valor: 1 }, ordem: 3, recompensaTitulo: "Explorador de possibilidades" },
+  { chave: "ofensiva-3", titulo: "Três dias seguidos", descricao: "Manteve a ofensiva por 3 dias", icone: "📅", criterio: { tipo: "ofensiva", valor: 3 }, ordem: 4, recompensaTitulo: "Professor consistente" },
+  { chave: "curso-completo", titulo: "Formação concluída", descricao: "Completou todos os encontros", icone: "🎓", criterio: { tipo: "curso", valor: 100 }, ordem: 5, recompensaTitulo: "Educador com IA" },
+];
+
+const MISSOES = [
+  { chave: "passo-do-dia", titulo: "Passo do dia", descricao: "Conclua uma atividade hoje.", tipo: "DIARIA" as const, criterio: "licoes", alvo: 1, icone: "metas", recompensaTitulo: "Ritmo em construção", ativo: true },
+  { chave: "ritmo-da-semana", titulo: "Ritmo da semana", descricao: "Conclua duas atividades nesta semana.", tipo: "SEMANAL" as const, criterio: "licoes", alvo: 2, icone: "progresso", recompensaTitulo: "Constância semanal", ativo: true },
+  { chave: "explorador-de-formatos", titulo: "Explorador de formatos", descricao: "Conclua quatro tipos diferentes de atividade.", tipo: "ESPECIAL" as const, criterio: "tipos_atividade", alvo: 4, icone: "explorar", recompensaTitulo: "Explorador pedagógico", ativo: true },
+  { chave: "sequencia-tres", titulo: "Três dias de prática", descricao: "Mantenha uma sequência de três dias.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 3, icone: "conquistas", recompensaTitulo: "Professor consistente", ativo: true },
 ];
 
 async function main() {
@@ -827,6 +834,15 @@ async function main() {
     });
   }
   console.log(`  conquistas: ${CONQUISTAS.length}`);
+
+  for (const missao of MISSOES) {
+    await prisma.mission.upsert({
+      where: { chave: missao.chave },
+      update: missao,
+      create: missao,
+    });
+  }
+  console.log(`  missões: ${MISSOES.length}`);
 
   // ---- Primeiro administrador ----
   const emailAdmin = process.env.ADMIN_EMAIL ?? "admin@aprenderia.site";

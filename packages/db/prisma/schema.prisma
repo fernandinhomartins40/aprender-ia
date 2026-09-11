@@ -94,6 +94,9 @@ model User {
   notificacoes     Notification[]
   inscricoesPush   PushSubscription[]
   preferenciasNotificacao NotificationPreference?
+  missoesUsuario   UserMission[]
+  recompensas      UserReward[]
+  desempenhos      ActivityPerformance[]
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
   solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
@@ -385,6 +388,8 @@ model Lesson {
   promptTemplates PromptTemplate[]
   exercicios      Exercise[]
   progressos      LessonProgress[]
+  desempenhos     ActivityPerformance[]
+  missoes         Mission[]
 
   @@unique([moduleId, ordem])
   @@index([tipo])
@@ -598,6 +603,8 @@ model Achievement {
   icone     String
   criterio  Json // { tipo: "licoes_concluidas", valor: 10 }
   ordem     Int    @default(0)
+  oculto    Boolean @default(false)
+  recompensaTitulo String?
 
   usuarios UserAchievement[]
 
@@ -1078,6 +1085,7 @@ model Notification {
 
   /// Assunto estável para agrupar e não repetir ("free.expirando").
   assunto String
+  categoria String @default("ESSENCIAL")
   titulo  String
   corpo   String @db.Text
   link    String?
@@ -1097,6 +1105,87 @@ model Notification {
   @@index([assunto])
   @@index([criadoEm])
   @@map("notifications")
+}
+
+enum TipoMissao {
+  DIARIA
+  SEMANAL
+  ESPECIAL
+}
+
+model Mission {
+  id        String @id @default(cuid())
+  chave     String @unique
+  titulo    String
+  descricao String
+  tipo      TipoMissao
+  criterio  String
+  alvo      Int
+  icone     String @default("metas")
+  recompensaTitulo String?
+  lessonId  String?
+  ativo     Boolean @default(true)
+  oculto    Boolean @default(false)
+  iniciaEm  DateTime?
+  terminaEm DateTime?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  usuarios UserMission[]
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  @@index([ativo, tipo])
+  @@index([lessonId])
+  @@map("missions")
+}
+
+model UserMission {
+  id        String @id @default(cuid())
+  userId    String
+  missionId String
+  ciclo     String
+  progresso Int @default(0)
+  concluidoEm DateTime?
+  atualizadoEm DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, missionId, ciclo])
+  @@index([userId, concluidoEm])
+  @@map("user_missions")
+}
+
+model UserReward {
+  id       String @id @default(cuid())
+  userId   String
+  origem   String
+  titulo   String
+  icone    String @default("recompensas")
+  recebidoEm DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, origem])
+  @@index([userId, recebidoEm])
+  @@map("user_rewards")
+}
+
+model ActivityPerformance {
+  id       String @id @default(cuid())
+  userId   String
+  lessonId String
+  acertos  Int
+  total    Int
+  tentativa Int @default(1)
+  registradoEm DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, registradoEm])
+  @@index([lessonId])
+  @@map("activity_performances")
 }
 
 /// Preferências opcionais de engajamento. Avisos essenciais de acesso,

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirAluno, carregarLicao } from "@/server/trilha";
-import { concluirLicao, registrarPrompt, analisarResposta } from "@/server/acoes";
+import { concluirLicao, registrarPrompt, analisarResposta, registrarDesempenho } from "@/server/acoes";
 import { LicaoCliente } from "@/components/licao-cliente";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 
@@ -82,6 +82,7 @@ export default async function Licao({ params }: { params: Promise<{ id: string }
         concluir={concluirLicao}
         registrar={registrarPrompt}
         analisar={analisarResposta}
+        registrarDesempenho={registrarDesempenho}
       />
     </div>
   );

@@ -188,7 +188,7 @@ export async function resumoAluno(userId: string) {
   inicioSemana.setDate(inicioSemana.getDate() - ((dia + 6) % 7));
   inicioSemana.setHours(0, 0, 0, 0);
 
-  const [ofensiva, execucoes, conquistas, diario, licoesNaSemana, recentes] = await Promise.all([
+  const [ofensiva, execucoes, conquistas, diario, licoesNaSemana, recentes, desempenhos] = await Promise.all([
     prisma.streak.findUnique({ where: { userId } }),
     prisma.promptRun.count({ where: { userId } }),
     prisma.userAchievement.count({ where: { userId } }),
@@ -206,6 +206,12 @@ export async function resumoAluno(userId: string) {
       take: 3,
       include: { achievement: { select: { titulo: true, icone: true } } },
     }),
+    prisma.activityPerformance.findMany({
+      where: { userId },
+      orderBy: { registradoEm: "desc" },
+      take: 6,
+      select: { acertos: true, total: true },
+    }),
   ]);
 
   const economizado = await prisma.diaryEntry.aggregate({
@@ -215,6 +221,24 @@ export async function resumoAluno(userId: string) {
 
   const antes = economizado._sum.minutosAntes ?? 0;
   const agora = economizado._sum.minutosAgora ?? 0;
+  const percentuais = desempenhos
+    .filter((d) => d.total > 0)
+    .map((d) => Math.round((d.acertos / d.total) * 100));
+  const atuais = percentuais.slice(0, 3);
+  const anteriores = percentuais.slice(3, 6);
+  const media = (valores: number[]) => valores.length
+    ? Math.round(valores.reduce((soma, valor) => soma + valor, 0) / valores.length)
+    : null;
+  const mediaAtual = media(atuais);
+  const mediaAnterior = media(anteriores);
+  const feedbackDesempenho = mediaAtual === null ? null
+    : mediaAnterior !== null && mediaAtual >= mediaAnterior + 5
+      ? { tom: "melhora" as const, titulo: "Seu desempenho melhorou", texto: `Sua precisão recente chegou a ${mediaAtual}%, acima dos ${mediaAnterior}% anteriores.` }
+      : mediaAtual >= 80
+        ? { tom: "forte" as const, titulo: "Excelente precisão", texto: `Você acertou, em média, ${mediaAtual}% nas atividades avaliadas mais recentes.` }
+        : mediaAtual < 60
+          ? { tom: "atencao" as const, titulo: "Vale revisar com calma", texto: `Sua precisão recente está em ${mediaAtual}%. Reveja as explicações antes do próximo desafio.` }
+          : { tom: "estavel" as const, titulo: "Bom progresso", texto: `Sua precisão recente está em ${mediaAtual}%. Continue praticando para consolidar.` };
 
   return {
     ofensiva: ofensiva?.diasSeguidos ?? 0,
@@ -224,6 +248,7 @@ export async function resumoAluno(userId: string) {
     diario,
     licoesNaSemana,
     conquistasRecentes: recentes.map((r) => ({ ...r.achievement, conquistadoEm: r.conquistadoEm })),
+    feedbackDesempenho,
     minutosEconomizados: Math.max(0, antes - agora),
   };
 }

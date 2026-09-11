@@ -56,6 +56,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     titulo: "Conteúdo",
     itens: [
       { href: "/admin/cursos", rotulo: "Cursos", icone: "cursos" },
+      { href: "/admin/gamificacao", rotulo: "Gamificação", icone: "recompensas" },
       { href: "/admin/landing", rotulo: "Página inicial", icone: "inicio" },
       { href: "/admin/aparencia", rotulo: "Aparência", icone: "imagem" },
     ],

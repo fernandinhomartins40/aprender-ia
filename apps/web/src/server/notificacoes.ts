@@ -134,6 +134,7 @@ export async function notificar(
         // "pendente" para uma mensagem que só precisa aparecer no painel.
         status: entrada.porEmail ? "PENDENTE" : "REGISTRADA",
         assunto: entrada.assunto,
+        categoria,
         titulo: entrada.titulo,
         corpo: entrada.corpo,
         link: entrada.link ?? null,
@@ -393,8 +394,8 @@ export async function listarNotificacoes(pagina = 1): Promise<{
 }
 
 /** As notificações do aluno logado, para o sino do painel. */
-export async function minhasNotificacoes(limite = 20): Promise<{
-  lista: { id: string; titulo: string; corpo: string; link: string | null; lidoEm: Date | null; criadoEm: Date }[];
+export async function minhasNotificacoes(limite = 20, categoria?: CategoriaNotificacao): Promise<{
+  lista: { id: string; categoria: string; titulo: string; corpo: string; link: string | null; lidoEm: Date | null; criadoEm: Date }[];
   naoLidas: number;
 }> {
   const sessao = await auth();
@@ -403,11 +404,11 @@ export async function minhasNotificacoes(limite = 20): Promise<{
   try {
     const [lista, naoLidas] = await Promise.all([
       prisma.notification.findMany({
-        where: { userId: sessao.user.id },
+        where: { userId: sessao.user.id, ...(categoria ? { categoria } : {}) },
         orderBy: { criadoEm: "desc" },
         take: Math.min(100, Math.max(1, limite)),
         select: {
-          id: true, titulo: true, corpo: true, link: true,
+          id: true, categoria: true, titulo: true, corpo: true, link: true,
           lidoEm: true, criadoEm: true,
         },
       }),

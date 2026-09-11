@@ -7,6 +7,7 @@ import { verificarAcessoCurso } from "./acesso";
 import { analisarPtcf, type Analise } from "@/lib/motor-ptcf";
 import { nivelDoXp } from "@/lib/gamificacao";
 import { notificar } from "./notificacoes";
+import { avaliarMissoes } from "./missoes";
 
 /* ============================================================
    OFENSIVA (streak)
@@ -123,6 +124,13 @@ async function conferirConquistas(userId: string) {
         data: { userId, achievementId: c.id },
       });
       novas.push({ titulo: c.titulo, icone: c.icone });
+      if (c.recompensaTitulo) {
+        await prisma.userReward.upsert({
+          where: { userId_origem: { userId, origem: `conquista:${c.id}` } },
+          create: { userId, origem: `conquista:${c.id}`, titulo: c.recompensaTitulo, icone: c.icone },
+          update: {},
+        });
+      }
     }
   }
 
@@ -245,6 +253,7 @@ export async function concluirLicao(dados: FormData) {
   const encontroConcluido = !repetida && totalModulo > 0 && feitasModulo === totalModulo;
   const xpTotal = somaXp._sum.xpGanho ?? 0;
   const nivel = nivelDoXp(xpTotal);
+  const novasMissoes = await avaliarMissoes(user.id);
 
   if (novasConquistas.length > 0) {
     await notificar({
@@ -272,6 +281,19 @@ export async function concluirLicao(dados: FormData) {
     });
   }
 
+  if (!repetida && nivel.numero > nivelAntes.numero) {
+    await notificar({
+      userId: user.id,
+      assunto: `progresso.nivel.${nivel.numero}`,
+      titulo: `Nível ${nivel.numero} alcançado`,
+      corpo: `Você avançou para ${nivel.titulo}. Seu progresso foi calculado a partir das atividades concluídas.`,
+      link: "/app",
+      categoria: "CONQUISTA",
+      dedupeHoras: 8_760,
+      enviarPushAgora: false,
+    });
+  }
+
   revalidatePath("/app");
   revalidatePath("/app/trilha");
   revalidatePath("/app/conquistas");
@@ -291,7 +313,25 @@ export async function concluirLicao(dados: FormData) {
     trilhaConcluida: pct >= 100,
     tipoLicao: licao.tipo,
     missaoSemanalConcluida: !repetida && licoesNaSemana === 2,
+    novasMissoes,
   };
+}
+
+export async function registrarDesempenho(dados: FormData): Promise<void> {
+  const user = await exigirAluno();
+  const lessonId = String(dados.get("lessonId") ?? "");
+  const acertos = Math.max(0, Number(dados.get("acertos") ?? 0));
+  const total = Math.max(1, Number(dados.get("total") ?? 1));
+  if (!lessonId || acertos > total) return;
+  const permitido = await prisma.lesson.findFirst({
+    where: { id: lessonId, tipo: { in: ["QUIZ", "CACA_ERRO"] } }, select: { id: true },
+  });
+  if (!permitido) return;
+  const tentativas = await prisma.activityPerformance.count({ where: { userId: user.id, lessonId } });
+  await prisma.activityPerformance.create({
+    data: { userId: user.id, lessonId, acertos, total, tentativa: tentativas + 1 },
+  });
+  revalidatePath("/app");
 }
 
 /* ============================================================

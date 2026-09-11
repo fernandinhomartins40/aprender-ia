@@ -54,7 +54,7 @@ export function SinoNotificacoes({
       >
         Avisos
         {contador > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-vermelho px-1 text-xs font-bold text-white">
+          <span className="feedback-entrada absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-vermelho px-1 text-xs font-bold text-white">
             {contador > 9 ? "9+" : contador}
           </span>
         )}

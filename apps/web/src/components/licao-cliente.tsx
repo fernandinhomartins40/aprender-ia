@@ -19,6 +19,7 @@ export function LicaoCliente({
   concluir,
   registrar,
   analisar,
+  registrarDesempenho,
 }: {
   tipo: string;
   conteudo: any;
@@ -35,6 +36,7 @@ export function LicaoCliente({
   registrar: (d: FormData) => Promise<void>;
   /** Analisa o texto escrito nas atividades de resposta aberta. */
   analisar: Analisar;
+  registrarDesempenho: (d: FormData) => Promise<void>;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -64,6 +66,12 @@ export function LicaoCliente({
     iniciar(async () => { await registrar(d); });
   }
 
+  async function aoDesempenho(acertos: number, total: number) {
+    const d = new FormData();
+    d.set("lessonId", lessonId); d.set("acertos", String(acertos)); d.set("total", String(total));
+    await registrarDesempenho(d);
+  }
+
   if (pendente) {
     return (
       <div className="py-16 text-center">
@@ -87,7 +95,7 @@ export function LicaoCliente({
         </>
       );
     case "QUIZ":
-      return <PlayerQuiz perguntas={conteudo.perguntas ?? []} onCompleto={finalizar} />;
+      return <PlayerQuiz perguntas={conteudo.perguntas ?? []} onCompleto={finalizar} onDesempenho={aoDesempenho} />;
     case "AQUECIMENTO":
       return <PlayerAquecimento conteudo={conteudo} onCompleto={finalizar} />;
     case "NO_CELULAR":
@@ -104,7 +112,7 @@ export function LicaoCliente({
         />
       );
     case "CACA_ERRO":
-      return <PlayerCacaErro conteudo={conteudo} onCompleto={finalizar} />;
+      return <PlayerCacaErro conteudo={conteudo} onCompleto={finalizar} onDesempenho={aoDesempenho} />;
     case "DESAFIO":
       return <PlayerDesafio conteudo={conteudo} onCompleto={finalizar} />;
     case "CASO":

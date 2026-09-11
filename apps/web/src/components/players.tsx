@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CardPrompt } from "./card-prompt";
 import { IconeApp } from "./icone-app";
+import { FeedbackVisual } from "./feedback-visual";
 import { AnalisePtcf, ProximoPasso } from "./analise-ptcf";
 import type { Analise } from "@/lib/motor-ptcf";
 
@@ -71,17 +72,11 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
             );
           case "atencao":
             return (
-              <div key={i} className="feedback-entrada rounded-lg border-l-4 border-vermelho bg-vermelho-soft p-5">
-                <p className="flex items-center gap-2 font-titulo font-bold text-vermelho-dark"><IconeApp nome="seguranca" tamanho={22} />{b.titulo}</p>
-                <p className="mt-2 text-vermelho-dark">{b.texto}</p>
-              </div>
+              <FeedbackVisual key={i} estado="atencao" titulo={b.titulo}>{b.texto}</FeedbackVisual>
             );
           case "dica":
             return (
-              <div key={i} className="feedback-entrada rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
-                <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><IconeApp nome="ideias" tamanho={22} />{b.titulo}</p>
-                <p className="mt-2 text-amarelo-dark">{b.texto}</p>
-              </div>
+              <FeedbackVisual key={i} estado="dica" titulo={b.titulo}>{b.texto}</FeedbackVisual>
             );
           case "destaque":
             return (
@@ -370,21 +365,27 @@ type Pergunta = {
 export function PlayerQuiz({
   perguntas,
   onCompleto,
+  onDesempenho,
 }: {
   perguntas: Pergunta[];
   onCompleto: () => void;
+  onDesempenho?: (acertos: number, total: number) => Promise<void>;
 }) {
   const [atual, setAtual] = useState(0);
   const [escolha, setEscolha] = useState<string | null>(null);
   const [revelado, setRevelado] = useState(false);
   const [acertosSeguidos, setAcertosSeguidos] = useState(0);
+  const [acertos, setAcertos] = useState(0);
 
   const p = perguntas[atual]!;
   const ultima = atual === perguntas.length - 1;
   const correta = p.opcoes.find((o) => o.correta)?.id;
 
-  function avancar() {
-    if (ultima) return onCompleto();
+  async function avancar() {
+    if (ultima) {
+      await onDesempenho?.(acertos, perguntas.length);
+      return onCompleto();
+    }
     setAtual((a) => a + 1);
     setEscolha(null);
     setRevelado(false);
@@ -393,6 +394,7 @@ export function PlayerQuiz({
   function confirmar() {
     setRevelado(true);
     setAcertosSeguidos((atual) => escolha === correta ? atual + 1 : 0);
+    if (escolha === correta) setAcertos((atual) => atual + 1);
   }
 
   return (
@@ -430,15 +432,12 @@ export function PlayerQuiz({
       </div>
 
       {revelado && (
-        <div className={`mt-5 rounded-lg border-l-4 p-4 feedback-entrada ${escolha === correta ? "border-verde bg-verde-soft" : "border-vermelho bg-vermelho-soft feedback-erro"}`}>
-          <p className={`font-titulo font-bold ${escolha === correta ? "text-verde-dark" : "text-vermelho-dark"}`}>
-            {escolha === correta ? "Resposta correta — raciocínio confirmado." : "Ainda não — use a explicação para ajustar o raciocínio:"}
-          </p>
-          <p className={`mt-1 ${escolha === correta ? "text-verde-dark" : "text-vermelho-dark"}`}>{p.explicacao}</p>
+        <FeedbackVisual estado={escolha === correta ? "correta" : "incorreta"} titulo={escolha === correta ? "Resposta correta — raciocínio confirmado." : "Ainda não — use a explicação para ajustar o raciocínio:"} compacto className="mt-5">
+          <p>{p.explicacao}</p>
           {escolha === correta && acertosSeguidos >= 2 && (
-            <p className="mt-2 font-semibold text-verde-dark">Sequência de {acertosSeguidos} acertos nesta atividade.</p>
+            <p className="mt-2 font-semibold">Sequência de {acertosSeguidos} acertos nesta atividade.</p>
           )}
-        </div>
+        </FeedbackVisual>
       )}
 
       <div className="mt-6">
@@ -579,6 +578,7 @@ export function PlayerDuelo({
 export function PlayerCacaErro({
   conteudo,
   onCompleto,
+  onDesempenho,
 }: {
   conteudo: {
     introducao: string;
@@ -589,6 +589,7 @@ export function PlayerCacaErro({
     licao: string;
   };
   onCompleto: () => void;
+  onDesempenho?: (acertos: number, total: number) => Promise<void>;
 }) {
   const [escolha, setEscolha] = useState<string | null>(null);
   const [revelado, setRevelado] = useState(false);
@@ -635,12 +636,9 @@ export function PlayerCacaErro({
 
       {revelado && (
         <>
-          <div className={`rounded-lg border-l-4 p-5 feedback-entrada ${acertou ? "border-verde bg-verde-soft" : "border-vermelho bg-vermelho-soft feedback-erro"}`}>
-            <p className={`font-titulo font-bold ${acertou ? "text-verde-dark" : "text-vermelho-dark"}`}>
-              {acertou ? "Você encontrou o ponto crítico." : "Vale olhar mais uma vez:"}
-            </p>
-            <p className={`mt-2 ${acertou ? "text-verde-dark" : "text-vermelho-dark"}`}>{conteudo.gabarito}</p>
-          </div>
+          <FeedbackVisual estado={acertou ? "correta" : "incorreta"} titulo={acertou ? "Você encontrou o ponto crítico." : "Vale olhar mais uma vez:"}>
+            {conteudo.gabarito}
+          </FeedbackVisual>
           <div className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
             <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><IconeApp nome="ideias" tamanho={22} />A lição</p>
             <p className="mt-2 text-amarelo-dark">{conteudo.licao}</p>
@@ -653,7 +651,7 @@ export function PlayerCacaErro({
           Confirmar
         </button>
       ) : (
-        <button onClick={onCompleto} className="btn-primario">
+        <button onClick={async () => { await onDesempenho?.(acertou ? 1 : 0, 1); onCompleto(); }} className="btn-primario">
           Concluir lição
         </button>
       )}
@@ -927,7 +925,7 @@ export function PlayerCheckpoint({
                 className="flex w-full items-start gap-3 text-left"
               >
                 <span
-                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 ${
+                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 transition-all ${
                     marcados.has(i) ? "border-verde bg-verde text-white" : "border-borda"
                   }`}
                   aria-hidden="true"

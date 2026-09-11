@@ -18,6 +18,7 @@ export type ResultadoConclusao = {
   trilhaConcluida: boolean;
   tipoLicao: string;
   missaoSemanalConcluida: boolean;
+  novasMissoes: { titulo: string; recompensa: string | null; icone: string }[];
 };
 
 export function FeedbackConclusao({
@@ -42,6 +43,8 @@ export function FeedbackConclusao({
       ? `${resultado.encontroTitulo} concluído!`
       : resultado.missaoSemanalConcluida
         ? "Objetivo da semana alcançado!"
+      : resultado.novasMissoes.length > 0
+        ? "Missão concluída!"
       : subiuNivel
         ? `Nível ${resultado.nivel} alcançado!`
         : resultado.tipoLicao === "DESAFIO"
@@ -54,6 +57,7 @@ export function FeedbackConclusao({
       aria-modal="true"
       aria-labelledby="titulo-conclusao"
       className="relative overflow-hidden rounded-2xl border border-indigo-line bg-white p-6 text-center shadow-lg sm:p-9"
+      data-feedback-estado={resultado.trilhaConcluida ? "modulo" : resultado.novasMissoes.length ? "objetivo" : subiuNivel ? "nivel" : resultado.tipoLicao === "DESAFIO" ? "desafio" : "atividade"}
       initial={reduzir ? false : { opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
@@ -106,6 +110,18 @@ export function FeedbackConclusao({
           <p className="font-titulo font-bold text-amarelo-dark">Nova conquista</p>
           {resultado.novasConquistas.map((c) => (
             <p key={c.titulo} className="mt-1 text-amarelo-dark">{c.icone} {c.titulo}</p>
+          ))}
+        </div>
+      )}
+
+      {resultado.novasMissoes.length > 0 && (
+        <div className="mx-auto mt-4 max-w-lg rounded-xl border border-verde bg-verde-soft p-4 text-left">
+          <p className="font-titulo font-bold text-verde-dark">Missão concluída</p>
+          {resultado.novasMissoes.map((m) => (
+            <div key={m.titulo} className="mt-2 text-verde-dark">
+              <p className="font-semibold">{m.titulo}</p>
+              {m.recompensa && <p className="text-sm">Recompensa recebida: {m.recompensa}</p>}
+            </div>
           ))}
         </div>
       )}

@@ -3,14 +3,16 @@ import { exigirAluno, carregarTrilha, resumoAluno } from "@/server/trilha";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 import { IconeApp } from "@/components/icone-app";
 import { nivelDoXp, xpAteProximoNivel } from "@/lib/gamificacao";
+import { missoesDoAluno } from "@/server/missoes";
 
 export const dynamic = "force-dynamic";
 
 export default async function PainelAluno() {
   const user = await exigirAluno();
-  const [trilha, resumo] = await Promise.all([
+  const [trilha, resumo, missoes] = await Promise.all([
     carregarTrilha(user.id),
     resumoAluno(user.id),
+    missoesDoAluno(user.id),
   ]);
 
   const primeiroNome = user.nome?.split(" ")[0] ?? "professor(a)";
@@ -31,8 +33,7 @@ export default async function PainelAluno() {
     .find((l) => l.status === "DISPONIVEL" || l.status === "EM_ANDAMENTO");
   const nivel = nivelDoXp(trilha?.xpTotal ?? 0);
   const faltamNivel = xpAteProximoNivel(trilha?.xpTotal ?? 0);
-  const metaSemanal = 2;
-  const missaoConcluida = resumo.licoesNaSemana >= metaSemanal;
+  const missao = missoes.find((m) => !m.concluida) ?? missoes[0];
 
   return (
     <div>
@@ -76,19 +77,28 @@ export default async function PainelAluno() {
           </div>
         </div>
 
-        <div className={`card ${missaoConcluida ? "border-verde bg-verde-soft" : "border-amarelo bg-amarelo-soft"}`}>
+        <Link href="/app/missoes" className={`card block ${missao?.concluida ? "border-verde bg-verde-soft" : "border-amarelo bg-amarelo-soft"}`}>
           <div className="flex items-center gap-3">
-            <IconeApp nome={missaoConcluida ? "conquistas" : "metas"} tamanho={44} />
+            <IconeApp nome={missao?.concluida ? "conquistas" : "metas"} tamanho={44} />
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-tinta-clara">Missão da semana</p>
-              <p className="font-titulo font-bold">Concluir {metaSemanal} atividades</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-tinta-clara">{missao ? `Missão ${missao.tipo.toLowerCase()}` : "Missões"}</p>
+              <p className="font-titulo font-bold">{missao ? (missao.oculto && !missao.concluida ? "Objetivo secreto" : missao.titulo) : "Descubra seus próximos objetivos"}</p>
             </div>
           </div>
           <p className="mt-3 text-sm text-tinta-clara">
-            {missaoConcluida ? "Concluída — consistência construída com progresso real." : `${resumo.licoesNaSemana} de ${metaSemanal} concluídas nesta semana.`}
+            {missao ? (missao.concluida ? "Concluída — sua recompensa está disponível." : missao.oculto ? "Continue explorando para revelar este objetivo." : `${missao.progresso} de ${missao.alvo} concluídos com progresso real.`) : "Abra a central para acompanhar desafios e recompensas."}
           </p>
-        </div>
+        </Link>
       </section>
+
+      {resumo.feedbackDesempenho && (
+        <section className={`feedback-entrada mt-6 rounded-xl border-l-4 p-5 ${resumo.feedbackDesempenho.tom === "atencao" ? "border-amarelo bg-amarelo-soft text-amarelo-dark" : "border-verde bg-verde-soft text-verde-dark"}`}>
+          <div className="flex items-center gap-3">
+            <IconeApp nome={resumo.feedbackDesempenho.tom === "atencao" ? "ideias" : "progresso"} tamanho={36} />
+            <div><h2 className="font-titulo font-bold">{resumo.feedbackDesempenho.titulo}</h2><p className="mt-1 text-sm">{resumo.feedbackDesempenho.texto}</p></div>
+          </div>
+        </section>
+      )}
 
       {/* ---- Números ---- */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

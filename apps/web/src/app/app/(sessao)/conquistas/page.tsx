@@ -29,6 +29,7 @@ export default async function Conquistas() {
         {todas.map((c) => {
           const quando = conquistadas.get(c.id);
           const tem = Boolean(quando);
+          const secreta = c.oculto && !tem;
           return (
             <div
               key={c.id}
@@ -41,10 +42,10 @@ export default async function Conquistas() {
                 aria-hidden
                 className={`flex justify-center text-6xl leading-none ${tem ? "" : "grayscale"}`}
               >
-                {c.icone || "🏅"}
+                {secreta ? "❔" : (c.icone || "🏅")}
               </div>
-              <p className="mt-3 font-titulo font-bold">{c.titulo}</p>
-              <p className="mt-1 text-sm text-tinta-clara">{c.descricao}</p>
+              <p className="mt-3 font-titulo font-bold">{secreta ? "Conquista secreta" : c.titulo}</p>
+              <p className="mt-1 text-sm text-tinta-clara">{secreta ? "Continue avançando para revelar este marco." : c.descricao}</p>
               {quando && (
                 <p className="mt-2 text-xs text-conquista">
                   {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(quando)}

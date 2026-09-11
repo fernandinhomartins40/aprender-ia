@@ -183,6 +183,27 @@ export const CONFIGS: DefinicaoConfig[] = [
     rotulo: "Dias para reengajamento",
     padrao: "10",
   },
+  {
+    chave: "engajamento.texto_retorno", tipo: "TEXTO", grupo: "notificacoes",
+    rotulo: "Mensagem para retomar os estudos",
+    descricao: "Use {atividade} para inserir o nome da próxima atividade.",
+    padrao: "Seu progresso continua salvo. Retome por “{atividade}”, exatamente de onde parou.",
+  },
+  {
+    chave: "engajamento.texto_sequencia", tipo: "TEXTO", grupo: "notificacoes",
+    rotulo: "Mensagem para proteger a sequência", descricao: "Aceita {atividade} e {dias}.",
+    padrao: "Você vem construindo uma sequência de {dias} dias. Continue com “{atividade}”.",
+  },
+  {
+    chave: "engajamento.texto_quase_concluiu", tipo: "TEXTO", grupo: "notificacoes",
+    rotulo: "Mensagem de trilha quase concluída", descricao: "Aceita {atividade} e {restantes}.",
+    padrao: "Restam {restantes} atividades. A próxima é “{atividade}”.",
+  },
+  {
+    chave: "engajamento.texto_nova_missao", tipo: "TEXTO", grupo: "notificacoes",
+    rotulo: "Mensagem de nova missão", descricao: "Use {missao} para inserir o objetivo disponível.",
+    padrao: "Uma nova missão está disponível: {missao}.",
+  },
 ];
 
 export const PADROES = new Map(CONFIGS.map((c) => [c.chave, c]));
