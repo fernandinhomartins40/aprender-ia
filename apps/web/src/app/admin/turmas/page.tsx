@@ -36,8 +36,8 @@ export default async function Turmas() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Turmas</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Turmas</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           Cada turma tem cronograma, local e código de matrícula próprios. Para
           cadastrar alunos, use{" "}
           <Link href="/admin/alunos" className="font-bold text-indigo hover:underline">

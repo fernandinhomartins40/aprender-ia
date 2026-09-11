@@ -46,7 +46,7 @@ export async function definirPlano(dados: FormData): Promise<void> {
     dados: { de: antes.plano, para: plano, premiumAte: prazo || null },
   });
 
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
   revalidatePath("/admin/alunos");
 }
 
@@ -89,7 +89,7 @@ export async function alternarSituacao(dados: FormData): Promise<void> {
     autorNome: admin.nome,
   });
 
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
   revalidatePath("/admin/alunos");
 }
 
@@ -128,7 +128,7 @@ export async function lancarPagamento(dados: FormData): Promise<void> {
     },
   });
 
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
 }
 
 export async function registrarQuitacao(dados: FormData): Promise<void> {
@@ -150,7 +150,7 @@ export async function registrarQuitacao(dados: FormData): Promise<void> {
     data: { situacao: "ATIVO" },
   });
 
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
   revalidatePath("/admin/alunos");
 }
 
@@ -163,7 +163,7 @@ export async function cancelarLancamento(dados: FormData): Promise<void> {
     where: { id: paymentId },
     data: { status: "CANCELADO" },
   });
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
 }
 
 /**
@@ -201,7 +201,7 @@ export async function gerarProximaMensalidade(dados: FormData): Promise<void> {
     },
   });
 
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
 }
 
 /* ============================================================

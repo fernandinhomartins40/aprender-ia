@@ -22,8 +22,8 @@ export default async function Landing() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-titulo text-3xl font-extrabold">Página inicial</h1>
-          <p className="mt-1 text-tinta-clara">
+          <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Página inicial</h1>
+          <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
             Todo o texto da landing, editável sem tocar no código.
           </p>
         </div>

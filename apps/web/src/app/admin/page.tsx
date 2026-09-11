@@ -359,7 +359,7 @@ export default async function VisaoGeral({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { href: "/admin/alunos", icone: "estudantes" as const, titulo: "Alunos e turmas", texto: "Cadastro, turmas e progresso" },
-          { href: "/admin/financeiro", icone: "marketplace" as const, titulo: "Financeiro", texto: "Cobranças, planos e inadimplência" },
+          { href: "/admin/cobrancas", icone: "marketplace" as const, titulo: "Cobranças", texto: "Lançamentos, baixas e atrasos" },
           { href: "/admin/cursos", icone: "cursos" as const, titulo: "Cursos", texto: "Módulos, lições e publicação" },
           { href: "/admin/configuracoes", icone: "configuracoes" as const, titulo: "Configurações", texto: "Regras de acesso e parâmetros" },
         ].map((c) => (

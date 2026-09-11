@@ -83,8 +83,8 @@ export default async function Assinaturas({
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-titulo text-3xl font-extrabold">Assinaturas</h1>
-          <p className="mt-1 text-tinta-clara">
+          <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Assinaturas</h1>
+          <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
             Quem paga, quanto entra por mês e quem está em atraso.
           </p>
         </div>

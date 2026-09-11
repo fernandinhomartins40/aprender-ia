@@ -28,7 +28,7 @@ function Secao({
   return (
     <section className="card">
       <h2 className="font-titulo text-xl font-extrabold">{titulo}</h2>
-      {descricao && <p className="mt-1 text-tinta-clara">{descricao}</p>}
+      {descricao && <p className="mt-1 max-w-2xl text-sm text-tinta-clara">{descricao}</p>}
       <div className="mt-5">{children}</div>
     </section>
   );
@@ -70,8 +70,8 @@ export default async function Perfil() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Meu perfil</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Meu perfil</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           Seus dados de acesso e informações da conta.
         </p>
       </div>

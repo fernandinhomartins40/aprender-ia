@@ -81,7 +81,10 @@ function FormularioEntrar() {
         return;
       }
 
-      router.push(proximo);
+      // Sem `?proximo=` na URL, quem decide o destino é o servidor: o
+      // `signIn` não devolve o papel, e mandar um administrador para /app
+      // o obrigava a caçar o link "Administração" para chegar ao painel.
+      router.push(params.get("proximo") ?? "/entrar/destino");
       router.refresh();
     } catch {
       setErro(

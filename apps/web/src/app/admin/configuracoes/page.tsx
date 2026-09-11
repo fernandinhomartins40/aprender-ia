@@ -44,8 +44,8 @@ export default async function Configuracoes() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Configurações</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Configurações</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           As regras da plataforma. Tudo aqui vale imediatamente, sem alterar
           código — e o que você nunca tocou segue no valor padrão.
         </p>

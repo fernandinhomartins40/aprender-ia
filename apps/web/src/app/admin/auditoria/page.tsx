@@ -32,8 +32,8 @@ export default async function Auditoria({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Histórico de ações</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Histórico de ações</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           {total.toLocaleString("pt-BR")} ação(ões) registrada(s). Quem alterou o
           quê, quando — e de onde.
         </p>

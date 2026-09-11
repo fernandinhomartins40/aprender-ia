@@ -70,8 +70,8 @@ export default async function Relatorios({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-titulo text-3xl font-extrabold">Relatórios</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Relatórios</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           Listas filtradas, para consultar na tela ou abrir no Excel.
         </p>
       </div>

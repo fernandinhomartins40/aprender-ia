@@ -40,8 +40,8 @@ export default async function Notificacoes({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-titulo text-3xl font-extrabold">Notificações</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Notificações</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           Mensagens enviadas aos alunos — pelo painel, por e-mail e por WhatsApp.
         </p>
       </div>

@@ -39,7 +39,7 @@ async function definirCobranca(dados: FormData) {
     },
   });
   revalidatePath("/admin/cursos");
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
 }
 
 export default async function Cursos() {
@@ -49,8 +49,8 @@ export default async function Cursos() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Cursos</h1>
-        <p className="mt-1 text-tinta-clara">
+        <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Cursos</h1>
+        <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
           Estrutura de módulos e lições, e o que está visível para os alunos.
         </p>
       </div>
@@ -89,7 +89,7 @@ export default async function Cursos() {
                     </span>
                   </div>
                   {c.subtitulo && (
-                    <p className="mt-1 text-tinta-clara">{c.subtitulo}</p>
+                    <p className="mt-1 max-w-2xl text-sm text-tinta-clara">{c.subtitulo}</p>
                   )}
                   <p className="mt-2 text-sm text-cinza">
                     {c.cargaHoraria}h · {c._count.modulos} módulos ·{" "}

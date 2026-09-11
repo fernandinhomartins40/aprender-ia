@@ -12,8 +12,8 @@ export default async function Planos() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-titulo text-3xl font-extrabold">Planos</h1>
-          <p className="mt-1 text-tinta-clara">
+          <h1 className="font-titulo text-2xl font-extrabold text-tinta sm:text-3xl">Planos</h1>
+          <p className="mt-1 max-w-2xl text-sm text-tinta-clara">
             O que você vende, por quanto e com que periodicidade. Editar aqui
             não altera assinatura já feita.
           </p>

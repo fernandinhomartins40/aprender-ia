@@ -331,7 +331,7 @@ export async function criarAssinatura(
   });
 
   revalidatePath("/admin/assinaturas");
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
   revalidatePath("/admin/alunos");
 
   return {
@@ -404,7 +404,7 @@ export async function cancelarAssinatura(dados: FormData): Promise<void> {
   });
 
   revalidatePath("/admin/assinaturas");
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
 }
 
 /** Reativa uma assinatura cancelada, começando um ciclo novo de hoje. */
@@ -509,7 +509,7 @@ export async function gerarProximaCobranca(dados: FormData): Promise<void> {
   });
 
   revalidatePath("/admin/assinaturas");
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
 }
 
 /**
@@ -599,7 +599,7 @@ export async function quitarCobranca(dados: FormData): Promise<void> {
   });
 
   revalidatePath("/admin/assinaturas");
-  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/cobrancas");
   revalidatePath("/admin/alunos");
 }
 
