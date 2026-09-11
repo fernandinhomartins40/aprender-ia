@@ -70,14 +70,25 @@ type Modo = "oculto" | "android" | "ios" | "ios_outro_navegador";
 export function ConviteInstalar({ tom = "cartao" }: { tom?: "claro" | "cartao" }) {
   const [modo, setModo] = useState<Modo>("oculto");
   const [instalando, setInstalando] = useState(false);
+  /// Explica o caminho do menu quando o navegador não oferece o diálogo.
+  const [mostrarComoInstalar, setMostrarComoInstalar] = useState(false);
 
   useEffect(() => {
     // Já instalado: nunca oferecer de novo. É o caso do PWA aberto pelo
     // ícone da tela de início.
     if (jaInstalado()) return;
 
+    // A dispensa vale só para esta sessão, não para sempre.
+    //
+    // Com `localStorage`, um toque em "Agora não" escondia o botão de
+    // instalar em definitivo naquele aparelho — e a única saída era
+    // limpar os dados do site, que ninguém adivinha. Em `sessionStorage`
+    // o convite para de incomodar agora e volta na próxima abertura.
     try {
-      if (localStorage.getItem(CHAVE_DISPENSADO) === "1") return;
+      if (sessionStorage.getItem(CHAVE_DISPENSADO) === "1") return;
+      // Limpa a dispensa permanente gravada pela versão anterior, senão
+      // quem já tocou em "Agora não" nunca mais veria o botão.
+      localStorage.removeItem(CHAVE_DISPENSADO);
     } catch {
       /* sem armazenamento: mostra o convite mesmo assim */
     }
@@ -88,11 +99,16 @@ export function ConviteInstalar({ tom = "cartao" }: { tom?: "claro" | "cartao" }
       return;
     }
 
-    // Android/desktop: o evento pode ter sido capturado antes desta
-    // montagem (o caso comum) ou chegar em seguida.
-    if (window.__aprenderiaInstalar) {
-      setModo("android");
-    }
+    // Android/desktop: o convite aparece SEMPRE.
+    //
+    // Antes ele só existia se `beforeinstallprompt` já tivesse sido
+    // capturado — e esse evento dispara uma única vez, some quando o
+    // Chrome decide que já ofereceu, e nunca volta depois de uma recusa.
+    // O resultado era o botão desaparecer sozinho, sem explicação. Agora o
+    // botão está sempre lá; quem decide o que ele faz é o clique: com o
+    // evento em mãos, abre o diálogo nativo; sem ele, ensina o caminho do
+    // menu do navegador, que funciona sempre.
+    setModo("android");
 
     const aoFicarInstalavel = () => setModo("android");
     const aoInstalar = () => setModo("oculto");
@@ -108,7 +124,7 @@ export function ConviteInstalar({ tom = "cartao" }: { tom?: "claro" | "cartao" }
   function dispensar() {
     setModo("oculto");
     try {
-      localStorage.setItem(CHAVE_DISPENSADO, "1");
+      sessionStorage.setItem(CHAVE_DISPENSADO, "1");
     } catch {
       /* só perde a memória da dispensa */
     }
@@ -116,7 +132,14 @@ export function ConviteInstalar({ tom = "cartao" }: { tom?: "claro" | "cartao" }
 
   async function instalar() {
     const evento = window.__aprenderiaInstalar;
-    if (!evento) return;
+
+    // Sem o evento do navegador não há API de instalação para chamar: o
+    // caminho que sempre funciona é o menu do próprio Chrome. Mostramos
+    // como chegar lá em vez de deixar o botão sem efeito.
+    if (!evento) {
+      setMostrarComoInstalar(true);
+      return;
+    }
 
     setInstalando(true);
     try {
@@ -129,11 +152,12 @@ export function ConviteInstalar({ tom = "cartao" }: { tom?: "claro" | "cartao" }
       if (escolha?.outcome === "accepted") {
         setModo("oculto");
       } else {
-        // Recusou: guardamos para não insistir a cada abertura.
-        dispensar();
+        // Recusar o diálogo do sistema NÃO esconde o convite: quem fechou
+        // por engano precisa de outra chance. Só o "Agora não" dispensa.
+        setMostrarComoInstalar(true);
       }
     } catch {
-      setModo("oculto");
+      setMostrarComoInstalar(true);
     } finally {
       setInstalando(false);
     }
@@ -219,6 +243,18 @@ export function ConviteInstalar({ tom = "cartao" }: { tom?: "claro" | "cartao" }
       <p className={`mt-1 ${texto}`}>
         Abre rápido, em tela cheia, direto da sua tela inicial.
       </p>
+
+      {mostrarComoInstalar && (
+        <div className={`mt-3 rounded-xl px-3 py-2.5 ${claro ? "bg-white/15" : "bg-white"}`}>
+          <p className={`${texto} font-semibold`}>Pelo menu do navegador:</p>
+          <p className={`mt-1 ${texto}`}>
+            Toque em <strong className="font-semibold">⋮</strong> (canto superior
+            direito) e escolha{" "}
+            <strong className="font-semibold">Instalar aplicativo</strong> ou{" "}
+            <strong className="font-semibold">Adicionar à tela inicial</strong>.
+          </p>
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button

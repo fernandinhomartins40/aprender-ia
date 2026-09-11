@@ -4,7 +4,6 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { CampoSenha } from "@/components/campo-senha";
 import { ConviteInstalar } from "@/components/convite-instalar";
 import { Logo } from "@/components/logo";
@@ -100,13 +99,14 @@ export function EntradaApp({ proximo }: { proximo: string }) {
           abrindo ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <Image
-          src="/icones/icone-192.png"
-          alt=""
-          width={120}
-          height={120}
-          priority
-          className={`h-auto w-28 ${abrindo ? "animate-pulsar" : ""}`}
+        {/* A abertura mostra a logo escrita, não o ícone quadrado: o
+            quadradinho é o símbolo da tela inicial do aparelho, e aqui a
+            tela inteira está disponível para a marca. */}
+        <Logo
+          href={null}
+          largura={260}
+          prioridade
+          className={`h-auto w-60 max-w-[70vw] ${abrindo ? "animate-pulsar" : ""}`}
         />
       </div>
 
