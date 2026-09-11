@@ -28,6 +28,13 @@ const CURSO = {
   cargaHoraria: 40,
 };
 
+const FERRAMENTAS_IA = [
+  { chave: "chatgpt", nome: "ChatGPT", descricao: "Conversa, escrita, planejamento e revisão de materiais.", categoria: "Assistente de texto", url: "https://chatgpt.com/", urlCadastro: "https://chatgpt.com/", ordem: 0 },
+  { chave: "gemini", nome: "Gemini", descricao: "Assistente do Google para pesquisa, ideias e materiais didáticos.", categoria: "Assistente de texto", url: "https://gemini.google.com/", urlCadastro: "https://gemini.google.com/", ordem: 1 },
+  { chave: "deepseek", nome: "DeepSeek", descricao: "Assistente de texto para testar variações de prompts.", categoria: "Assistente de texto", url: "https://chat.deepseek.com/", urlCadastro: "https://chat.deepseek.com/", ordem: 2 },
+  { chave: "notebooklm", nome: "NotebookLM", descricao: "Leitura assistida de fontes próprias, com citações para conferência.", categoria: "Pesquisa com fontes", url: "https://notebooklm.google.com/", urlCadastro: "https://notebooklm.google.com/", ordem: 3 },
+];
+
 /*
  * A apostila foi concebida para encontro presencial. A trilha é individual:
  * aqui preservamos o conteúdo e trocamos apenas as instruções de sala
@@ -660,6 +667,25 @@ const MODULOS = [
       { titulo: "Checkpoint final", tipo: TipoLicao.CHECKPOINT, xp: 80, tempo: 5, cap: "Encontro 4", conteudo: { titulo: "Você concluiu a trilha", itens: ["Criar e revisar avaliações", "Usar rubricas claras", "Anonimizar dados antes de usar IA", "Lidar com autoria sem depender de detectores", "Manter um banco pessoal de prompts"], tarefa: "Aplique seu projeto de intervenção e registre o que mudou na sua prática." } },
     ],
   },
+  {
+    ordem: 4, titulo: "Extra: oficina de planejamento", subtitulo: "Prática guiada para transformar a apostila em rotina", cor: "#14B8A6", icone: "🧭", faixa: "Extra", pago: false,
+    licoes: [
+      { titulo: "Do prompt ao material utilizável", tipo: TipoLicao.TEORIA, xp: 15, tempo: 6, cap: "Extensão pedagógica", conteudo: { blocos: [{ tipo: "paragrafo", texto: "Esta oficina é uma extensão nova, baseada nos princípios de P.T.C.F., revisão humana, acessibilidade e privacidade vistos na apostila. O objetivo é reunir esses passos em uma rotina repetível." }, { tipo: "lista", titulo: "Ciclo de qualidade", itens: ["Defina objetivo e restrições", "Peça um primeiro rascunho", "Confira fatos, linguagem e inclusão", "Teste um trecho com a turma", "Registre o que ajustará na próxima vez"] }] } },
+      { titulo: "Caso: um material bonito, mas inviável", tipo: TipoLicao.CASO, xp: 35, tempo: 8, cap: "Extensão pedagógica", conteudo: { titulo: "Um material bonito, mas inviável", contexto: "Uma professora recebeu da IA uma sequência visualmente atraente, mas ela pressupõe projetor, impressão colorida e 90 minutos que a turma não tem.", pergunta: "Quais restrições devem entrar no próximo prompt e quais partes você manteria?", solucao: "Volte ao P.T.C.F.: informe tempo, recursos existentes, número de alunos e objetivo. Preserve a ideia pedagógica, não a forma que a IA escolheu.", tempoMinutos: 8 } },
+      { titulo: "Desafio: seu roteiro de revisão", tipo: TipoLicao.DESAFIO, xp: 35, tempo: 8, cap: "Extensão pedagógica", conteudo: { titulo: "Desafio: seu roteiro de revisão", segundos: 480, instrucoes: ["Escolha um material que você já gerou com IA.", "Revise objetivo, fontes, adequação ao ano, acessibilidade e dados pessoais.", "Escreva um refinamento com as duas correções mais importantes.", "Salve uma checklist curta para reaplicar."], fechamento: "Produto de saída: uma rotina de revisão que evita aceitar respostas prontas sem critério." } },
+      { titulo: "Checkpoint da oficina extra", tipo: TipoLicao.CHECKPOINT, xp: 50, tempo: 4, cap: "Extensão pedagógica", conteudo: { titulo: "Planejamento com qualidade", itens: ["Transformar restrições em contexto", "Revisar antes de aplicar", "Checar acessibilidade e privacidade", "Salvar um modelo que melhora com o uso"], tarefa: "Use sua checklist em um material real antes da próxima aula." } },
+    ],
+  },
+  {
+    ordem: 5, titulo: "Avançado: projetos com IA", subtitulo: "Decisões pedagógicas, avaliação e implementação responsável", cor: "#7C3AED", icone: "🎓", faixa: "Avançado", pago: true,
+    licoes: [
+      { titulo: "Projetar antes de gerar", tipo: TipoLicao.TEORIA, xp: 20, tempo: 8, cap: "Extensão avançada", conteudo: { blocos: [{ tipo: "paragrafo", texto: "Conteúdo avançado novo: aqui a IA entra em um projeto pedagógico inteiro, mas as escolhas continuam sendo do educador. Use os fundamentos da apostila como critério: objetivo claro, contexto real, conferência e proteção de dados." }, { tipo: "lista", titulo: "Antes do primeiro prompt", itens: ["Qual aprendizagem será evidenciada?", "Que decisão continua humana?", "Que evidência mostrará progresso?", "Como estudantes com ritmos diferentes participarão?"] }] } },
+      { titulo: "Caso: automação que reduz a escuta", tipo: TipoLicao.CASO, xp: 40, tempo: 10, cap: "Extensão avançada", conteudo: { titulo: "Automação que reduz a escuta", contexto: "A equipe quer gerar feedbacks em massa para uma turma. Os textos ficam corretos, mas estudantes não reconhecem suas produções nem sabem qual próximo passo priorizar.", pergunta: "Como redesenhar o fluxo para ganhar tempo sem transformar feedback em mensagem genérica?", solucao: "Use a IA para estruturar rascunhos anônimos e critérios; o professor seleciona evidências reais, define uma prioridade por estudante e revisa o tom. Eficiência não substitui escuta.", tempoMinutos: 10 } },
+      { titulo: "Duelo: pedido genérico ou evidência clara?", tipo: TipoLicao.DUELO, xp: 35, tempo: 7, cap: "Extensão avançada", conteudo: { titulo: "Pedido genérico ou evidência clara?", tempo: "7 min", contexto: "Compare os dois pedidos antes de escrever sua versão.", promptRuim: "Crie um projeto sobre meio ambiente para minha turma.", resultadoRuim: "Sem objetivo, duração, recursos ou evidência, a resposta tende a ser genérica e difícil de aplicar.", promptBom: "Atue como co-planejador. Para 8º ano, proponha um projeto de 3 aulas sobre consumo de água. Contexto: 32 alunos e pouco acesso à internet. A evidência final deve ser uma proposta local justificada com dados. Entregue etapas, materiais de baixo custo, apoios de leitura e rubrica de 3 critérios.", resultadoBom: "O pedido explicita objetivo, contexto, evidência, restrições e formato; a IA recebe direção e o professor preserva o julgamento.", desafio: "Escreva uma versão desse pedido para um projeto real seu:", promptParaReescrever: "Crie um projeto para minha turma." } },
+      { titulo: "Desafio: protocolo de uso responsável", tipo: TipoLicao.DESAFIO, xp: 45, tempo: 12, cap: "Extensão avançada", conteudo: { titulo: "Desafio: protocolo de uso responsável", segundos: 720, instrucoes: ["Escolha uma tarefa recorrente da sua escola.", "Defina o que a IA pode rascunhar e o que exige decisão humana.", "Liste quais dados precisam ser anonimizados ou não podem sair da escola.", "Crie um critério de qualidade que você conferirá antes de usar o resultado.", "Escreva como comunicará esse uso de modo transparente."], fechamento: "Produto de saída: um protocolo que torna o uso de IA verificável, seguro e pedagógico." } },
+      { titulo: "Checkpoint avançado", tipo: TipoLicao.CHECKPOINT, xp: 90, tempo: 5, cap: "Extensão avançada", conteudo: { titulo: "Projeto com decisão humana", itens: ["Projetar evidências antes de gerar", "Usar IA para rascunho, não para julgar", "Criar apoios sem reduzir expectativas", "Proteger dados e explicar o processo"], tarefa: "Aplique o protocolo em uma atividade pequena, registre o resultado e revise-o antes de escalar." } },
+    ],
+  },
 ];
 
 void MODULOS_INICIAIS;
@@ -691,12 +717,21 @@ async function main() {
   });
   console.log(`  curso: ${curso.titulo}`);
 
+  for (const ferramenta of FERRAMENTAS_IA) {
+    await prisma.aiTool.upsert({
+      where: { chave: ferramenta.chave },
+      update: ferramenta,
+      create: ferramenta,
+    });
+  }
+  console.log(`  ferramentas de IA: ${FERRAMENTAS_IA.length}`);
+
   // ---- Módulos e lições ----
   let totalLicoes = 0;
   for (const m of MODULOS) {
     const modulo = await prisma.module.upsert({
       where: { courseId_ordem: { courseId: curso.id, ordem: m.ordem } },
-      update: { titulo: m.titulo, subtitulo: m.subtitulo, cor: m.cor, icone: m.icone },
+      update: { titulo: m.titulo, subtitulo: m.subtitulo, cor: m.cor, icone: m.icone, pago: m.pago ?? false, faixa: m.faixa ?? null },
       create: {
         courseId: curso.id,
         ordem: m.ordem,
@@ -704,6 +739,8 @@ async function main() {
         subtitulo: m.subtitulo,
         cor: m.cor,
         icone: m.icone,
+        pago: m.pago ?? false,
+        faixa: m.faixa ?? null,
       },
     });
 
@@ -772,6 +809,8 @@ async function main() {
           variaveis,
           categoria: c.categoria,
           dica: c.dica ?? null,
+          origem: l.cap ?? null,
+          faixa: m.faixa ?? "Gratuito",
           ferramentasSugeridas: ["gemini", "deepseek", "chatgpt"],
         };
 
@@ -811,6 +850,8 @@ async function main() {
       categoria: p.categoria,
       disciplina: p.disciplina,
       dica: `Da apostila — ${p.origem}.`,
+      origem: p.origem,
+      faixa: "Gratuito",
       ferramentasSugeridas: ["gemini", "deepseek", "chatgpt"],
     };
 

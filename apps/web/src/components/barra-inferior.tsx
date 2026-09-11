@@ -33,6 +33,8 @@ const DIREITA: Posicao[] = [
 const SECUNDARIOS: Posicao[] = [
   { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
   { href: "/app/prompts", rotulo: "Banco de prompts", icone: "prompt" },
+  { href: "/app/criar-prompt", rotulo: "Criar prompt guiado", icone: "ideias" },
+  { href: "/app/ferramentas", rotulo: "Ferramentas de IA", icone: "ferramentas" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
   { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
   { href: "/app/acesso", rotulo: "Meu acesso", icone: "seguranca" },

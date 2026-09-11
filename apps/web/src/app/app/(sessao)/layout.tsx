@@ -19,6 +19,8 @@ const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
   { href: "/app", rotulo: "Início", icone: "inicio" },
   { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
   { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
+  { href: "/app/criar-prompt", rotulo: "Criar prompt", icone: "ideias" },
+  { href: "/app/ferramentas", rotulo: "Ferramentas", icone: "ferramentas" },
   { href: "/app/diario", rotulo: "Diário", icone: "documentos" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
   { href: "/app/missoes", rotulo: "Missões", icone: "metas" },

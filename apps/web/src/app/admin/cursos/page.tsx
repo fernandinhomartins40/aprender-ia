@@ -155,6 +155,7 @@ export default async function Cursos() {
                       <p className="mt-1 text-sm text-cinza">
                         {m._count.licoes} lições
                       </p>
+                      {m.faixa && <p className={m.pago ? "mt-1 text-xs font-bold text-indigo" : "mt-1 text-xs font-bold text-verde-dark"}>{m.faixa}{m.pago ? " · plano completo" : " · gratuito"}</p>}
                     </div>
                   ))}
                 </div>

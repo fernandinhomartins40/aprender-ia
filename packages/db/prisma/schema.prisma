@@ -410,6 +410,11 @@ model PromptTemplate {
   categoria String // "planejamento" | "avaliacao" | "inclusao" | ...
   disciplina String?
   dica      String? @db.Text
+  /// Referência verificável: capítulo da apostila ou extensão pedagógica.
+  origem    String?
+  /// Gratuito, Extra ou Avançado. A biblioteca usa esta faixa para não
+  /// prometer a usuários FREE um material que o servidor bloqueia.
+  faixa     String  @default("Gratuito")
 
   ferramentasSugeridas String[] // ["gemini", "deepseek", "chatgpt"]
 
@@ -422,6 +427,25 @@ model PromptTemplate {
   @@index([categoria])
   @@index([disciplina])
   @@map("prompt_templates")
+}
+
+/// Catálogo administrável de ferramentas externas. URLs ficam no banco para
+/// que trocar uma ferramenta não exija publicar uma nova versão do PWA.
+model AiTool {
+  id           String   @id @default(cuid())
+  chave        String   @unique
+  nome         String
+  descricao    String   @db.Text
+  categoria    String
+  url          String
+  urlCadastro  String?
+  ativo        Boolean  @default(true)
+  ordem        Int      @default(0)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([ativo, ordem])
+  @@map("ai_tools")
 }
 
 model PromptRun {

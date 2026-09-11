@@ -28,6 +28,8 @@ export default async function Prompts() {
           categoria: p.categoria,
           disciplina: p.disciplina,
           dica: p.dica,
+          origem: p.origem,
+          faixa: p.faixa,
           variaveis: (p.variaveis as any) ?? [],
           ferramentasSugeridas: p.ferramentasSugeridas,
         }))}

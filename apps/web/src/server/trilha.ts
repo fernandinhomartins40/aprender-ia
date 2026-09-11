@@ -90,11 +90,19 @@ export async function carregarTrilha(userId: string) {
 
   let jaLiberouProxima = false;
   const modulos = curso.modulos.map((m) => {
+    // A faixa avançada vive no mesmo curso da parte gratuita. A checagem é
+    // feita no servidor, por módulo, para que esconder um link no cliente
+    // nunca seja a única barreira de acesso.
+    const acessoModulo = dono
+      ? avaliarAcesso(dono, { pago: m.pago })
+      : ({ permitido: false, motivo: "curso-pago-plano-free", mensagem: "Módulo indisponível." } as Veredito);
     const licoes = m.licoes.map((l) => {
       const p = porLicao.get(l.id);
       let status: StatusLicao;
 
-      if (p?.status === "CONCLUIDA") {
+      if (!acessoModulo.permitido) {
+        status = "BLOQUEADA";
+      } else if (p?.status === "CONCLUIDA") {
         status = "CONCLUIDA";
       } else if (!jaLiberouProxima) {
         status = p?.status === "EM_ANDAMENTO" ? "EM_ANDAMENTO" : "DISPONIVEL";
@@ -122,14 +130,19 @@ export async function carregarTrilha(userId: string) {
       subtitulo: m.subtitulo,
       cor: m.cor ?? "#4F46E5",
       icone: m.icone,
+      faixa: m.faixa,
+      bloqueadoPorPlano: !acessoModulo.permitido,
+      mensagemBloqueio: acessoModulo.permitido ? null : acessoModulo.mensagem,
       licoes,
       concluidas,
       total: licoes.length,
     };
   });
 
-  const totalLicoes = modulos.reduce((s, m) => s + m.total, 0);
-  const totalConcluidas = modulos.reduce((s, m) => s + m.concluidas, 0);
+  // O percentual FREE não inclui uma faixa que ainda não pode ser cursada.
+  const modulosAcessiveis = modulos.filter((m) => !m.bloqueadoPorPlano);
+  const totalLicoes = modulosAcessiveis.reduce((s, m) => s + m.total, 0);
+  const totalConcluidas = modulosAcessiveis.reduce((s, m) => s + m.concluidas, 0);
   const xpTotal = progressos.reduce((s, p) => s + p.xpGanho, 0);
 
   return {

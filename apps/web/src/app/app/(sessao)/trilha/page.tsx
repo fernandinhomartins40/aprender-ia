@@ -68,8 +68,19 @@ export default async function Trilha() {
                 <p className="text-sm text-tinta-clara">
                   {m.subtitulo} · {m.concluidas}/{m.total}
                 </p>
+                {m.faixa && (
+                  <p className={m.bloqueadoPorPlano ? "mt-1 text-xs font-bold text-indigo" : "mt-1 text-xs font-bold text-verde-dark"}>
+                    {m.bloqueadoPorPlano ? `🔒 ${m.faixa} · Plano completo` : m.faixa}
+                  </p>
+                )}
               </div>
             </div>
+
+            {m.bloqueadoPorPlano && (
+              <div className="mb-4 rounded-lg border border-indigo-line bg-indigo-soft px-4 py-3 text-sm text-indigo-dark">
+                {m.mensagemBloqueio}
+              </div>
+            )}
 
             <ol className="relative space-y-3 pl-6">
               {/* linha vertical conectando os nós */}

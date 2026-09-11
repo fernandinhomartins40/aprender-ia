@@ -10,6 +10,8 @@ type Item = {
   categoria: string;
   disciplina: string | null;
   dica: string | null;
+  origem: string | null;
+  faixa: string;
   variaveis: { chave: string; rotulo?: string; exemplo?: string }[];
   ferramentasSugeridas: string[];
 };
@@ -32,7 +34,7 @@ export function BibliotecaPrompts({
 
   const filtrados = prompts.filter((p) => {
     const bateCategoria = categoria === "todas" || p.categoria === categoria;
-    const texto = `${p.titulo} ${p.corpo} ${p.disciplina ?? ""}`.toLowerCase();
+    const texto = `${p.titulo} ${p.corpo} ${p.disciplina ?? ""} ${p.origem ?? ""}`.toLowerCase();
     return bateCategoria && texto.includes(busca.toLowerCase());
   });
 
@@ -77,6 +79,7 @@ export function BibliotecaPrompts({
                   <p className="mt-0.5 text-sm text-cinza">
                     {p.categoria}
                     {p.disciplina && ` · ${p.disciplina}`}
+                    {p.origem && ` · ${p.origem}`}
                   </p>
                 </div>
                 <span className="shrink-0 font-titulo text-sm font-bold text-indigo">

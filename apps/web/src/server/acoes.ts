@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import { exigirAluno, garantirMatricula } from "./trilha";
-import { verificarAcessoCurso } from "./acesso";
+import { avaliarAcesso, SELECT_ACESSO, verificarAcessoCurso } from "./acesso";
 import { analisarPtcf, type Analise } from "@/lib/motor-ptcf";
 import { nivelDoXp } from "@/lib/gamificacao";
 import { notificar } from "./notificacoes";
@@ -168,9 +168,16 @@ export async function concluirLicao(dados: FormData) {
 
   const licao = await prisma.lesson.findUnique({
     where: { id: lessonId },
-    select: { xpRecompensa: true, tipo: true, moduleId: true, module: { select: { titulo: true } } },
+    select: { xpRecompensa: true, tipo: true, moduleId: true, module: { select: { titulo: true, pago: true } } },
   });
   if (!licao) return null;
+
+  // Não basta a tela esconder a faixa avançada: uma chamada direta à ação
+  // também precisa respeitar o plano do módulo.
+  if (licao.module.pago) {
+    const conta = await prisma.user.findUnique({ where: { id: user.id }, select: SELECT_ACESSO });
+    if (!conta || !avaliarAcesso(conta, { pago: true }).permitido) return null;
+  }
 
   const jaFeita = await prisma.lessonProgress.findUnique({
     where: { enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId } },

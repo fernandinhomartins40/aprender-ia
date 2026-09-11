@@ -111,7 +111,7 @@ export async function listarCursos() {
       _count: { select: { matriculas: true, modulos: true, turmas: true } },
       modulos: {
         orderBy: { ordem: "asc" },
-        select: { id: true, titulo: true, cor: true, _count: { select: { licoes: true } } },
+        select: { id: true, titulo: true, cor: true, pago: true, faixa: true, _count: { select: { licoes: true } } },
       },
     },
   });
