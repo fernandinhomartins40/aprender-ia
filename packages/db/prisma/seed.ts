@@ -193,8 +193,22 @@ const MODULOS = [
           introducao:
             "Hora de praticar de verdade. Personalize o prompt abaixo com a sua disciplina e o seu ano, escolha uma ferramenta e veja o resultado.",
           categoria: "planejamento",
+          // [CONTEXTO] entrou no corpo porque a dica mandava "caprichar
+          // no Contexto" e não havia onde escrevê-lo: o prompt saía sem
+          // a letra que a própria lição diz ser a mais importante.
           corpo:
-            "Aja como professor(a) de [DISCIPLINA] do [ANO]. Crie um plano de aula de 50 minutos sobre [TEMA]. Inclua: objetivo de aprendizagem, habilidade BNCC relacionada, materiais necessários (de baixo custo), passo a passo cronometrado, e uma atividade de fechamento.",
+            "Aja como professor(a) de [DISCIPLINA] do [ANO]. Crie um plano de aula de 50 minutos sobre [TEMA]. Minha turma: [CONTEXTO]. Inclua: objetivo de aprendizagem, habilidade BNCC relacionada, materiais necessários (de baixo custo), passo a passo cronometrado, e uma atividade de fechamento.",
+          campos: [
+            { chave: "DISCIPLINA", rotulo: "Disciplina", exemplo: "Ex: Ciências" },
+            { chave: "ANO", rotulo: "Ano/série", exemplo: "Ex: 5º ano" },
+            { chave: "TEMA", rotulo: "Tema da aula", exemplo: "Ex: sistema solar" },
+            {
+              chave: "CONTEXTO",
+              rotulo: "Sua turma",
+              exemplo: "Ex: 28 alunos, escola rural, sem projetor, 4 com defasagem",
+              linhas: 3,
+            },
+          ],
           dica: "Capriche no Contexto: diga quantos alunos, o que a escola tem e o que não tem.",
         },
       },
@@ -259,6 +273,18 @@ const MODULOS = [
           categoria: "pareceres",
           corpo:
             "Aja como coordenadora pedagógica experiente em avaliação formativa. Transforme as anotações abaixo em um parecer descritivo de 2 parágrafos, em tom acolhedor e profissional. Comece pelos avanços, aponte o que precisa de estímulo sem julgamento, e termine com uma meta positiva.\n\nAnotações sobre aluno(a) fictício(a) do [ANO]:\n[SUAS ANOTAÇÕES]",
+          campos: [
+            { chave: "ANO", rotulo: "Ano/série", exemplo: "Ex: 3º ano" },
+            {
+              chave: "SUAS ANOTAÇÕES",
+              rotulo: "Suas anotações",
+              // O exemplo mostra o formato esperado — tópicos soltos, do
+              // jeito que o professor realmente anota no caderno — e já
+              // usa nome fictício, reforçando a dica sem repeti-la.
+              exemplo: "Ex: lê bem, mas escreve pouco; participa; falta às segundas",
+              linhas: 4,
+            },
+          ],
           dica: "Nunca use o nome real do aluno. Escreva sempre 'aluno fictício'.",
         },
       },
@@ -343,8 +369,22 @@ const MODULOS = [
           introducao:
             "A técnica mais valiosa do curso: todos trabalham o mesmo tema, em três profundidades, sem ninguém se sentir exposto.",
           categoria: "inclusao",
+          // Ganhou Papel e Contexto: o corpo começava direto no "Crie",
+          // sem dizer quem a IA deve ser nem como é a turma — e é uma
+          // lição sobre adaptar para alunos reais.
           corpo:
-            "Crie a mesma atividade sobre [TEMA] em 3 versões para o [ANO]:\n\nVersão A (Básica): para alunos com defasagem. Texto curto, perguntas com resposta localizada no texto.\nVersão B (Intermediária): para o nível esperado. Perguntas de interpretação.\nVersão C (Avançada): perguntas de inferência e opinião.\n\nAs 3 versões devem ter o MESMO tema e aparência visual semelhante.",
+            "Aja como professor(a) de [DISCIPLINA] especialista em ensino inclusivo. Crie a mesma atividade sobre [TEMA] em 3 versões para o [ANO]. Minha turma: [CONTEXTO].\n\nVersão A (Básica): para alunos com defasagem. Texto curto, perguntas com resposta localizada no texto.\nVersão B (Intermediária): para o nível esperado. Perguntas de interpretação.\nVersão C (Avançada): perguntas de inferência e opinião.\n\nAs 3 versões devem ter o MESMO tema e aparência visual semelhante.",
+          campos: [
+            { chave: "DISCIPLINA", rotulo: "Disciplina", exemplo: "Ex: Português" },
+            { chave: "TEMA", rotulo: "Tema da atividade", exemplo: "Ex: interpretação de fábula" },
+            { chave: "ANO", rotulo: "Ano/série", exemplo: "Ex: 4º ano" },
+            {
+              chave: "CONTEXTO",
+              rotulo: "Sua turma",
+              exemplo: "Ex: 30 alunos, 6 não alfabetizados, 1 com laudo de TEA",
+              linhas: 3,
+            },
+          ],
           dica: "Folhas parecidas evitam que a turma perceba quem recebeu qual versão.",
         },
       },
@@ -509,10 +549,30 @@ async function main() {
 
       // Lições do tipo PROMPT ganham um template reutilizável na biblioteca
       if (l.tipo === TipoLicao.PROMPT && "corpo" in l.conteudo) {
-        const c = l.conteudo as { corpo: string; categoria: string; dica?: string };
+        const c = l.conteudo as {
+          corpo: string;
+          categoria: string;
+          dica?: string;
+          campos?: { chave: string; rotulo: string; exemplo: string; linhas?: number }[];
+        };
+
+        // Os campos vêm escritos na lição quando existem.
+        //
+        // Antes o rótulo era derivado da chave e não havia exemplo
+        // nenhum, então a tela mostrava "Disciplina / Ex: disciplina" —
+        // o placeholder repetindo a pergunta em vez de responder. Quem
+        // nunca escreveu um prompt não aprende nada com isso; um exemplo
+        // concreto ("Ex: Ciências") ensina o tipo de resposta esperada.
+        //
+        // O fallback continua para qualquer variável que apareça no
+        // corpo sem estar declarada: melhor um rótulo tosco do que um
+        // campo que some da tela.
+        const declarados = new Map((c.campos ?? []).map((v) => [v.chave, v]));
         const variaveis = [...new Set(c.corpo.match(/\[([A-ZÀ-Ú0-9_ /]+)\]/g) ?? [])].map(
           (v) => {
             const chave = v.slice(1, -1);
+            const declarado = declarados.get(chave);
+            if (declarado) return { ...declarado, tipo: "texto" };
             return { chave, rotulo: chave.charAt(0) + chave.slice(1).toLowerCase(), tipo: "texto" };
           },
         );

@@ -329,9 +329,39 @@ function montarVeredito(dimensoes: AnaliseDimensao[]): string {
   return `${completas.length} de 4 letras prontas. Falta trabalhar: ${lista}.`;
 }
 
+/**
+ * Marcadores `[ASSIM]` que sobraram sem preencher.
+ *
+ * Nas lições de prompt pronto, o corpo é escrito por nós e já contém
+ * "materiais de baixo custo", "alunos com defasagem", "3 versões" — que
+ * são marcadores legítimos de Contexto e Formato QUANDO a pessoa os
+ * escreve, mas aqui são texto nosso. Medido: o prompt da lição 7 sem
+ * nenhum campo preenchido dava 4 de 4 letras, e quem clicasse em
+ * "Conferir" sem digitar nada receberia "as quatro letras estão
+ * presentes" — o falso elogio que este motor existe para eliminar.
+ *
+ * A regra é sobre a AUTORIA, não sobre as palavras: enquanto o campo
+ * está vazio, o texto ao redor dele não é resposta de ninguém. Os
+ * padrões continuam certos; o que muda é quanto do texto conta.
+ */
+const MARCADOR_VAZIO = /\[([A-ZÀ-Ú0-9_ /]+)\]/;
+
 /** Analisa o texto escrito pelo aluno. Função pura: mesma entrada, mesma saída. */
 export function analisarPtcf(entrada: string): Analise {
   const original = (entrada ?? "").trim();
+
+  // Um prompt com marcador por preencher não é um prompt: é um modelo.
+  // Dizer qual campo falta é mais útil do que analisar o molde e
+  // devolver um resultado que não descreve o trabalho de ninguém.
+  const pendente = MARCADOR_VAZIO.exec(original);
+  if (pendente) {
+    return {
+      dimensoes: [],
+      completas: 0,
+      vazio: true,
+      veredito: `Preencha os campos acima antes de conferir — ainda falta ${pendente[1]?.toLowerCase() ?? "um campo"}. A análise lê o prompt pronto, do jeito que ele vai chegar à IA.`,
+    };
+  }
 
   if (original.length < MINIMO_CARACTERES) {
     return {
