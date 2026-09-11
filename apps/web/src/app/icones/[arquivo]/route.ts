@@ -42,8 +42,10 @@ const PERMITIDOS: Record<string, Alvo> = {
   "icone-384.png": { lado: 384, estatico: "icone-384.png" },
   "icone-512.png": { lado: 512, estatico: "icone-512.png" },
   "apple-touch-icon.png": { lado: 180, estatico: "apple-touch-icon.png" },
-  "apple-touch-152.png": { lado: null, estatico: "apple-touch-152.png" },
-  "apple-touch-167.png": { lado: null, estatico: "apple-touch-167.png" },
+  // 152 e 167 tinham `lado: null`, ou seja, só vinham do repositório:
+  // trocar a arte no painel não mudava o ícone em nenhum iPad.
+  "apple-touch-152.png": { lado: 152, estatico: "apple-touch-152.png" },
+  "apple-touch-167.png": { lado: 167, estatico: "apple-touch-167.png" },
   "apple-touch-180.png": { lado: 180, estatico: "apple-touch-180.png" },
   // O maskable é o que o Android prefere para o atalho. Ele tem chave
   // própria no banco (`pwa.icone_maskable_*`), gerada pelo painel com a

@@ -13,7 +13,12 @@
 // já visitou o site — que passa a misturar HTML novo com JavaScript velho
 // depois de cada deploy. O deploy reescreve este valor.
 const VERSAO = "aprender-ia-v2";
-const ESSENCIAIS = ["/offline", "/manifest.json", "/marca/logo-900.png"];
+// O manifest saiu daqui: virou rota dinâmica (`/manifest.webmanifest`) e
+// não é mais um arquivo. Pré-cacheá-lo pelo nome antigo fazia o `addAll`
+// falhar inteiro com 404 — e um `addAll` que rejeita aborta a instalação
+// do service worker, derrubando junto o offline e as notificações.
+// Também não faz sentido guardá-lo: ele precisa refletir o ícone atual.
+const ESSENCIAIS = ["/offline", "/marca/logo-900.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -63,9 +68,28 @@ self.addEventListener("fetch", (e) => {
   // deixa o formulário de login pendurado.
   if (url.pathname.startsWith("/entrar") || url.pathname.startsWith("/cadastro")) return;
 
+  // Os ícones do aplicativo NÃO entram no cache-first.
+  //
+  // Eles não têm hash no nome: `/icones/icone-192.png` é o mesmo endereço
+  // antes e depois de o administrador trocar a arte no painel. Servidos
+  // pelo cache, o ícone antigo sobrevivia à troca e voltava a aparecer —
+  // era por isso que "arrumava e estragava de novo". Rede primeiro, com o
+  // cache só como reserva para quando não há conexão.
+  if (url.pathname.startsWith("/icones")) {
+    e.respondWith(
+      fetch(e.request)
+        .then((resp) => {
+          const copia = resp.clone();
+          caches.open(VERSAO).then((c) => c.put(e.request, copia));
+          return resp;
+        })
+        .catch(() => caches.match(e.request)),
+    );
+    return;
+  }
+
   // Assets com hash: cache primeiro
-  if (url.pathname.startsWith("/_next/static") || url.pathname.startsWith("/marca")
-      || url.pathname.startsWith("/icones")) {
+  if (url.pathname.startsWith("/_next/static") || url.pathname.startsWith("/marca")) {
     e.respondWith(
       caches.match(e.request).then(
         (r) =>

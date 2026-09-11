@@ -57,8 +57,91 @@ export async function tamanhosIcone(): Promise<TamanhoIcone[]> {
     { chave: "pwa.icone_256", lado: 256, rotulo: "256 px", onde: "Desktop" },
     { chave: "pwa.icone_384", lado: 384, rotulo: "384 px", onde: "Android (densidade alta)" },
     { chave: "pwa.icone_512", lado: 512, rotulo: "512 px", onde: "Splash e loja" },
-    { chave: "pwa.icone_180", lado: 180, rotulo: "180 px", onde: "iPhone e iPad" },
+    // O iOS escolhe pelo tamanho do aparelho: iPhone usa 180, iPad 152 ou
+    // 167. Os dois últimos vinham só do repositório, então trocar a arte
+    // no painel não mudava o ícone em nenhum iPad.
+    { chave: "pwa.icone_152", lado: 152, rotulo: "152 px", onde: "iPad" },
+    { chave: "pwa.icone_167", lado: 167, rotulo: "167 px", onde: "iPad Pro" },
+    { chave: "pwa.icone_180", lado: 180, rotulo: "180 px", onde: "iPhone" },
   ];
+}
+
+/**
+ * O catálogo de ícones do manifest — fonte única.
+ *
+ * Antes existiam duas fontes desencontradas: o `public/manifest.json`
+ * estático, que declarava `image/png` em tudo, e o banco, que guarda o
+ * que o painel gerou em WebP. O Chrome descarta ícone cujo tipo declarado
+ * não bate com o servido (e o cabeçalho `nosniff` o impede de corrigir
+ * sozinho), então o Android caía no favicon — era esta a razão de o ícone
+ * enviado pelo administrador nunca aparecer no aparelho.
+ *
+ * Agora o manifest é gerado a partir daqui, com o tipo REAL de cada
+ * arquivo e um carimbo de versão que muda quando o administrador salva.
+ */
+export type IconeManifest = {
+  arquivo: string;
+  lado: number;
+  tipo: string;
+  maskable: boolean;
+};
+
+/** Tipo real de cada ícone e o carimbo de versão, lidos do banco. */
+export async function catalogoIcones(): Promise<{
+  icones: IconeManifest[];
+  versao: string;
+}> {
+  const comuns = await tamanhosIcone();
+  const mascaras = await tamanhosMaskable();
+
+  // Sem banco (ou sem nada enviado), valem os arquivos do repositório,
+  // que são PNG.
+  let tipos = new Map<string, string>();
+  let versao = "padrao";
+
+  try {
+    const linhas = await prisma.platformSetting.findMany({
+      where: { chave: { startsWith: "pwa.icone_" } },
+      select: { chave: true, valor: true, atualizadoEm: true },
+    });
+
+    let maisRecente = 0;
+    for (const l of linhas) {
+      if (!l.valor?.startsWith("data:image/")) continue;
+      const tipo = l.valor.slice(5, l.valor.indexOf(";"));
+      if (tipo) tipos.set(l.chave, tipo);
+      const t = new Date(l.atualizadoEm).getTime();
+      if (t > maisRecente) maisRecente = t;
+    }
+    if (maisRecente > 0) versao = String(maisRecente);
+  } catch (e) {
+    console.error("[icones-pwa] catálogo indisponível, usando o padrão:", e);
+    tipos = new Map();
+  }
+
+  const icones: IconeManifest[] = [];
+
+  for (const t of comuns) {
+    // O de 180 é do iOS e não entra no manifest do Android.
+    if (t.lado === 180) continue;
+    icones.push({
+      arquivo: `icone-${t.lado}.png`,
+      lado: t.lado,
+      tipo: tipos.get(t.chave) ?? "image/png",
+      maskable: false,
+    });
+  }
+
+  for (const t of mascaras) {
+    icones.push({
+      arquivo: `icone-maskable-${t.lado}.png`,
+      lado: t.lado,
+      tipo: tipos.get(t.chave) ?? "image/png",
+      maskable: true,
+    });
+  }
+
+  return { icones, versao };
 }
 
 /** A imagem enviada, para a tela poder mostrá-la e recortar de novo. */
