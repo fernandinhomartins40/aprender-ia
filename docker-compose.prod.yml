@@ -65,6 +65,34 @@ services:
         condition: service_healthy
     networks: [interna]
 
+  # Executa o reengajamento dentro da própria rede Docker. A rota continua
+  # protegida por CRON_SECRET e aplica preferências, horários e limites na
+  # própria aplicação; este serviço só agenda a execução.
+  scheduler:
+    image: curlimages/curl:8.12.1
+    container_name: aprenderia-scheduler
+    restart: unless-stopped
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-}
+      ENGAGEMENT_INTERVAL_SECONDS: ${ENGAGEMENT_INTERVAL_SECONDS:-3600}
+    depends_on:
+      - web
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -z "$${CRON_SECRET}" ]; then
+          echo "CRON_SECRET ausente; agendador de engajamento desativado."
+          exec tail -f /dev/null
+        fi
+        while true; do
+          curl --fail --silent --show-error --max-time 60 \
+            -X POST -H "Authorization: Bearer $${CRON_SECRET}" \
+            http://web:3000/api/engajamento || true
+          sleep "$${ENGAGEMENT_INTERVAL_SECONDS}"
+        done
+    networks: [interna]
+
   nginx:
     image: nginx:1.27-alpine
     container_name: aprenderia-nginx
