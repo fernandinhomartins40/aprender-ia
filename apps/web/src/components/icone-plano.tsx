@@ -132,7 +132,7 @@ export function IconePlano({
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-[30%] ${className}`}
       style={{
         width: tamanho,
         height: tamanho,

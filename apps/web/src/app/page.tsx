@@ -433,25 +433,31 @@ export default async function Home() {
                 <Link
                   key={t.id}
                   href={t.link || "/cadastro"}
-                  className="group flex flex-col rounded-2xl border border-borda p-5 transition-shadow hover:shadow-md"
+                  className="group flex flex-col rounded-2xl p-4 transition-shadow hover:shadow-md"
                   // 10% de opacidade da cor da trilha: dá identidade ao
                   // cartão sem comprometer o contraste do texto escuro.
                   style={{ background: `${cor}0F` }}
                 >
-                  {/* Altura fixa no ícone e no título: os textos das
-                      trilhas têm comprimentos diferentes, e sem isso a
-                      seta de cada cartão parava numa altura distinta. */}
-                  {t.icone && <IconePlano nome={t.icone} cor={cor} tamanho={44} />}
-                  <h3 className="mt-3 font-titulo font-bold leading-snug text-tinta">
-                    {t.titulo}
-                  </h3>
-                  <p className="mt-1.5 flex-1 text-sm leading-relaxed text-tinta-clara">
+                  {/* Ícone e título na mesma linha, como no desenho: o
+                      título empilhado embaixo alongava o cartão sem
+                      necessidade, já que sobra largura ao lado do ícone. */}
+                  <div className="flex items-center gap-2.5">
+                    {t.icone && <IconePlano nome={t.icone} cor={cor} tamanho={38} />}
+                    <h3 className="font-titulo text-[15px] font-bold leading-tight text-tinta">
+                      {t.titulo}
+                    </h3>
+                  </div>
+
+                  <p className="mt-2 flex-1 text-[13px] leading-relaxed text-tinta-clara">
                     {t.texto}
                   </p>
+
+                  {/* Fundo na cor da trilha, bem diluído: a seta branca com
+                      sombra destoava dos cartões, que não têm borda. */}
                   <span
                     aria-hidden
-                    className="mt-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white font-bold shadow-sm transition-transform group-hover:translate-x-1"
-                    style={{ color: cor }}
+                    className="mt-3 inline-flex h-9 w-9 items-center justify-center rounded-full font-bold transition-transform group-hover:translate-x-1"
+                    style={{ background: `${cor}24`, color: cor }}
                   >
                     →
                   </span>
@@ -487,10 +493,17 @@ export default async function Home() {
               </div>
             ))}
 
+            {/* A frase vai como arte, não como texto: é lettering
+                manuscrito com grifo, que nenhuma fonte da web reproduz.
+                O `alt` carrega o conteúdo para quem usa leitor de tela. */}
             {numeros.texto && (
-              <p className="max-w-[12rem] text-center font-titulo text-lg font-bold text-indigo">
-                {numeros.texto}
-              </p>
+              <Image
+                src="/landing/frase-juntos.webp"
+                alt={numeros.texto}
+                width={892}
+                height={900}
+                className="h-auto w-40 sm:w-48"
+              />
             )}
           </div>
         </section>
