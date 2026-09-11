@@ -350,7 +350,7 @@ export default async function Home() {
               Sem `overflow-hidden`: é o transbordo do mascote que dá o
               efeito da referência. */}
           <div className="relative rounded-[32px] bg-grad-escuro px-6 py-8 sm:px-8 lg:px-10 lg:py-7">
-            <div className="grid items-center gap-8 lg:grid-cols-[200px,minmax(0,1fr),minmax(0,1.15fr)] lg:gap-8">
+            <div className="grid items-center gap-8 lg:grid-cols-[250px,minmax(0,1fr),minmax(0,1fr)] lg:gap-7">
               {plataforma.imagem && (
                 <Image
                   src={plataforma.imagem}
@@ -358,8 +358,10 @@ export default async function Home() {
                   aria-hidden
                   width={280}
                   height={280}
-                  // A margem negativa faz o robô subir para fora da faixa.
-                  className="relative mx-auto h-auto w-36 lg:-mt-16 lg:w-full"
+                  // Sobe para fora da faixa pelo topo e desce até a borda de
+                  // baixo (`-mb-7` cancela o padding), para o notebook
+                  // encostar na base em vez de o robô flutuar no meio.
+                  className="relative mx-auto h-auto w-36 lg:-mb-7 lg:-mt-24 lg:w-full"
                 />
               )}
 
@@ -381,19 +383,19 @@ export default async function Home() {
                   {itensDe(plataforma).map((p) => (
                     <li
                       key={p.id}
-                      className="flex items-center gap-3 rounded-2xl bg-white p-4"
+                      className="flex items-center gap-2.5 rounded-xl bg-white p-3"
                     >
                       {p.icone && (
                         <IconePlano
                           nome={p.icone}
                           cor={p.cor || "#4F46E5"}
-                          tamanho={40}
+                          tamanho={34}
                           // Fundo suave com a figura sólida colorida: dentro
                           // do cartão branco é a figura que carrega a cor.
                           preenchido={false}
                         />
                       )}
-                      <span className="text-[13px] font-bold leading-snug text-tinta">
+                      <span className="text-xs font-bold leading-snug text-tinta">
                         {p.titulo}
                       </span>
                     </li>
@@ -693,7 +695,7 @@ export default async function Home() {
                 alt={chamadaFinal.titulo.replace(/\n/g, " ")}
                 width={1100}
                 height={383}
-                className="h-auto w-full max-w-sm lg:max-w-md"
+                className="h-auto w-full max-w-[280px] lg:max-w-[340px]"
               />
 
               <div>
@@ -714,10 +716,10 @@ export default async function Home() {
                 )}
               </div>
 
-              {/* Mascote e frase sobem para fora da faixa. A margem negativa
-                  é o que produz o transbordo; `relative` os mantém acima do
-                  fundo colorido. */}
-              <div className="relative hidden items-end gap-3 lg:flex">
+              {/* O mascote sobe para fora da faixa pelo topo e desce até a
+                  borda de baixo: `-mb-9` cancela o padding da faixa, de modo
+                  que os pés encostem na base em vez de flutuarem no meio. */}
+              <div className="relative hidden items-end gap-2 lg:flex">
                 {chamadaFinal.imagem && (
                   <Image
                     src={chamadaFinal.imagem}
@@ -725,7 +727,7 @@ export default async function Home() {
                     aria-hidden
                     width={400}
                     height={400}
-                    className="-mt-20 h-auto w-48 drop-shadow-xl"
+                    className="-mb-9 -mt-24 h-auto w-60 drop-shadow-xl"
                   />
                 )}
                 <Image
@@ -733,7 +735,7 @@ export default async function Home() {
                   alt="Aprender transforma realidades!"
                   width={1100}
                   height={1072}
-                  className="-mt-10 h-auto w-28"
+                  className="mb-2 h-auto w-24"
                 />
               </div>
             </div>
