@@ -2,6 +2,7 @@ import { prisma } from "@aprender/db";
 import { lerNumero, lerTexto } from "./configuracoes";
 import { carregarTrilha } from "./trilha";
 import { notificar } from "./notificacoes";
+import { processarConteudosAgendados } from "./conteudo-notificacao";
 
 const DIA = 86_400_000;
 
@@ -19,6 +20,7 @@ function cicloAtual(tipo: "DIARIA" | "SEMANAL" | "ESPECIAL", agora: Date) {
 
 /** Processa missões disponíveis e reengajamento com deduplicação e limite diário. */
 export async function processarEngajamento() {
+  await processarConteudosAgendados();
   const [leve, longa, textoRetorno, textoSequencia, textoQuase, textoMissao, missoes] = await Promise.all([
     lerNumero("engajamento.inatividade_leve_dias"),
     lerNumero("engajamento.inatividade_longa_dias"),

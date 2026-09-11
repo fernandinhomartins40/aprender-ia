@@ -6,6 +6,8 @@ import {
 } from "@/server/notificacoes";
 import { exigirAdmin } from "@/server/admin";
 import { FormNotificacao } from "@/components/form-notificacao";
+import { FormConteudoNotificacao } from "@/components/form-conteudo-notificacao";
+import { criarConteudoNotificacao } from "@/server/conteudo-notificacao";
 import { AvisoWhatsApp } from "@/components/aviso-whatsapp";
 import { dataBR } from "@/lib/dinheiro";
 
@@ -20,7 +22,7 @@ export default async function Notificacoes({
   const params = await searchParams;
   const pagina = Math.max(1, Number(params.pagina ?? 1) || 1);
 
-  const [{ registros, total, paginas, indisponivel }, alunos, turmas] = await Promise.all([
+  const [{ registros, total, paginas, indisponivel }, alunos, turmas, licoes, conteudos] = await Promise.all([
     listarNotificacoes(pagina),
     prisma.user.findMany({
       where: { papel: "ALUNO" },
@@ -31,6 +33,8 @@ export default async function Notificacoes({
       orderBy: { criadoEm: "desc" },
       select: { id: true, nome: true, _count: { select: { membros: true } } },
     }),
+    prisma.lesson.findMany({ orderBy: [{ module: { ordem: "asc" } }, { ordem: "asc" }], select: { id: true, titulo: true, module: { select: { titulo: true } } } }),
+    prisma.notificationContent.findMany({ orderBy: { criadoEm: "desc" }, take: 12, include: { _count: { select: { entregas: true } } } }),
   ]);
 
   const semEmail = registros.filter(
@@ -55,6 +59,8 @@ export default async function Notificacoes({
         </div>
       ) : (
         <>
+          <FormConteudoNotificacao acao={criarConteudoNotificacao} turmas={turmas.map(t => ({ id: t.id, nome: t.nome }))} licoes={licoes.map(l => ({ id: l.id, titulo: l.titulo, modulo: l.module.titulo }))} />
+          {conteudos.length > 0 && <section className="card"><h2 className="font-titulo text-xl font-extrabold">Conteúdos recentes</h2><div className="mt-4 space-y-3">{conteudos.map(c => <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-borda p-3"><div><p className="font-titulo font-bold">{c.titulo}</p><p className="text-sm text-cinza">{c.status === "AGENDADO" && c.publicarEm ? `Agendado para ${dataBR(c.publicarEm)}` : `${c._count.entregas} entrega(s) · ${c.categoria}`}</p></div><span className={c.status === "PUBLICADO" ? "selo-verde" : "selo-amarelo"}>{c.status === "PUBLICADO" ? "Publicado" : "Agendado"}</span></div>)}</div></section>}
           <FormNotificacao
             acao={enviarNotificacao}
             alunos={alunos}

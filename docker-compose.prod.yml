@@ -60,10 +60,25 @@ services:
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       # Protege a rota interna acordada pelo cron diário da VPS.
       CRON_SECRET: ${CRON_SECRET:-}
+    volumes:
+      - notification-media:/app/apps/web/public/uploads/notificacoes
     depends_on:
       postgres:
         condition: service_healthy
+      media-init:
+        condition: service_completed_successfully
     networks: [interna]
+
+  # Volume nomeado nasce como root. Este preparo único garante que o processo
+  # web não privilegiado (uid 1001) consiga gravar mídia sem abrir permissões
+  # para todo o container.
+  media-init:
+    image: alpine:3.21
+    container_name: aprenderia-media-init
+    restart: "no"
+    volumes:
+      - notification-media:/media
+    command: ["/bin/sh", "-c", "mkdir -p /media && chown 1001:1001 /media"]
 
   # Executa o reengajamento dentro da própria rede Docker. A rota continua
   # protegida por CRON_SECRET e aplica preferências, horários e limites na
@@ -114,6 +129,8 @@ services:
 volumes:
   postgres-data:
     name: aprenderia_postgres_data
+  notification-media:
+    name: aprenderia_notification_media
 
 networks:
   interna:

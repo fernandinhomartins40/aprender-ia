@@ -8,11 +8,9 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
     serverActions: {
-      // O padrão é 1 MB e o envio dos ícones do PWA estourava: são sete
-      // PNGs na mesma submissão, e base64 ainda cresce ~33% sobre o
-      // binário. 4 MB cobre o conjunto com folga — o servidor continua
-      // recusando qualquer imagem individual acima de 1,5 MB.
-      bodySizeLimit: "4mb",
+      // Ícones e mídia editorial. O servidor limita cada vídeo/imagem a
+      // 25 MB; a margem absorve o multipart sem aceitar upload ilimitado.
+      bodySizeLimit: "28mb",
     },
   },
 };

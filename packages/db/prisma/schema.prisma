@@ -1113,6 +1113,7 @@ model Notification {
   titulo  String
   corpo   String @db.Text
   link    String?
+  contentId String?
 
   /// Quem disparou. Nulo = a própria plataforma (regra automática).
   autorNome String?
@@ -1124,11 +1125,41 @@ model Notification {
   criadoEm DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content NotificationContent? @relation(fields: [contentId], references: [id], onDelete: SetNull)
 
   @@index([userId, lidoEm])
   @@index([assunto])
   @@index([criadoEm])
+  @@index([contentId])
   @@map("notifications")
+}
+
+model NotificationContent {
+  id String @id @default(cuid())
+  slug String @unique
+  titulo String
+  subtitulo String?
+  corpo String @db.Text
+  imagemUrl String?
+  videoUrl String?
+  icone String @default("notificacoes")
+  categoria String @default("ESSENCIAL")
+  prioridade Int @default(0)
+  ctaRotulo String?
+  ctaLink String?
+  ctaExterno Boolean @default(false)
+  publico String @default("todos")
+  publicoId String?
+  status String @default("RASCUNHO")
+  publicarEm DateTime?
+  expiraEm DateTime?
+  criadoPor String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  entregas Notification[]
+  @@index([status, publicarEm])
+  @@map("notification_contents")
 }
 
 enum TipoMissao {

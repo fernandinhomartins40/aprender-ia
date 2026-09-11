@@ -59,6 +59,7 @@ export type NovaNotificacao = {
   dedupeHoras?: number;
   automatica?: boolean;
   enviarPushAgora?: boolean;
+  contentId?: string | null;
 };
 
 /**
@@ -138,6 +139,7 @@ export async function notificar(
         titulo: entrada.titulo,
         corpo: entrada.corpo,
         link: entrada.link ?? null,
+        contentId: entrada.contentId ?? null,
         autorNome: entrada.autorNome ?? null,
       },
       select: { id: true },
