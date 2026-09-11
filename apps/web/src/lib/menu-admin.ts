@@ -41,6 +41,9 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       // de uma turma, e separá-los obrigava a ir e voltar no cadastro.
       { href: "/admin/alunos", rotulo: "Alunos e turmas", icone: "estudantes" },
       { href: "/admin/turmas", rotulo: "Cronogramas", icone: "calendario", prefixo: true },
+      // Fica em Pessoas, e não em Conteúdo: o que esta tela mostra é o
+      // que os professores escreveram, não o material do curso.
+      { href: "/admin/praticas", rotulo: "Práticas", icone: "prompt" },
       {
         href: "/admin/solicitacoes",
         rotulo: "Solicitações",

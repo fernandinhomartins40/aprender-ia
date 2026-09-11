@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import {
   PlayerTeoria, PlayerQuiz, PlayerDuelo, PlayerCacaErro,
   PlayerPrompt, PlayerDesafio, PlayerCaso, PlayerCheckpoint,
+  type Analisar,
 } from "./players";
 
 export function LicaoCliente({
@@ -15,6 +16,7 @@ export function LicaoCliente({
   proximaId,
   concluir,
   registrar,
+  analisar,
 }: {
   tipo: string;
   conteudo: any;
@@ -29,6 +31,8 @@ export function LicaoCliente({
   proximaId?: string | null;
   concluir: (d: FormData) => Promise<void>;
   registrar: (d: FormData) => Promise<void>;
+  /** Analisa o texto escrito nas atividades de resposta aberta. */
+  analisar: Analisar;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -74,15 +78,36 @@ export function LicaoCliente({
     case "QUIZ":
       return <PlayerQuiz perguntas={conteudo.perguntas ?? []} onCompleto={finalizar} />;
     case "DUELO":
-      return <PlayerDuelo conteudo={conteudo} onCompleto={finalizar} />;
+      return (
+        <PlayerDuelo
+          conteudo={conteudo}
+          onCompleto={finalizar}
+          analisar={analisar}
+          lessonId={lessonId}
+        />
+      );
     case "CACA_ERRO":
       return <PlayerCacaErro conteudo={conteudo} onCompleto={finalizar} />;
     case "DESAFIO":
       return <PlayerDesafio conteudo={conteudo} onCompleto={finalizar} />;
     case "CASO":
-      return <PlayerCaso conteudo={conteudo} onCompleto={finalizar} />;
+      return (
+        <PlayerCaso
+          conteudo={conteudo}
+          onCompleto={finalizar}
+          analisar={analisar}
+          lessonId={lessonId}
+        />
+      );
     case "CHECKPOINT":
-      return <PlayerCheckpoint conteudo={conteudo} onCompleto={finalizar} />;
+      return (
+        <PlayerCheckpoint
+          conteudo={conteudo}
+          onCompleto={finalizar}
+          analisar={analisar}
+          lessonId={lessonId}
+        />
+      );
     case "PROMPT":
       return template ? (
         <PlayerPrompt

@@ -3,6 +3,53 @@
 import { useEffect, useState } from "react";
 import { CardPrompt } from "./card-prompt";
 import { IconeApp } from "./icone-app";
+import { AnalisePtcf, ProximoPasso } from "./analise-ptcf";
+import type { Analise } from "@/lib/motor-ptcf";
+
+/**
+ * A server action que lê o texto do aluno e devolve a análise.
+ *
+ * Opcional em todos os players: se a página não passar (ou se algum dia
+ * um player for usado fora da lição), a atividade continua funcionando
+ * como campo de escrita — apenas sem devolutiva. Nenhuma tela quebra por
+ * falta dela.
+ */
+export type Analisar = (dados: FormData) => Promise<{ analise: Analise; salvo: boolean }>;
+
+/**
+ * Estado comum das atividades de texto livre.
+ *
+ * Fica aqui, e não dentro de cada player, porque os três (DUELO, CASO e
+ * CHECKPOINT) tinham exatamente o mesmo defeito antes — um botão que
+ * revelava texto fixo sem ler nada — e resolver em três lugares
+ * diferentes seria o caminho mais curto para os três voltarem a divergir.
+ */
+function useAnalise(analisar: Analisar | undefined, lessonId: string | undefined, chave: string) {
+  const [analise, setAnalise] = useState<Analise | null>(null);
+  const [analisando, setAnalisando] = useState(false);
+
+  async function enviar(texto: string) {
+    if (!analisar) return;
+    setAnalisando(true);
+    try {
+      const d = new FormData();
+      d.set("texto", texto);
+      d.set("chave", chave);
+      if (lessonId) d.set("lessonId", lessonId);
+      const r = await analisar(d);
+      setAnalise(r.analise);
+    } catch (e) {
+      // A rede caiu no meio. Não deixamos a tela em "Analisando..." para
+      // sempre: a pessoa pode tentar de novo.
+      console.error("[players] análise indisponível:", e);
+      setAnalise(null);
+    } finally {
+      setAnalisando(false);
+    }
+  }
+
+  return { analise, analisando, enviar };
+}
 
 /* ============================================================
    TEORIA — mesma linguagem visual dos quadros da apostila
@@ -166,6 +213,8 @@ export function PlayerQuiz({
 export function PlayerDuelo({
   conteudo,
   onCompleto,
+  analisar,
+  lessonId,
 }: {
   conteudo: {
     contexto: string;
@@ -177,9 +226,11 @@ export function PlayerDuelo({
     promptParaReescrever: string;
   };
   onCompleto: () => void;
+  analisar?: Analisar;
+  lessonId?: string;
 }) {
-  const [revelado, setRevelado] = useState(false);
   const [minhaVersao, setMinhaVersao] = useState("");
+  const { analise, analisando, enviar } = useAnalise(analisar, lessonId, "duelo");
 
   return (
     <div className="space-y-6">
@@ -208,27 +259,59 @@ export function PlayerDuelo({
       </div>
 
       <div className="rounded-lg border-2 border-dashed border-laranja bg-laranja-soft p-5">
-        <p className="flex items-center gap-2 font-titulo font-bold text-laranja-dark"><IconeApp nome="editar_conteudo" tamanho={22} />{conteudo.desafio}</p>
-        <pre className="mt-3 whitespace-pre-wrap rounded-md bg-prompt-bg p-3 font-mono text-sm text-prompt-txt">
+        <p className="flex items-center gap-2 font-titulo text-lg font-bold text-laranja-dark">
+          <IconeApp nome="editar_conteudo" tamanho={22} />
+          Sua vez
+        </p>
+
+        {/* O enunciado antigo era só "reescreva este prompt usando as
+            quatro letras" — e quem não sabia o que isso significa ficava
+            sem saber o que fazer. Agora a instrução diz o passo, o
+            prompt a corrigir aparece rotulado, e o que a análise vai
+            procurar está dito antes de escrever. */}
+        <p className="mt-2 text-laranja-dark">
+          Reescreva o prompt abaixo incluindo as quatro letras. Depois toque
+          em <strong>Analisar a minha versão</strong>: eu leio o seu texto e
+          mostro, letra por letra, o que já está lá e o que falta.
+        </p>
+
+        <p className="mt-4 text-xs font-bold uppercase tracking-wide text-laranja-dark opacity-80">
+          Prompt a corrigir
+        </p>
+        <pre className="mt-1 whitespace-pre-wrap rounded-md bg-prompt-bg p-3 font-mono text-sm text-prompt-txt">
           {conteudo.promptParaReescrever}
         </pre>
-        <textarea
-          value={minhaVersao}
-          onChange={(e) => setMinhaVersao(e.target.value)}
-          rows={5}
-          placeholder="Escreva a sua versão usando Papel, Tarefa, Contexto e Formato..."
-          className="campo mt-3 bg-white"
-        />
-        {!revelado ? (
-          <button onClick={() => setRevelado(true)} className="btn-energia mt-3">
-            Ver como avaliar a minha versão
-          </button>
-        ) : (
-          <p className="mt-3 rounded-md bg-white p-3 text-sm text-laranja-dark">
-            Compare com o exemplo bom acima. A sua versão tem as quatro letras? O{" "}
-            <strong>Contexto</strong> descreve a sua turma de verdade — idade,
-            recursos da escola, dificuldades?
-          </p>
+
+        <ul className="mt-4 grid gap-1 text-sm text-laranja-dark sm:grid-cols-2">
+          <li>
+            <strong>P</strong>apel — quem a IA deve ser
+          </li>
+          <li>
+            <strong>T</strong>arefa — o que ela deve fazer
+          </li>
+          <li>
+            <strong>C</strong>ontexto — a sua turma de verdade
+          </li>
+          <li>
+            <strong>F</strong>ormato — como quer receber
+          </li>
+        </ul>
+
+        <div className="mt-4">
+          <AnalisePtcf
+            valor={minhaVersao}
+            aoMudar={setMinhaVersao}
+            analise={analise}
+            analisando={analisando}
+            aoEnviar={() => enviar(minhaVersao)}
+            dica="Ex.: Aja como professor(a) de... Crie... para uma turma de... Entregue em..."
+          />
+        </div>
+
+        {analise && !analise.vazio && analise.completas === 4 && (
+          <div className="mt-4">
+            <ProximoPasso texto={minhaVersao} />
+          </div>
         )}
       </div>
 
@@ -462,6 +545,8 @@ export function PlayerDesafio({
 export function PlayerCaso({
   conteudo,
   onCompleto,
+  analisar,
+  lessonId,
 }: {
   conteudo: {
     cena: string;
@@ -472,9 +557,12 @@ export function PlayerCaso({
     discussao?: string;
   };
   onCompleto: () => void;
+  analisar?: Analisar;
+  lessonId?: string;
 }) {
   const [resposta, setResposta] = useState("");
   const [revelado, setRevelado] = useState(false);
+  const { analise, analisando, enviar } = useAnalise(analisar, lessonId, "caso");
 
   return (
     <div className="space-y-5">
@@ -486,13 +574,34 @@ export function PlayerCaso({
         <p className="font-titulo text-lg font-bold text-indigo-dark">
           {conteudo.pergunta}
         </p>
-        <textarea
-          value={resposta}
-          onChange={(e) => setResposta(e.target.value)}
-          rows={6}
-          placeholder="Escreva aqui a sua resposta antes de ver a solução..."
-          className="campo mt-3"
-        />
+
+        {/* No CASO a resposta esperada é o PROMPT que resolveria a
+            situação — por isso o mesmo motor serve aqui. Antes havia só
+            uma textarea e um botão que abria a solução pronta: quem
+            escrevia e quem não escrevia recebiam exatamente a mesma
+            tela. */}
+        <p className="mt-1 text-sm text-tinta-clara">
+          Escreva o prompt que você usaria para resolver isso. A análise
+          mostra quais das quatro letras já estão no seu texto.
+        </p>
+
+        <div className="mt-3">
+          <AnalisePtcf
+            valor={resposta}
+            aoMudar={setResposta}
+            analise={analise}
+            analisando={analisando}
+            aoEnviar={() => enviar(resposta)}
+            linhas={6}
+            dica="Escreva aqui o prompt que resolveria esta situação..."
+          />
+        </div>
+
+        {analise && !analise.vazio && analise.completas === 4 && (
+          <div className="mt-4">
+            <ProximoPasso texto={resposta} />
+          </div>
+        )}
       </div>
 
       {!revelado ? (
@@ -531,11 +640,17 @@ export function PlayerCaso({
 export function PlayerCheckpoint({
   conteudo,
   onCompleto,
+  analisar,
+  lessonId,
 }: {
   conteudo: { titulo: string; itens: string[]; tarefa?: string };
   onCompleto: () => void;
+  analisar?: Analisar;
+  lessonId?: string;
 }) {
   const [marcados, setMarcados] = useState<Set<number>>(new Set());
+  const [plano, setPlano] = useState("");
+  const { analise, analisando, enviar } = useAnalise(analisar, lessonId, "checkpoint");
 
   function alternar(i: number) {
     setMarcados((s) => {
@@ -582,6 +697,33 @@ export function PlayerCheckpoint({
         <div className="rounded-lg border-l-4 border-laranja bg-laranja-soft p-5">
           <p className="flex items-center gap-2 font-titulo font-bold text-laranja-dark"><IconeApp nome="metas" tamanho={22} />Tarefa da semana</p>
           <p className="mt-1 text-laranja-dark">{conteudo.tarefa}</p>
+
+          {/* A tarefa da semana era só uma frase para ler. Aqui a pessoa
+              escreve o prompt que vai usar de verdade e recebe a análise
+              ANTES de sair da tela — que é quando ainda dá para corrigir.
+              Sem isto, o checkpoint fecha o encontro sem que ninguém
+              tenha praticado a única coisa que o encontro ensinou. */}
+          <div className="mt-4">
+            <p className="font-titulo text-sm font-bold text-laranja-dark">
+              Escreva agora o prompt que você vai usar nessa tarefa
+            </p>
+            <div className="mt-2">
+              <AnalisePtcf
+                valor={plano}
+                aoMudar={setPlano}
+                analise={analise}
+                analisando={analisando}
+                aoEnviar={() => enviar(plano)}
+                linhas={4}
+                dica="Ex.: Aja como professor(a) de... Crie... para uma turma de... Entregue em..."
+              />
+            </div>
+            {analise && !analise.vazio && analise.completas === 4 && (
+              <div className="mt-4">
+                <ProximoPasso texto={plano} />
+              </div>
+            )}
+          </div>
         </div>
       )}
 

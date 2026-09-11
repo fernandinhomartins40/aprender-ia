@@ -471,6 +471,41 @@ model ExerciseResponse {
   @@map("exercise_responses")
 }
 
+/// Resposta escrita pelo aluno numa atividade de texto livre.
+///
+/// Separada de `ExerciseResponse` por duas razões: aquela exige um
+/// `Exercise` cadastrado, e estas lições guardam o enunciado no JSON de
+/// `Lesson`; e aquela resume o resultado em `correta Boolean`, enquanto
+/// um prompt não é certo ou errado — o motor P.T.C.F. devolve quatro
+/// dimensões em três estados cada.
+///
+/// `analise` guarda o veredito do momento do envio em vez de recalcular
+/// na leitura: o motor vai evoluir, e sem isto uma análise feita hoje
+/// mudaria sozinha a cada ajuste no léxico, deixando o histórico
+/// diferente do que a pessoa realmente viu na tela.
+model RespostaAberta {
+  id         String @id @default(cuid())
+  progressId String
+
+  /// Qual campo dentro da lição. Hoje sempre "principal".
+  chave     String @default("principal")
+  texto     String @db.Text
+  analise   Json?
+  /// Quantas das quatro letras foram detectadas. Atalho para o painel
+  /// ordenar e filtrar sem precisar abrir o JSON.
+  completas Int    @default(0)
+  tentativa Int    @default(1)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  progress LessonProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+  @@unique([progressId, chave])
+  @@index([progressId])
+  @@map("respostas_abertas")
+}
+
 // ============================================================
 // MATRÍCULA E PROGRESSO
 // ============================================================
@@ -515,6 +550,7 @@ model LessonProgress {
   enrollment Enrollment         @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   lesson     Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   respostas  ExerciseResponse[]
+  abertas    RespostaAberta[]
 
   @@unique([enrollmentId, lessonId])
   @@index([status])

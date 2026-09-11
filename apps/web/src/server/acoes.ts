@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import { exigirAluno, garantirMatricula } from "./trilha";
 import { verificarAcessoCurso } from "./acesso";
+import { analisarPtcf, type Analise } from "@/lib/motor-ptcf";
 
 /* ============================================================
    OFENSIVA (streak)
@@ -217,6 +218,86 @@ export async function concluirLicao(dados: FormData) {
 
   revalidatePath("/app");
   revalidatePath("/app/trilha");
+}
+
+/* ============================================================
+   RESPOSTA ESCRITA NAS ATIVIDADES DE TEXTO LIVRE
+   ============================================================ */
+
+/**
+ * Analisa e guarda o que o aluno escreveu.
+ *
+ * A análise roda AQUI, no servidor, e não no navegador, por três razões:
+ * o que é gravado é o mesmo que a pessoa viu (não há chance de divergir);
+ * o léxico do motor fica fora do pacote que o celular baixa; e melhorar
+ * as heurísticas não exige que ninguém recarregue a página.
+ *
+ * Devolve a análise em vez de só gravar: o player precisa do resultado
+ * para desenhar a devolutiva na hora.
+ */
+export async function analisarResposta(
+  dados: FormData,
+): Promise<{ analise: Analise; salvo: boolean }> {
+  const texto = String(dados.get("texto") ?? "").trim();
+  const analise = analisarPtcf(texto);
+
+  // Texto curto demais não vira registro: o motor já responde pedindo o
+  // texto, e gravar rascunho de três palavras encheria o painel de linhas
+  // que não dizem nada sobre a prática de ninguém.
+  if (analise.vazio) return { analise, salvo: false };
+
+  const lessonId = String(dados.get("lessonId") ?? "");
+  const chave = String(dados.get("chave") ?? "principal");
+  if (!lessonId) return { analise, salvo: false };
+
+  const user = await exigirAluno();
+  const matricula = await matriculaComAcesso(user.id);
+  // Sem acesso ao curso a análise ainda volta — quem perdeu o plano no
+  // meio da lição recebe a devolutiva, apenas não fica registrada.
+  if (!matricula) return { analise, salvo: false };
+
+  try {
+    // O progresso pode ainda não existir: escrever a resposta é, muitas
+    // vezes, a primeira coisa que a pessoa faz na lição. Criamos como
+    // EM_ANDAMENTO — sem XP, que só vem ao concluir.
+    const progresso = await prisma.lessonProgress.upsert({
+      where: { enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId } },
+      update: {},
+      create: {
+        enrollmentId: matricula.id,
+        lessonId,
+        status: "EM_ANDAMENTO",
+        iniciadoEm: new Date(),
+        tentativas: 0,
+      },
+      select: { id: true },
+    });
+
+    await prisma.respostaAberta.upsert({
+      where: { progressId_chave: { progressId: progresso.id, chave } },
+      update: {
+        texto,
+        analise: analise as unknown as object,
+        completas: analise.completas,
+        tentativa: { increment: 1 },
+      },
+      create: {
+        progressId: progresso.id,
+        chave,
+        texto,
+        analise: analise as unknown as object,
+        completas: analise.completas,
+        tentativa: 1,
+      },
+    });
+  } catch (e) {
+    // Falhar ao gravar não pode custar a devolutiva: a pessoa escreveu,
+    // merece a resposta do motor mesmo que o banco esteja indisponível.
+    console.error("[acoes] falha ao guardar resposta aberta:", e);
+    return { analise, salvo: false };
+  }
+
+  return { analise, salvo: true };
 }
 
 /* ============================================================
