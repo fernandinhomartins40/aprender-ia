@@ -9,6 +9,13 @@
 import { PrismaClient, TipoLicao } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { BANCO_PROMPTS } from "./banco-prompts";
+import {
+  CACAS,
+  CASOS,
+  DESAFIOS,
+  DUELOS,
+  TESTES_CELULAR,
+} from "./conteudo-apostila";
 
 const prisma = new PrismaClient();
 
@@ -21,7 +28,104 @@ const CURSO = {
   cargaHoraria: 40,
 };
 
-const MODULOS = [
+/*
+ * A apostila foi concebida para encontro presencial. A trilha é individual:
+ * aqui preservamos o conteúdo e trocamos apenas as instruções de sala
+ * ("em dupla", "levante a mão", "mostre ao colega") por ações que a pessoa
+ * consegue realizar sozinha, no próprio ritmo.
+ */
+function aquecimento(indice: number, pergunta: string, fechamento: string) {
+  return {
+    titulo: `Aquecimento do Encontro ${indice + 1}`,
+    tipo: TipoLicao.AQUECIMENTO,
+    xp: 10,
+    tempo: 2,
+    cap: `Encontro ${indice + 1}`,
+    conteudo: { pergunta, fechamento, tempo: "Pausa breve para começar" },
+  };
+}
+
+function duelo(indice: number) {
+  const d = DUELOS[indice]!;
+  return {
+    titulo: `Duelo: ${d.titulo}`,
+    tipo: TipoLicao.DUELO,
+    xp: 30,
+    tempo: Number.parseInt(d.tempo, 10),
+    cap: "Prática de prompts",
+    conteudo: {
+      contexto: "Compare os dois pedidos, observe o que muda no resultado e escreva a sua versão.",
+      ...d,
+    },
+  };
+}
+
+function caso(indice: number) {
+  const c = CASOS[indice]!;
+  return {
+    titulo: `Caso: ${c.titulo}`,
+    tipo: TipoLicao.CASO,
+    xp: 35,
+    tempo: Number.parseInt(c.tempo, 10),
+    cap: "Caso da rotina escolar",
+    conteudo: {
+      ...c,
+      pergunta: c.pergunta.replace(/^Em dupla:\s*/i, "Pense no seu contexto: "),
+      tempoMinutos: Number.parseInt(c.tempo, 10),
+      solucao: c.solucao.replace(/Discuss[aã]o(?: para a turma)?:/gi, "Para refletir:"),
+    },
+  };
+}
+
+function caca(
+  indice: number,
+  pergunta: string,
+  opcoes: { id: string; texto: string; correta: boolean }[],
+) {
+  const c = CACAS[indice]!;
+  return {
+    titulo: `Caça ao Erro: ${c.titulo}`,
+    tipo: TipoLicao.CACA_ERRO,
+    xp: 25,
+    tempo: Number.parseInt(c.tempo, 10),
+    cap: "Verificação crítica",
+    conteudo: {
+      introducao: c.instrucao,
+      respostaIA: c.respostaIA,
+      pergunta,
+      opcoes,
+      gabarito: c.gabarito,
+      licao: "A IA ajuda a produzir, mas a conferência é sempre sua.",
+    },
+  };
+}
+
+function celular(indice: number, passos: string[], porque: string) {
+  const t = TESTES_CELULAR[indice]!;
+  return {
+    titulo: `No celular: ${t.titulo}`,
+    tipo: TipoLicao.NO_CELULAR,
+    xp: 20,
+    tempo: 5,
+    cap: "Prática no celular",
+    conteudo: { titulo: t.titulo, tempo: "Faça no seu próprio aparelho", passos, porque },
+  };
+}
+
+function desafio(indice: number, segundos: number, instrucoes: string[], fechamento: string) {
+  return {
+    titulo: DESAFIOS[indice]!.titulo,
+    tipo: TipoLicao.DESAFIO,
+    xp: 30,
+    tempo: Math.ceil(segundos / 60),
+    cap: "Desafio cronometrado",
+    conteudo: { titulo: DESAFIOS[indice]!.titulo, segundos, instrucoes, fechamento },
+  };
+}
+
+// Mantido no arquivo como referência para os prompts originais do curso.
+// A trilha publicada é declarada abaixo, já completa com as 32 práticas.
+const MODULOS_INICIAIS = [
   {
     ordem: 0,
     titulo: "Encontro 1",
@@ -487,6 +591,78 @@ const MODULOS = [
     ],
   },
 ];
+
+const MODULOS = [
+  {
+    ordem: 0,
+    titulo: "Encontro 1",
+    subtitulo: "Primeiros passos e a arte de conversar com a IA",
+    cor: "#6366F1",
+    icone: "🚀",
+    licoes: [
+      aquecimento(0, "Você já levou trabalho da escola para o fim de semana no último mês?", "Este encontro começa por recuperar tempo para o que importa."),
+      { titulo: "O que é Inteligência Artificial", tipo: TipoLicao.TEORIA, xp: 10, tempo: 6, cap: "Cap. 1.1", conteudo: { blocos: [{ tipo: "paragrafo", texto: "IA é um programa treinado para reconhecer padrões e prever respostas. Ela é rápida; o seu repertório pedagógico é o que dá direção e sentido ao resultado." }, { tipo: "traduzindo", titulo: "LLM", texto: "É o modelo por trás do ChatGPT e do Gemini. Ele prevê palavras prováveis, por isso pode acertar muito e também inventar informações." }] } },
+      celular(0, ["Abra o navegador do seu celular e acesse gemini.google.com.", "Entre com sua conta do Google.", "Digite: Me dê 3 ideias criativas para ensinar [conteúdo] para alunos do [ano], usando materiais de baixo custo.", "Leia a resposta e escolha uma ideia aproveitável.", "Peça: Detalhe a ideia escolhida com um passo a passo."], "Seu celular já é uma porta de entrada para testar, adaptar e salvar ideias onde você estiver."),
+      duelo(0),
+      caso(0),
+      caca(0, "Qual obra parece inventada?", [{ id: "a", texto: "Psicogênese da Língua Escrita", correta: false }, { id: "b", texto: "A Importância do Ato de Ler", correta: false }, { id: "c", texto: "Alfabetização em Classes Populares Brasileiras", correta: true }]),
+      { titulo: "A fórmula P.T.C.F.", tipo: TipoLicao.TEORIA, xp: 15, tempo: 7, cap: "Cap. 2", conteudo: { blocos: [{ tipo: "lista", titulo: "O pedido que funciona", itens: ["Papel: quem a IA deve ser", "Tarefa: o que você quer", "Contexto: sua turma e suas restrições", "Formato: como quer receber a resposta"] }, { tipo: "dica", titulo: "Refine", texto: "Em vez de recomeçar, peça para reduzir, trocar exemplos ou transformar em tabela." }] } },
+      duelo(4),
+      caso(4),
+      desafio(0, 300, ["Escolha uma aula real que você dará nesta semana.", "Escreva o pedido com Papel, Tarefa, Contexto e Formato.", "Envie, revise o resultado e peça um refinamento.", "Salve o plano final para usar ou adaptar."], "Produto de saída: um plano de aula real, salvo e revisado por você."),
+      { titulo: "Seu primeiro plano de aula", tipo: TipoLicao.PROMPT, xp: 25, tempo: 10, cap: "Cap. 2.5", conteudo: { introducao: "Personalize o prompt com sua disciplina, seu conteúdo e as condições reais da turma.", categoria: "planejamento", corpo: "Aja como professor(a) de [DISCIPLINA] do [ANO]. Crie um plano de aula de 50 minutos sobre [TEMA]. Minha turma: [CONTEXTO]. Inclua objetivo, materiais de baixo custo, passo a passo cronometrado e fechamento.", campos: [{ chave: "DISCIPLINA", rotulo: "Disciplina", exemplo: "Ex.: Ciências" }, { chave: "ANO", rotulo: "Ano/série", exemplo: "Ex.: 5º ano" }, { chave: "TEMA", rotulo: "Tema", exemplo: "Ex.: sistema solar" }, { chave: "CONTEXTO", rotulo: "Sua turma", exemplo: "Ex.: 28 alunos, sem projetor", linhas: 3 }], dica: "Conte à IA o que existe e o que falta na sua escola." } },
+      { titulo: "Checkpoint do Encontro 1", tipo: TipoLicao.CHECKPOINT, xp: 50, tempo: 3, cap: "Encontro 1", conteudo: { titulo: "Você já consegue começar", itens: ["Conversar com uma IA pelo celular", "Usar P.T.C.F. para pedir algo específico", "Conferir fontes antes de usar", "Salvar um plano de aula adaptado"], tarefa: "Teste o plano em uma aula real e registre o que você ajustaria." } },
+    ],
+  },
+  {
+    ordem: 1, titulo: "Encontro 2", subtitulo: "Rotina, planejamento e BNCC", cor: "#0EA5E9", icone: "📋",
+    licoes: [
+      aquecimento(1, "Quanto tempo você levou para escrever seu último parecer descritivo?", "Transformar anotações em um primeiro rascunho libera tempo para a revisão que só você sabe fazer."),
+      { titulo: "Pareceres sem começar do zero", tipo: TipoLicao.TEORIA, xp: 10, tempo: 6, cap: "Cap. 3", conteudo: { blocos: [{ tipo: "paragrafo", texto: "Defina um padrão de parecer uma vez e alimente a IA com anotações de alunos fictícios. A revisão final continua sendo sua." }, { tipo: "atencao", titulo: "Privacidade", texto: "Nunca inclua nome, laudo ou qualquer dado identificável de estudante." }] } },
+      caso(1), duelo(1),
+      desafio(1, 240, ["Leia os tópicos da reunião fictícia.", "Peça à IA uma ata formal, com data, participantes, pauta e decisões.", "Revise a clareza e ajuste um detalhe antes de salvar."], "Produto de saída: uma ata-modelo que você pode reaproveitar."),
+      caca(1, "Qual código não pode existir no Ensino Fundamental?", [{ id: "a", texto: "EF07CI09", correta: false }, { id: "b", texto: "EF07BI14", correta: true }, { id: "c", texto: "Os dois são válidos", correta: false }]),
+      celular(1, ["Acesse notebooklm.google.com no celular e entre com sua conta.", "Crie um caderno para sua disciplina.", "Adicione o PDF oficial da BNCC como fonte.", "Pergunte quais habilidades tratam de um tema e ano que você ensina.", "Abra a citação e confira a página indicada."], "Uma fonte oficial com citações é muito mais segura do que aceitar um código sugerido sem conferir."),
+      { titulo: "Parecer a partir de anotações", tipo: TipoLicao.PROMPT, xp: 25, tempo: 8, cap: "Cap. 3.3", conteudo: { introducao: "Use apenas informações fictícias no teste e faça a revisão pedagógica antes de aproveitar qualquer texto.", categoria: "pareceres", corpo: "Aja como coordenadora pedagógica. Transforme estas anotações sobre estudante fictício do [ANO] em parecer de 2 parágrafos. Comece pelos avanços, indique o que precisa de estímulo sem julgamento e termine com uma meta positiva. Anotações: [ANOTACOES]", campos: [{ chave: "ANO", rotulo: "Ano/série", exemplo: "Ex.: 3º ano" }, { chave: "ANOTACOES", rotulo: "Anotações fictícias", exemplo: "Ex.: lê bem; participa; falta às segundas", linhas: 4 }], dica: "Troque dados reais por descrições genéricas antes de usar uma ferramenta." } },
+      caso(5), duelo(5),
+      { titulo: "Planejamento com restrições reais", tipo: TipoLicao.TEORIA, xp: 10, tempo: 6, cap: "Cap. 4", conteudo: { blocos: [{ tipo: "paragrafo", texto: "O plano útil não é o mais bonito: é o que cabe no seu tempo, materiais e calendário. Diga essas restrições no prompt." }, { tipo: "destaque", titulo: "BNCC", texto: "Use a IA para localizar e organizar; confirme o código e a descrição no documento oficial." }] } },
+      { titulo: "Checkpoint do Encontro 2", tipo: TipoLicao.CHECKPOINT, xp: 50, tempo: 3, cap: "Encontro 2", conteudo: { titulo: "Você já consegue organizar a rotina", itens: ["Gerar um rascunho seguro de parecer", "Transformar tópicos em ata", "Consultar a BNCC com fonte", "Planejar dentro das restrições reais"], tarefa: "Escolha uma tarefa burocrática da semana e crie seu prompt-modelo." } },
+    ],
+  },
+  {
+    ordem: 2, titulo: "Encontro 3", subtitulo: "Materiais, inclusão e recursos visuais", cor: "#10B981", icone: "🧡",
+    licoes: [
+      aquecimento(2, "Há algum aluno na sua turma que precisa de mais de um caminho para aprender?", "Inclusão começa quando o planejamento prevê diferenças sem expor ninguém."),
+      { titulo: "DUA: mais de um caminho para aprender", tipo: TipoLicao.TEORIA, xp: 10, tempo: 6, cap: "Cap. 7.1", conteudo: { blocos: [{ tipo: "traduzindo", titulo: "DUA", texto: "Desenho Universal para a Aprendizagem: oferecer diferentes formas de acessar conteúdo, participar e demonstrar aprendizagem." }, { tipo: "paragrafo", texto: "Adaptar forma, linguagem e profundidade pode beneficiar a turma toda — sem rotular estudantes." }] } },
+      duelo(2), caso(2),
+      celular(2, ["Escolha um enunciado real que você usa em aula.", "Abra sua ferramenta de IA no celular.", "Peça: Reescreva para estudante autista, com linguagem literal, concreta e passos numerados em até 3 linhas.", "Cole o enunciado fictício ou sem dados pessoais e envie.", "Compare a versão original e a adaptada: está clara sem exigir interpretação figurada?"], "A adaptação só funciona quando você revisa se a linguagem atende à necessidade concreta."),
+      caca(2, "Por que esta adaptação falha para um estudante com TEA?", [{ id: "a", texto: "Porque tem frases curtas demais", correta: false }, { id: "b", texto: "Porque usa muitas metáforas e linguagem figurada", correta: true }, { id: "c", texto: "Porque está numerada", correta: false }]),
+      desafio(2, 360, ["Escolha um conteúdo que você ensinará nas próximas semanas.", "Peça três versões do mesmo tema: básica, intermediária e avançada.", "Verifique se todas mantêm o mesmo tema e aparência semelhante.", "Ajuste a versão que ficou fora do nível esperado."], "Produto de saída: três caminhos para o mesmo objetivo de aprendizagem."),
+      { titulo: "A mesma atividade em 3 níveis", tipo: TipoLicao.PROMPT, xp: 25, tempo: 10, cap: "Cap. 7.5", conteudo: { introducao: "Crie níveis de profundidade, não rótulos para alunos. Todas as versões devem preservar o mesmo tema.", categoria: "inclusao", corpo: "Aja como professor(a) de [DISCIPLINA] especialista em inclusão. Crie atividade sobre [TEMA] para [ANO], em três versões. Contexto: [CONTEXTO]. Versão A: texto curto e respostas localizadas. B: interpretação. C: inferência e opinião. Mantenha mesmo tema e aparência semelhante.", campos: [{ chave: "DISCIPLINA", rotulo: "Disciplina", exemplo: "Ex.: Português" }, { chave: "TEMA", rotulo: "Tema", exemplo: "Ex.: uma fábula" }, { chave: "ANO", rotulo: "Ano/série", exemplo: "Ex.: 4º ano" }, { chave: "CONTEXTO", rotulo: "Contexto", exemplo: "Ex.: 30 alunos, ritmos diversos", linhas: 3 }], dica: "Revise cada versão para que ela acolha sem infantilizar." } },
+      caso(6), duelo(6),
+      { titulo: "Recursos visuais com intenção", tipo: TipoLicao.TEORIA, xp: 10, tempo: 5, cap: "Cap. 8", conteudo: { blocos: [{ tipo: "paragrafo", texto: "Canva e IA visual ajudam a tornar uma explicação visível, mas imagem não substitui objetivo. Defina o que o aluno precisa perceber antes de criar." }, { tipo: "dica", titulo: "Acessibilidade", texto: "Prefira contraste, texto legível e descrições claras; não dependa apenas de cor para comunicar." }] } },
+      { titulo: "Checkpoint do Encontro 3", tipo: TipoLicao.CHECKPOINT, xp: 50, tempo: 3, cap: "Encontro 3", conteudo: { titulo: "Você já consegue adaptar com propósito", itens: ["Criar uma atividade em três níveis", "Simplificar linguagem figurada", "Preservar pertencimento na adaptação", "Planejar um recurso visual acessível"], tarefa: "Aplique uma adaptação e anote o que facilitou a participação." } },
+    ],
+  },
+  {
+    ordem: 3, titulo: "Encontro 4", subtitulo: "Avaliação, ética e projeto final", cor: "#F59E0B", icone: "🏆",
+    licoes: [
+      aquecimento(3, "Qual parte da avaliação mais consome seu tempo: criar, corrigir ou lidar com dúvidas sobre autoria?", "Hoje você transforma esse trabalho em um processo mais claro, justo e seguro."),
+      { titulo: "Avaliar raciocínio, não só memória", tipo: TipoLicao.TEORIA, xp: 10, tempo: 6, cap: "Cap. 9", conteudo: { blocos: [{ tipo: "paragrafo", texto: "Uma boa avaliação pede interpretação, justificativa e relação com contexto. A IA pode gerar um primeiro rascunho; você calibra o nível e confere tudo." }, { tipo: "dica", titulo: "Distratores", texto: "Alternativas erradas úteis representam equívocos reais de raciocínio, não opções absurdas." }] } },
+      desafio(3, 360, ["Escolha um conteúdo que você avaliará neste bimestre.", "Peça cinco questões objetivas e duas discursivas, com situações contextualizadas.", "Exija gabarito comentado para cada alternativa incorreta.", "Revise ambiguidade, nível da turma e correção antes de salvar."], "Produto de saída: uma avaliação revisada, não uma prova aceita sem conferência."),
+      caca(3, "O gabarito está correto?", [{ id: "a", texto: "Sim, percentuais iguais se anulam", correta: false }, { id: "b", texto: "Não; o preço final é R$ 75,00", correta: true }, { id: "c", texto: "Não; o preço final é R$ 70,00", correta: false }]),
+      celular(3, ["Escolha um trabalho ou projeto que você avaliará em breve.", "Peça uma rubrica com critérios e níveis: Precisa melhorar, Bom e Excelente.", "Leia cada nível como se você fosse estudante: ele explica o que fazer?", "Se estiver abstrato, peça critérios mais concretos e observáveis.", "Salve a rubrica revisada."], "Uma rubrica clara reduz dúvidas e torna a correção mais consistente."),
+      { titulo: "LGPD: a linha vermelha", tipo: TipoLicao.TEORIA, xp: 15, tempo: 7, cap: "Cap. 10", conteudo: { blocos: [{ tipo: "atencao", titulo: "Nunca envie", texto: "Nomes completos, documentos, laudos identificáveis, endereços, fotos, notas ou matrículas associadas a nomes." }, { tipo: "dica", titulo: "Teste de segurança", texto: "Se este texto vazasse amanhã, alguém identificaria o estudante? Se sim, anonimize mais." }] } },
+      caso(3), duelo(3),
+      caso(7),
+      { titulo: "Feedback que faz o aluno continuar", tipo: TipoLicao.TEORIA, xp: 10, tempo: 5, cap: "Cap. 9.4", conteudo: { blocos: [{ tipo: "paragrafo", texto: "Peça feedback que reconheça avanços, priorize poucas melhorias e mostre como avançar. A meta é ensinar o próximo passo, não listar todos os erros." }] } },
+      duelo(7),
+      { titulo: "Checkpoint final", tipo: TipoLicao.CHECKPOINT, xp: 80, tempo: 5, cap: "Encontro 4", conteudo: { titulo: "Você concluiu a trilha", itens: ["Criar e revisar avaliações", "Usar rubricas claras", "Anonimizar dados antes de usar IA", "Lidar com autoria sem depender de detectores", "Manter um banco pessoal de prompts"], tarefa: "Aplique seu projeto de intervenção e registre o que mudou na sua prática." } },
+    ],
+  },
+];
+
+void MODULOS_INICIAIS;
 
 const CONQUISTAS = [
   { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira lição", icone: "🌱", criterio: { tipo: "licoes", valor: 1 }, ordem: 0 },

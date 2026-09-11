@@ -201,7 +201,7 @@ export const CACAS = [
     titulo: "A adaptação que não adapta",
     tempo: "4 min",
     instrucao: "🔍 Dois minutos: por que esta adaptação falha para um aluno com TEA?",
-    respostaIA: "\"Atividade: Viajando pelo mundo das frações\n\n 1. Solte a imaginação e mergulhe no universo dos números!\n\n 2. Divida a pizza como quem divide alegria entre amigos.\n\n 3. Agora воê vai brilhar: pinte as partes que representam 1/4.\n\n 4. Capriche e deixe sua criatividade voar alto!\"",
+    respostaIA: "\"Atividade: Viajando pelo mundo das frações\n\n 1. Solte a imaginação e mergulhe no universo dos números!\n\n 2. Divida a pizza como quem divide alegria entre amigos.\n\n 3. Agora você vai brilhar: pinte as partes que representam 1/4.\n\n 4. Capriche e deixe sua criatividade voar alto!\"",
     gabarito: "A IA formatou como lista numerada, mas não adaptou a linguagem — que é justamente o que mais importa no TEA.\n\n Estão lá: \"solte a imaginação\", \"mergulhe no universo\", \"dividir alegria\", \"você vai brilhar\", \"criatividade voar alto\". Cinco metáforas em quatro linhas. Um aluno que interpreta literalmente pode travar tentando entender como se mergulha em números ou como a criatividade voa.\n\n A lição: a IA obedece à forma que você pediu (numerar) e ignora o princípio se você não o explicitar. Peça sempre: \"linguagem 100% literal, sem metáforas, sem linguagem figurada\" — e depois confira. Você conhece o aluno; a IA não.",
   },
   {
