@@ -33,6 +33,22 @@ export type TamanhoIcone = {
 
 const CHAVE_ORIGEM = "pwa.icone_origem";
 
+/**
+ * Tamanhos "maskable", que o Android recorta em círculo.
+ *
+ * Ficam separados dos demais porque não são o mesmo recorte: a arte entra
+ * reduzida, sobre fundo sólido, para sobreviver ao corte. Sem eles, o
+ * manifest declarava maskable e só existia a versão do repositório — o
+ * ícone enviado pelo administrador nunca chegava à tela inicial, que é
+ * justamente onde ele mais aparece.
+ */
+export async function tamanhosMaskable(): Promise<TamanhoIcone[]> {
+  return [
+    { chave: "pwa.icone_maskable_192", lado: 192, rotulo: "192 px recortável", onde: "Android (tela inicial)" },
+    { chave: "pwa.icone_maskable_512", lado: 512, rotulo: "512 px recortável", onde: "Android (splash)" },
+  ];
+}
+
 export async function tamanhosIcone(): Promise<TamanhoIcone[]> {
   return [
     { chave: "pwa.icone_96", lado: 96, rotulo: "96 px", onde: "Android (densidade baixa)" },
@@ -63,7 +79,7 @@ export async function lerIconeOrigem(): Promise<string | null> {
 export async function lerIconesGerados(): Promise<Record<string, string>> {
   await exigirAdmin();
   try {
-    const tamanhos = await tamanhosIcone();
+    const tamanhos = [...(await tamanhosIcone()), ...(await tamanhosMaskable())];
     const linhas = await prisma.platformSetting.findMany({
       where: { chave: { in: tamanhos.map((t) => t.chave) } },
       select: { chave: true, valor: true },
@@ -94,7 +110,9 @@ export async function salvarIconesPwa(
     return { ok: false, mensagem: "Envie uma imagem antes de salvar." };
   }
 
-  const tamanhos = await tamanhosIcone();
+  // Os maskable entram na mesma transação: metade salva deixaria o
+  // aplicativo com um ícone na tela inicial e outro na lista.
+  const tamanhos = [...(await tamanhosIcone()), ...(await tamanhosMaskable())];
   const aGravar: { chave: string; valor: string }[] = [];
 
   for (const t of tamanhos) {
@@ -157,7 +175,7 @@ export async function salvarIconesPwa(
 /** Volta aos ícones do repositório. */
 export async function restaurarIconesPwa(): Promise<void> {
   const admin = await exigirAdmin();
-  const tamanhos = await tamanhosIcone();
+  const tamanhos = [...(await tamanhosIcone()), ...(await tamanhosMaskable())];
 
   try {
     await prisma.platformSetting.deleteMany({
@@ -186,10 +204,12 @@ export async function restaurarIconesPwa(): Promise<void> {
  */
 export async function iconePublico(
   lado: number,
+  maskable = false,
 ): Promise<{ dados: Buffer; tipo: string } | null> {
   try {
+    const chave = maskable ? `pwa.icone_maskable_${lado}` : `pwa.icone_${lado}`;
     const r = await prisma.platformSetting.findUnique({
-      where: { chave: `pwa.icone_${lado}` },
+      where: { chave },
       select: { valor: true },
     });
     if (!r?.valor) return null;

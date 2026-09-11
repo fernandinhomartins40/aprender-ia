@@ -1,5 +1,6 @@
 import {
   tamanhosIcone,
+  tamanhosMaskable,
   lerIconeOrigem,
   lerIconesGerados,
   salvarIconesPwa,
@@ -14,8 +15,9 @@ export const dynamic = "force-dynamic";
 export default async function Aparencia() {
   await exigirAdmin();
 
-  const [tamanhos, origem, gerados] = await Promise.all([
+  const [tamanhos, maskables, origem, gerados] = await Promise.all([
     tamanhosIcone(),
+    tamanhosMaskable(),
     lerIconeOrigem(),
     lerIconesGerados(),
   ]);
@@ -33,6 +35,7 @@ export default async function Aparencia() {
             acao={salvarIconesPwa}
             acaoRestaurar={restaurarIconesPwa}
             tamanhos={tamanhos}
+            maskables={maskables}
             origemSalva={origem}
             geradosSalvos={gerados}
           />

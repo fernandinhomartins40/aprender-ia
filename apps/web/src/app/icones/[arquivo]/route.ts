@@ -11,12 +11,30 @@ import { iconePublico } from "@/server/icones-pwa";
  * o ícone sem deploy e, ao mesmo tempo, garante que a plataforma nunca
  * fique sem ícone.
  *
- * Esta rota fica em `/icones/[arquivo]` e substitui os arquivos estáticos
- * que estavam no mesmo caminho — o Next dá precedência à rota.
+ * Esta rota fica em `/icones/[arquivo]`. Os arquivos de reserva moraram
+ * um tempo em `public/icones/` com EXATAMENTE estes nomes, e isso anulava
+ * a rota inteira: no Next, um arquivo de `public/` vence uma rota de
+ * mesmo caminho — o contrário do que este comentário afirmava antes. O
+ * efeito era silencioso e completo: o ícone enviado pelo painel ficava
+ * guardado no banco, correto, e o servidor entregava o PNG do
+ * repositório. Por isso as reservas agora ficam em `public/icones/padrao/`,
+ * um caminho que não colide com nada.
  */
 
+/** Onde ficam as reservas — fora do caminho servido por esta rota. */
+const PASTA_PADRAO = ["public", "icones", "padrao"];
+
+type Alvo = {
+  /// Lado em pixels quando existe versão enviada pelo painel; `null`
+  /// quando o arquivo só pode vir do repositório.
+  lado: number | null;
+  estatico: string;
+  /// Versão com margem para o recorte circular do Android.
+  maskable?: boolean;
+};
+
 /** Só nomes conhecidos: o `arquivo` vem da URL e não pode virar caminho. */
-const PERMITIDOS: Record<string, { lado: number | null; estatico: string }> = {
+const PERMITIDOS: Record<string, Alvo> = {
   "icone-96.png": { lado: 96, estatico: "icone-96.png" },
   "icone-128.png": { lado: 128, estatico: "icone-128.png" },
   "icone-192.png": { lado: 192, estatico: "icone-192.png" },
@@ -27,10 +45,13 @@ const PERMITIDOS: Record<string, { lado: number | null; estatico: string }> = {
   "apple-touch-152.png": { lado: null, estatico: "apple-touch-152.png" },
   "apple-touch-167.png": { lado: null, estatico: "apple-touch-167.png" },
   "apple-touch-180.png": { lado: 180, estatico: "apple-touch-180.png" },
-  // Os maskable continuam vindo do repositório: exigem margem de
-  // segurança específica, que o recorte livre do painel não garante.
-  "icone-maskable-192.png": { lado: null, estatico: "icone-maskable-192.png" },
-  "icone-maskable-512.png": { lado: null, estatico: "icone-maskable-512.png" },
+  // O maskable é o que o Android prefere para o atalho. Ele tem chave
+  // própria no banco (`pwa.icone_maskable_*`), gerada pelo painel com a
+  // margem de segurança do recorte circular — antes vinha só do
+  // repositório, e era por isso que o ícone enviado pelo administrador
+  // nunca aparecia no aparelho.
+  "icone-maskable-192.png": { lado: 192, estatico: "icone-maskable-192.png", maskable: true },
+  "icone-maskable-512.png": { lado: 512, estatico: "icone-maskable-512.png", maskable: true },
 };
 
 export async function GET(
@@ -44,7 +65,7 @@ export async function GET(
 
   // 1) O que o administrador enviou.
   if (alvo.lado !== null) {
-    const salvo = await iconePublico(alvo.lado);
+    const salvo = await iconePublico(alvo.lado, alvo.maskable === true);
     if (salvo) {
       return new NextResponse(new Uint8Array(salvo.dados), {
         headers: {
@@ -59,7 +80,7 @@ export async function GET(
 
   // 2) O arquivo do repositório.
   try {
-    const caminho = path.join(process.cwd(), "public", "icones", alvo.estatico);
+    const caminho = path.join(process.cwd(), ...PASTA_PADRAO, alvo.estatico);
     const conteudo = await readFile(caminho);
     return new NextResponse(new Uint8Array(conteudo), {
       headers: {

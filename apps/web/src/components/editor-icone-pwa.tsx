@@ -24,12 +24,15 @@ export function EditorIconePwa({
   acao,
   acaoRestaurar,
   tamanhos,
+  maskables,
   origemSalva,
   geradosSalvos,
 }: {
   acao: Acao;
   acaoRestaurar: () => void;
   tamanhos: TamanhoIcone[];
+  /// Versões com margem para o recorte circular do Android.
+  maskables: TamanhoIcone[];
   origemSalva: string | null;
   geradosSalvos: Record<string, string>;
 }) {
@@ -114,6 +117,93 @@ export function EditorIconePwa({
   }
 
   /**
+   * A cor de fundo do ícone recortável, tirada da própria arte.
+   *
+   * O Android recorta um círculo do maskable, e o que sobra nos cantos
+   * precisa de cor sólida. Usar uma cor fixa da marca destoava de arte
+   * com fundo próprio (a nossa é azul-escuro), então amostramos os quatro
+   * cantos do recorte e usamos a mediana: se a arte tem fundo, ele
+   * continua; se é transparente, cai no roxo da marca.
+   */
+  function corDeFundo(ctx: CanvasRenderingContext2D, lado: number): string {
+    const pontos = [
+      [2, 2],
+      [lado - 3, 2],
+      [2, lado - 3],
+      [lado - 3, lado - 3],
+    ] as const;
+
+    const amostras: number[][] = [];
+    for (const [x, y] of pontos) {
+      try {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        if ((d[3] ?? 0) > 200) amostras.push([d[0] ?? 0, d[1] ?? 0, d[2] ?? 0]);
+      } catch {
+        /* canvas "sujo" por imagem de outra origem: usa o padrão */
+      }
+    }
+
+    if (amostras.length === 0) return "#4F46E5"; // roxo da marca
+
+    const mediana = (i: number) => {
+      const v = amostras.map((a) => a[i] ?? 0).sort((x, y) => x - y);
+      return v[Math.floor(v.length / 2)] ?? 0;
+    };
+    return `rgb(${mediana(0)},${mediana(1)},${mediana(2)})`;
+  }
+
+  /**
+   * Versão recortável: a arte reduzida sobre fundo sólido.
+   *
+   * O Android corta um círculo inscrito no quadrado, e a zona garantida é
+   * cerca de 80% do lado. A arte entra em 62% para caber com folga — sem
+   * isso, o que a pessoa enquadrou aparece decepado na tela inicial.
+   */
+  function recortarMaskable(lado: number): string | null {
+    const img = imgRef.current;
+    if (!img || !img.naturalWidth) return null;
+
+    // O mesmo enquadramento de `recortar`, calculado de novo aqui: passar
+    // por uma data URL intermediária exigiria esperar o decode da imagem,
+    // e um `drawImage` antes disso desenha um quadro vazio — o ícone
+    // sairia como fundo liso, sem arte.
+    const base = Math.min(img.naturalWidth, img.naturalHeight);
+    const recorte = base / zoom;
+    const centroX = img.naturalWidth / 2 - deslocX * recorte;
+    const centroY = img.naturalHeight / 2 - deslocY * recorte;
+    const sx = Math.max(0, Math.min(img.naturalWidth - recorte, centroX - recorte / 2));
+    const sy = Math.max(0, Math.min(img.naturalHeight - recorte, centroY - recorte / 2));
+
+    // 1) Canvas auxiliar com o recorte cheio, só para amostrar a cor dos
+    //    cantos — é a cor que vai preencher o que o círculo não cobre.
+    const interno = document.createElement("canvas");
+    interno.width = lado;
+    interno.height = lado;
+    const ictx = interno.getContext("2d");
+    if (!ictx) return null;
+    ictx.imageSmoothingQuality = "high";
+    ictx.drawImage(img, sx, sy, recorte, recorte, 0, 0, lado, lado);
+
+    // 2) Canvas final: fundo sólido + arte reduzida à zona segura.
+    const canvas = document.createElement("canvas");
+    canvas.width = lado;
+    canvas.height = lado;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    ctx.fillStyle = corDeFundo(ictx, lado);
+    ctx.fillRect(0, 0, lado, lado);
+
+    const util = Math.round(lado * 0.62);
+    const margem = Math.round((lado - util) / 2);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, sx, sy, recorte, recorte, margem, margem, util, util);
+
+    const webp = canvas.toDataURL("image/webp", 0.9);
+    return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/png");
+  }
+
+  /**
    * A imagem original, reduzida para guardar.
    *
    * Ela é salva junto para permitir reenquadrar depois sem reenviar o
@@ -152,6 +242,17 @@ export function EditorIconePwa({
       novos[t.chave] = d;
     }
 
+    // Os recortáveis usam o mesmo enquadramento, porém com margem: são o
+    // que o Android põe na tela inicial.
+    for (const t of maskables) {
+      const d = recortarMaskable(t.lado);
+      if (!d) {
+        setAviso("A imagem ainda está carregando. Tente de novo.");
+        return;
+      }
+      novos[t.chave] = d;
+    }
+
     const total = Object.values(novos).reduce((s, v) => s + v.length, 0);
     const emMB = (total / 1_048_576).toFixed(1);
     setGerados(novos);
@@ -176,7 +277,7 @@ export function EditorIconePwa({
     arrastando.current = null;
   };
 
-  const prontos = Object.keys(gerados).length === tamanhos.length;
+  const prontos = Object.keys(gerados).length === tamanhos.length + maskables.length;
 
   return (
     <div className="space-y-6">
@@ -284,7 +385,7 @@ export function EditorIconePwa({
           </p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {tamanhos.map((t) => {
+            {[...tamanhos, ...maskables].map((t) => {
               const atual = gerados[t.chave] ?? geradosSalvos[t.chave];
               return (
                 <div
@@ -314,7 +415,7 @@ export function EditorIconePwa({
             {/* A original vai reduzida: inteira, somada aos sete tamanhos,
                 estourava o limite de corpo da Server Action. */}
             <input type="hidden" name="origem" value={prontos ? (origemReduzida() ?? "") : ""} />
-            {tamanhos.map((t) => (
+            {[...tamanhos, ...maskables].map((t) => (
               <input key={t.chave} type="hidden" name={t.chave} value={gerados[t.chave] ?? ""} />
             ))}
             <button
