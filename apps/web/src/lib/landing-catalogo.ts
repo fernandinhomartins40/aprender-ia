@@ -55,7 +55,11 @@ export const SECOES: SecaoPadrao[] = [
     ajuda:
       "O que a pessoa lê nos primeiros três segundos. No título, cada quebra de linha vira uma quebra na página; a última linha sai em destaque azul.",
     ordem: 1,
-    campos: ["selo", "titulo", "subtitulo", "cta", "cta2", "imagem"],
+    // Sem campo de imagem: a capa é montada em camadas no código (um fundo
+    // por faixa de tela + o mascote em PNG transparente), então não existe
+    // uma arte única para trocar pelo painel. Oferecer o campo daria a
+    // impressão de que trocá-lo mudaria a capa, e não mudaria.
+    campos: ["selo", "titulo", "subtitulo", "cta", "cta2"],
     selo: "Plataforma Aprender IA",
     titulo: "Aprenda. Pratique.\nEvolua com IA.",
     subtitulo:
@@ -64,13 +68,12 @@ export const SECOES: SecaoPadrao[] = [
     ctaLink: "/cadastro",
     cta2Texto: "Conheça os cursos",
     cta2Link: "#trilhas",
-    imagem: "/landing/hero-banner.webp",
     listaRotulo: "Selos abaixo dos botões",
     camposItem: ["icone", "cor"],
     itens: [
-      { titulo: "Conteúdo para todos os níveis", icone: "conquistas", cor: "#10B981" },
-      { titulo: "Comunidade ativa de educadores", icone: "comunidade", cor: "#6366F1" },
-      { titulo: "Ferramentas e materiais gratuitos", icone: "ferramentas", cor: "#F59E0B" },
+      { titulo: "Conteúdo para todos os níveis", icone: "check", cor: "#10B981" },
+      { titulo: "Comunidade ativa de educadores", icone: "pessoas", cor: "#6366F1" },
+      { titulo: "Ferramentas e materiais gratuitos", icone: "infinito", cor: "#F59E0B" },
     ],
   },
   {
@@ -128,10 +131,10 @@ export const SECOES: SecaoPadrao[] = [
     listaRotulo: "Pilares",
     camposItem: ["icone", "cor"],
     itens: [
-      { titulo: "Cursos gratuitos e pagos", icone: "cursos", cor: "#6366F1" },
-      { titulo: "Ferramentas de IA selecionadas", icone: "ia", cor: "#2563EB" },
-      { titulo: "Materiais e templates prontos", icone: "materiais", cor: "#10B981" },
-      { titulo: "Comunidade e suporte", icone: "comunidade", cor: "#F97316" },
+      { titulo: "Cursos gratuitos e pagos", icone: "capelo", cor: "#6366F1" },
+      { titulo: "Ferramentas de IA selecionadas", icone: "engrenagem", cor: "#2563EB" },
+      { titulo: "Materiais e templates prontos", icone: "documento", cor: "#10B981" },
+      { titulo: "Comunidade e suporte", icone: "pessoas", cor: "#F97316" },
     ],
   },
   {
@@ -153,35 +156,35 @@ export const SECOES: SecaoPadrao[] = [
       {
         titulo: "IA na Educação",
         texto: "Do planejamento à avaliação, com IA na prática.",
-        icone: "aulas",
+        icone: "livro",
         cor: "#2563EB",
         link: "/cadastro",
       },
       {
         titulo: "Produtividade",
         texto: "Faça mais em menos tempo com IA.",
-        icone: "progresso",
+        icone: "foguete",
         cor: "#7C3AED",
         link: "/cadastro",
       },
       {
         titulo: "Criação de Conteúdo",
         texto: "Textos, imagens, vídeos e apresentações.",
-        icone: "editar_conteudo",
+        icone: "lapis",
         cor: "#10B981",
         link: "/cadastro",
       },
       {
         titulo: "Carreira e Negócios",
         texto: "IA para o seu desenvolvimento profissional.",
-        icone: "empreendedores",
+        icone: "maleta",
         cor: "#F97316",
         link: "/cadastro",
       },
       {
         titulo: "Explorando a IA",
         texto: "Primeiros passos para curiosos e iniciantes.",
-        icone: "ideias",
+        icone: "lampada",
         cor: "#EC4899",
         link: "/cadastro",
       },
@@ -198,10 +201,10 @@ export const SECOES: SecaoPadrao[] = [
     listaRotulo: "Indicadores",
     camposItem: ["texto", "icone", "cor"],
     itens: [
-      { titulo: "+50 mil", texto: "pessoas na comunidade", icone: "comunidade", cor: "#6366F1" },
-      { titulo: "+200", texto: "aulas e tutoriais", icone: "aulas", cor: "#2563EB" },
-      { titulo: "4,9", texto: "avaliação média", icone: "favoritos", cor: "#EC4899" },
-      { titulo: "Conteúdo sempre atualizado", texto: "", icone: "novidades", cor: "#EAB308" },
+      { titulo: "+50 mil", texto: "pessoas na comunidade", icone: "pessoas", cor: "#6366F1" },
+      { titulo: "+200", texto: "aulas e tutoriais", icone: "livro", cor: "#2563EB" },
+      { titulo: "4,9", texto: "avaliação média", icone: "coracao", cor: "#EC4899" },
+      { titulo: "Conteúdo sempre atualizado", texto: "", icone: "estrela", cor: "#EAB308" },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Logo } from "@/components/logo";
-import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
+import { IconePlano, SeloIcone, TracoIcone } from "@/components/icone-plano";
 import { IconeRede } from "@/components/redes-sociais";
 import { lerLanding, type SecaoResolvida } from "@/server/landing";
 import { planosPublicos } from "@/server/assinaturas";
@@ -23,6 +23,19 @@ import { MENU_TOPO } from "@/lib/landing-catalogo";
 // A landing lê do banco, então não pode ser estática; `revalidate` evita
 // consultar a cada visita sem exigir republicação manual ao editar.
 export const revalidate = 60;
+
+/**
+ * Links institucionais do rodapé.
+ *
+ * Termos, Privacidade e Contato ainda não têm página: os destinos estão
+ * declarados aqui para que criá-las seja só acrescentar a rota.
+ */
+const LINKS_RODAPE = [
+  { rotulo: "Sobre", href: "/#publico" },
+  { rotulo: "Termos", href: "/termos" },
+  { rotulo: "Privacidade", href: "/privacidade" },
+  { rotulo: "Contato", href: "/contato" },
+];
 
 /** Quebra de linha digitada pelo admin vale como quebra de linha. */
 function comQuebras(texto: string) {
@@ -86,9 +99,11 @@ export default async function Home() {
   return (
     <main className="bg-white">
       {/* ---------- Cabeçalho ---------- */}
-      <header className="sticky top-0 z-50 border-b border-borda bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3">
-          <Logo largura={104} prioridade />
+      <header className="sticky top-0 z-50 bg-white">
+        {/* A logo cresceu e o respiro vertical encolheu na mesma medida,
+            para a altura do cabeçalho continuar em 78px. */}
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-[5px]">
+          <Logo largura={132} prioridade />
 
           <nav aria-label="Seções do site" className="hidden lg:block">
             <ul className="flex items-center gap-7">
@@ -106,6 +121,28 @@ export default async function Home() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* A busca de conteúdo mora dentro da plataforma; aqui o ícone
+                leva para lá em vez de abrir um campo que não teria o que
+                pesquisar numa página só. */}
+            <Link
+              href="/entrar?proximo=/app/prompts"
+              aria-label="Buscar conteúdo"
+              className="hidden h-9 w-9 items-center justify-center rounded-full text-tinta-clara transition-colors hover:bg-indigo-soft hover:text-indigo sm:inline-flex"
+            >
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+            </Link>
             <Link
               href="/entrar"
               className="rounded-full border-2 border-indigo-line px-5 py-2 text-sm font-bold text-indigo transition-colors hover:border-indigo"
@@ -126,11 +163,43 @@ export default async function Home() {
       {/* ---------- Hero ---------- */}
       {hero && (
         <section className="relative overflow-hidden bg-grad-capa">
-          {/* Duas colunas, e não a arte como fundo: o banner tem proporção
-              larga (2,5:1) e, esticado para cobrir uma seção alta, o robô
-              subia por cima do texto e deixava o parágrafo ilegível. Aqui
-              cada um tem seu espaço, em qualquer altura de tela. */}
-          <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 py-14 sm:py-16 lg:grid-cols-[1.05fr,1fr] lg:gap-6 lg:py-20">
+          {/* O hero é montado em duas camadas, e é isso que resolve a
+              responsividade: o FUNDO é só degradê, então pode ser cortado
+              em qualquer direção sem estragar nada; o MASCOTE é um PNG
+              transparente por cima, livre para mudar de tamanho e de lugar
+              conforme a tela. Antes, com arte e fundo na mesma imagem, o
+              robô acabava por trás do texto em tablet e celular.
+
+              Cada faixa recebe o fundo com a proporção mais próxima da sua,
+              e o navegador baixa só um deles. */}
+          <picture>
+            <source media="(min-width: 1280px)" srcSet="/landing/hero-fundo-desktop.webp" />
+            <source media="(min-width: 768px)" srcSet="/landing/hero-fundo-tablet.webp" />
+            <img
+              src="/landing/hero-fundo-mobile.webp"
+              alt=""
+              aria-hidden
+              fetchPriority="high"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </picture>
+
+          {/* Véu claro sob o texto: o fundo tem áreas saturadas e sem ele o
+              parágrafo cinza perderia contraste. No celular cobre a faixa
+              inteira, já que lá o texto ocupa toda a largura. */}
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/20 lg:bg-gradient-to-r lg:from-white/75 lg:via-white/35 lg:to-transparent"
+          />
+
+          {/* Abaixo de 1024px o conteúdo empilha: texto em cima, mascote
+              embaixo. O respiro é curto de propósito — a meta é a dobra
+              inteira caber na tela do celular sem rolagem.
+
+              Os 660px pedidos para o desktop ficam presos a um teto de 85%
+              da janela: num iPad em paisagem (690px de altura) a medida
+              fixa empurrava a dobra para fora da tela. */}
+          <div className="relative mx-auto grid max-w-7xl items-center gap-4 px-5 py-5 sm:gap-6 sm:py-7 lg:min-h-[min(660px,85vh)] lg:grid-cols-[1fr,1.05fr] lg:gap-6 lg:py-14">
             <div className="max-w-xl">
               {hero.selo && (
                 <span className="inline-flex items-center rounded-full bg-indigo px-4 py-1.5 text-xs font-bold text-white">
@@ -138,21 +207,23 @@ export default async function Home() {
                 </span>
               )}
 
-              <h1 className="mt-6 font-titulo text-4xl font-extrabold leading-[1.1] text-tinta sm:text-5xl lg:text-6xl">
+              {/* Medidas menores no celular e folga só a partir do desktop:
+                  é o que faz a dobra inteira caber na tela sem rolagem. */}
+              <h1 className="mt-4 font-titulo text-[28px] font-extrabold leading-[1.1] text-tinta sm:mt-6 sm:text-4xl lg:text-6xl">
                 <TituloComDestaque texto={hero.titulo} corDestaque="var(--indigo)" />
               </h1>
 
               {hero.subtitulo && (
-                <p className="mt-6 text-base leading-relaxed text-tinta-clara sm:text-lg">
+                <p className="mt-3 text-sm leading-relaxed text-tinta-clara sm:mt-5 sm:text-base lg:text-lg">
                   {hero.subtitulo}
                 </p>
               )}
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-5 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:gap-3">
                 {hero.ctaTexto && (
                   <Link
                     href={hero.ctaLink || "/cadastro"}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo px-7 py-3.5 font-titulo font-bold text-white shadow-cor transition-colors hover:bg-indigo-dark"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo px-6 py-3 font-titulo text-sm font-bold text-white shadow-cor transition-colors hover:bg-indigo-dark sm:px-7 sm:py-3.5 sm:text-base"
                   >
                     {hero.ctaTexto}
                     <span aria-hidden>→</span>
@@ -161,25 +232,25 @@ export default async function Home() {
                 {hero.cta2Texto && (
                   <Link
                     href={hero.cta2Link || "#trilhas"}
-                    className="inline-flex items-center justify-center rounded-full border-2 border-indigo-line bg-white px-7 py-3.5 font-titulo font-bold text-indigo transition-colors hover:border-indigo"
+                    className="inline-flex items-center justify-center rounded-full border-2 border-indigo-line bg-white px-6 py-3 font-titulo text-sm font-bold text-indigo transition-colors hover:border-indigo sm:px-7 sm:py-3.5 sm:text-base"
                   >
                     {hero.cta2Texto}
                   </Link>
                 )}
               </div>
 
+              {/* No celular os três ficam lado a lado, em coluna: em lista
+                  empilhada eles sozinhos comiam 150px de altura e empurravam
+                  o mascote para fora da tela. */}
               {itensDe(hero).length > 0 && (
-                <ul className="mt-9 grid gap-4 sm:grid-cols-3">
+                <ul className="mt-4 grid grid-cols-3 gap-2 sm:mt-8 sm:gap-4">
                   {itensDe(hero).map((s) => (
-                    <li key={s.id} className="flex items-center gap-2.5">
-                      {s.icone && (
-                        <IconeApp
-                          nome={s.icone as NomeIconeApp}
-                          tamanho={32}
-                          className="shrink-0"
-                        />
-                      )}
-                      <span className="text-sm font-semibold leading-tight text-tinta-clara">
+                    <li
+                      key={s.id}
+                      className="flex flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left"
+                    >
+                      {s.icone && <SeloIcone nome={s.icone} cor={s.cor || "#4F46E5"} />}
+                      <span className="text-[11px] font-semibold leading-tight text-tinta-clara sm:text-sm">
                         {s.titulo}
                       </span>
                     </li>
@@ -188,20 +259,20 @@ export default async function Home() {
               )}
             </div>
 
-            {/* O mascote recortado, à direita no desktop e abaixo do texto
-                no celular. Decorativo: o <h1> ao lado já diz o que é a
-                página, e descrevê-lo de novo só faria o leitor de tela
-                repetir a mesma informação. */}
-            <div className="order-first lg:order-none">
+            {/* O mascote, sempre no fluxo — nunca posicionado por cima do
+                texto. No desktop ele é a segunda coluna da grade; abaixo
+                disso, o bloco que vem logo depois do texto. Em nenhum dos
+                dois casos ele pode cobrir o que precisa ser lido. */}
+            <div className="flex justify-center lg:justify-end">
               <Image
-                src="/landing/robo-comemorando.webp"
+                src="/landing/hero-mascote.webp"
                 alt=""
                 aria-hidden
-                width={720}
-                height={720}
+                width={1200}
+                height={1200}
                 priority
-                sizes="(max-width: 1024px) 60vw, 40vw"
-                className="mx-auto h-auto w-52 sm:w-64 lg:w-full lg:max-w-lg"
+                sizes="(max-width: 768px) 80vw, (max-width: 1280px) 55vw, 46vw"
+                className="h-auto w-[78%] max-w-[300px] sm:max-w-[380px] lg:w-full lg:max-w-[620px]"
               />
             </div>
           </div>
@@ -241,11 +312,13 @@ export default async function Home() {
                       aria-hidden
                       width={280}
                       height={280}
-                      className="h-40 w-auto object-contain"
+                      className="h-44 w-auto object-contain"
                     />
                   </div>
                 )}
-                <div className="flex-1 bg-white p-5">
+                {/* O texto fica sobre o mesmo fundo colorido: a faixa
+                    branca que eu tinha posto cortava o cartão em dois. */}
+                <div className="flex-1 p-5">
                   <h3 className="font-titulo text-lg font-bold text-tinta">{p.titulo}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-tinta-clara">{p.texto}</p>
                 </div>
@@ -289,7 +362,9 @@ export default async function Home() {
                       key={p.id}
                       className="flex items-center gap-3 rounded-xl bg-white/95 p-3.5"
                     >
-                      {p.icone && <IconeApp nome={p.icone as NomeIconeApp} tamanho={34} />}
+                      {p.icone && (
+                        <IconePlano nome={p.icone} cor={p.cor || "#4F46E5"} tamanho={38} />
+                      )}
                       <span className="text-sm font-bold leading-tight text-tinta">
                         {p.titulo}
                       </span>
@@ -345,9 +420,7 @@ export default async function Home() {
                   {/* Altura fixa no ícone e no título: os textos das
                       trilhas têm comprimentos diferentes, e sem isso a
                       seta de cada cartão parava numa altura distinta. */}
-                  <div className="flex h-10 items-center">
-                    {t.icone && <IconeApp nome={t.icone as NomeIconeApp} tamanho={40} />}
-                  </div>
+                  {t.icone && <IconePlano nome={t.icone} cor={cor} tamanho={44} />}
                   <h3 className="mt-3 font-titulo font-bold leading-snug text-tinta">
                     {t.titulo}
                   </h3>
@@ -375,8 +448,8 @@ export default async function Home() {
             {itensDe(numeros).map((n) => (
               <div key={n.id} className="text-center">
                 {n.icone && (
-                  <div className="flex justify-center">
-                    <IconeApp nome={n.icone as NomeIconeApp} tamanho={44} />
+                  <div className="flex justify-center" style={{ color: n.cor || "#4F46E5" }}>
+                    <TracoIcone nome={n.icone} tamanho={34} />
                   </div>
                 )}
                 {/* Item sem legenda é um rótulo ("Conteúdo sempre
@@ -621,27 +694,14 @@ export default async function Home() {
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <nav aria-label="Links do rodapé">
-              <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-tinta-clara">
-                <li>
-                  <Link href="#publico" className="hover:text-indigo hover:underline">
-                    Sobre
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/entrar" className="hover:text-indigo hover:underline">
-                    Entrar
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/cadastro" className="hover:text-indigo hover:underline">
-                    Criar conta
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/admin" className="hover:text-indigo hover:underline">
-                    Painel
-                  </Link>
-                </li>
+              <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-tinta-clara">
+                {LINKS_RODAPE.map((l) => (
+                  <li key={l.rotulo}>
+                    <Link href={l.href} className="hover:text-indigo hover:underline">
+                      {l.rotulo}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
 

@@ -34,13 +34,23 @@ ICONES_LADO = 256
 LANDING_ORIGEM = RAIZ / "assets landingpage"
 LANDING_DESTINO = RAIZ / "apps/web/public/landing"
 LANDING = {
-    "ChatGPT Image 10_09_2026, 18_20_41.png": ("hero-banner", 1600),
     "ChatGPT Image 10_09_2026, 18_20_45.png": ("robo-comemorando", 720),
     "ChatGPT Image 10_09_2026, 18_20_49.png": ("robo-notebook", 720),
     "ChatGPT Image 10_09_2026, 18_21_00.png": ("publico-educadores", 560),
     "ChatGPT Image 10_09_2026, 18_20_56.png": ("publico-estudantes", 560),
     "ChatGPT Image 10_09_2026, 18_20_54.png": ("publico-profissionais", 560),
     "ChatGPT Image 10_09_2026, 18_20_52.png": ("publico-curiosos", 560),
+}
+
+# A capa é montada em camadas: um fundo por faixa de tela (só degradê, que
+# pode ser cortado em qualquer direção) mais o mascote em PNG transparente,
+# livre para mudar de tamanho e posição. Juntar tudo numa arte só fazia o
+# robô cair por trás do texto em tablet e celular.
+HERO = {
+    "hero-fundo-desktop.png": ("hero-fundo-desktop", 2560),
+    "hero-fundo-tablet.png": ("hero-fundo-tablet", 1600),
+    "hero-fundo-mobile.png": ("hero-fundo-mobile", 1080),
+    "hero-mascote.png": ("hero-mascote", 1200),
 }
 
 
@@ -75,6 +85,16 @@ def main() -> None:
             antes, depois, feitos = antes + a, depois + d, feitos + 1
     else:
         print(f"aviso: '{LANDING_ORIGEM.name}/' não encontrada — arte não regerada")
+
+    # As camadas da capa ficam na raiz do projeto, e não na pasta de
+    # assets: são poucas e trocadas com frequência.
+    for arquivo, (nome, lado) in HERO.items():
+        origem = RAIZ / arquivo
+        if not origem.exists():
+            continue
+        # O mascote precisa do canal alpha; os fundos são opacos.
+        a, d = converter(origem, LANDING_DESTINO / f"{nome}.webp", lado, 90)
+        antes, depois, feitos = antes + a, depois + d, feitos + 1
 
     if feitos:
         print(f"{feitos} imagens: {antes / 1_048_576:.1f} MB -> {depois / 1_048_576:.2f} MB")
