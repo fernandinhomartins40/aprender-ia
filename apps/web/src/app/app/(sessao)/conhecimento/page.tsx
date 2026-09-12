@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CATEGORIAS_CONHECIMENTO } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
+import { consultarHistorico } from "@/server/acoes";
 import { categoriasComVerbetes, verbetes } from "@/server/conhecimento";
 import { CentralConhecimento } from "@/components/central-conhecimento";
 import { IconeApp } from "@/components/icone-app";
@@ -60,7 +61,12 @@ export default async function Conhecimento({
         </span>
       </Link>
 
-      <CentralConhecimento itens={itens} slugInicial={slugInicial} categorias={categorias} />
+      <CentralConhecimento
+        itens={itens}
+        slugInicial={slugInicial}
+        categorias={categorias}
+        aoConsultarHistorico={consultarHistorico}
+      />
     </div>
   );
 }

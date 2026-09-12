@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import { buscar, lerCodigoBncc, pedidoDeHabilidade } from "@/lib/motor-conhecimento";
 
 /**
@@ -50,15 +51,30 @@ const EXEMPLOS = [
   "Como anonimizar dados de estudantes?",
 ];
 
+export type AchadoHistorico = {
+  oQueFez: string;
+  quando: string;
+  categoria: string | null;
+};
+
 export function CentralConhecimento({
   itens,
   slugInicial,
   categorias,
+  aoConsultarHistorico,
 }: {
   itens: Item[];
   /** Verbete aberto de saída, quando se chega por `?termo=`. */
   slugInicial?: string;
   categorias: string[];
+  /**
+   * Busca no diário do próprio professor.
+   *
+   * Responde "já trabalhei isso antes?" com os registros dele — que é o
+   * que transforma a Central numa consulta ao próprio percurso, e não só
+   * a um glossário.
+   */
+  aoConsultarHistorico?: (assunto: string) => Promise<AchadoHistorico[]>;
 }) {
   const [consulta, setConsulta] = useState("");
   const [categoria, setCategoria] = useState("todas");
@@ -82,6 +98,33 @@ export function CentralConhecimento({
   );
 
   const aberto = slugAberto ? porSlug[slugAberto] : undefined;
+
+  // ---- "Já trabalhei isso antes?" ----
+  // Consulta com atraso: a cada tecla seria uma ida ao servidor por
+  // caractere. 600ms é o tempo em que alguém para de digitar uma palavra.
+  const [historico, setHistorico] = useState<AchadoHistorico[]>([]);
+  useEffect(() => {
+    const termo = consulta.trim();
+    if (!aoConsultarHistorico || termo.length < 4) {
+      setHistorico([]);
+      return;
+    }
+    let valido = true;
+    const t = setTimeout(() => {
+      aoConsultarHistorico(termo)
+        .then((r) => {
+          // Descarta resposta de uma consulta que já não é a atual.
+          if (valido) setHistorico(r);
+        })
+        .catch(() => {
+          if (valido) setHistorico([]);
+        });
+    }, 600);
+    return () => {
+      valido = false;
+      clearTimeout(t);
+    };
+  }, [consulta, aoConsultarHistorico]);
 
   // Chegar por `?termo=` ou escolher um relacionado deve levar o olho ao
   // painel: no celular ele fica abaixo da lista, fora da tela.
@@ -121,6 +164,30 @@ export function CentralConhecimento({
                 {e}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* O próprio percurso do professor vem antes do glossário: se ele
+            já trabalhou o assunto, essa é a informação mais útil que
+            temos — e é dele, não nossa. */}
+        {historico.length > 0 && (
+          <div className="mt-4 rounded-xl border border-verde bg-verde-soft p-4">
+            <p className="font-titulo text-sm font-bold text-verde-dark">
+              Você já trabalhou isto
+            </p>
+            <ul className="mt-2 space-y-2">
+              {historico.map((h, i) => (
+                <li key={i} className="text-sm leading-relaxed text-verde-dark">
+                  <span className="font-semibold">{h.quando}</span> — {h.oQueFez}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/app/diario"
+              className="mt-3 inline-block text-sm font-bold text-verde-dark underline"
+            >
+              Abrir o diário →
+            </Link>
           </div>
         )}
 

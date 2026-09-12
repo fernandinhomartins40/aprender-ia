@@ -1,4 +1,5 @@
 import { exigirAluno } from "@/server/trilha";
+import { registrarMontagemPrompt } from "@/server/acoes";
 import { ConstrutorPrompt } from "@/components/construtor-prompt";
 import { mapaVerbetes } from "@/server/conhecimento";
 import { Termo } from "@/components/termo";
@@ -24,7 +25,7 @@ export default async function CriarPrompt() {
           <Termo slug="privacidade" contexto="criar-prompt" rotulo="Privacidade de estudantes" />
         </p>
       </div>
-      <ConstrutorPrompt ajuda={ajuda} />
+      <ConstrutorPrompt ajuda={ajuda} aoUsar={registrarMontagemPrompt} />
     </div>
   );
 }

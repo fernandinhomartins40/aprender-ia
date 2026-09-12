@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { analisarPtcf, montarPromptPtcf } from "@/lib/motor-ptcf";
+import { extrairDisciplina, extrairEtapa } from "@/lib/motor-diario";
 import { AjudaContextual, type ItemAjuda } from "./ajuda-contextual";
 
 /**
@@ -49,7 +50,14 @@ const CAMPOS = [
   },
 ] as const;
 
-export function ConstrutorPrompt({ ajuda = {} }: { ajuda?: Record<string, ItemAjuda> }) {
+export function ConstrutorPrompt({
+  ajuda = {},
+  aoUsar,
+}: {
+  ajuda?: Record<string, ItemAjuda>;
+  /** Registra no diário quando o prompt é copiado para uso real. */
+  aoUsar?: (d: FormData) => Promise<void>;
+}) {
   const [valores, setValores] = useState<Record<string, string>>({});
   const [copiado, setCopiado] = useState(false);
 
@@ -78,6 +86,23 @@ export function ConstrutorPrompt({ ajuda = {} }: { ajuda?: Record<string, ItemAj
     await navigator.clipboard.writeText(prompt);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 1600);
+
+    // O que ele escreveu na Tarefa é a ideia; o Contexto costuma trazer
+    // turma e condições. Mandamos os campos como estão — sem interpretar.
+    const tarefa = valores.tarefa?.trim();
+    if (aoUsar && tarefa) {
+      const d = new FormData();
+      d.set("ideia", tarefa);
+      d.set("chave", `construtor:${[tarefa, valores.contexto].join("|").slice(0, 120)}`);
+      // Do Contexto tiramos só o que é turma e disciplina de fato. Jogar
+      // o campo inteiro em `etapa` encheria a memória de frase solta.
+      const contexto = valores.contexto ?? "";
+      const etapa = extrairEtapa(contexto);
+      const disciplina = extrairDisciplina(contexto);
+      if (etapa) d.set("etapa", etapa);
+      if (disciplina) d.set("disciplina", disciplina);
+      void aoUsar(d).catch(() => {});
+    }
   }
 
   return (

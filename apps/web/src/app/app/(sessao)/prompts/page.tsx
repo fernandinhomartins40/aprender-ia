@@ -1,6 +1,10 @@
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
-import { alternarFavoritoPrompt, registrarPrompt } from "@/server/acoes";
+import {
+  alternarFavoritoPrompt,
+  registrarMontagemPrompt,
+  registrarPrompt,
+} from "@/server/acoes";
 import { BibliotecaPrompts } from "@/components/biblioteca-prompts";
 import { mapaVerbetes } from "@/server/conhecimento";
 import { Termo } from "@/components/termo";
@@ -55,6 +59,7 @@ export default async function Prompts() {
 
       <BibliotecaPrompts
         ajuda={ajuda}
+        aoMontarPrompt={registrarMontagemPrompt}
         prompts={prompts.map((p) => ({
           id: p.id,
           titulo: p.titulo,

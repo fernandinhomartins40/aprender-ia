@@ -87,6 +87,13 @@ export function CardPrompt({
       await navigator.clipboard.writeText(promptFinal);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2500);
+      // Copiar É usar o prompt — e é o caminho mais comum, porque a
+      // maioria das ferramentas não aceita o texto pela URL. Antes só
+      // `abrir()` avisava, então quem copiava não contava para o painel
+      // nem entrava no diário: o trabalho acontecia e não deixava rastro.
+      // "copiado" no lugar da ferramenta é honesto: não sabemos onde ele
+      // colou, e inventar um destino seria registrar o que não aconteceu.
+      onExecutado?.("copiado", promptFinal, valores);
     } catch {
       setAviso("Não conseguimos copiar. Selecione o texto e copie manualmente.");
     }

@@ -8,6 +8,13 @@ import { analisarPtcf, type Analise } from "@/lib/motor-ptcf";
 import { nivelDoXp } from "@/lib/gamificacao";
 import { notificar } from "./notificacoes";
 import { avaliarMissoes } from "./missoes";
+import {
+  jaTrabalhou,
+  registrarLicaoConcluida,
+  registrarPromptMontado,
+  registrarUsoDePrompt,
+} from "./diario";
+import { organizarRegistroManual } from "@/lib/motor-diario";
 
 /* ============================================================
    OFENSIVA (streak)
@@ -181,6 +188,10 @@ export async function concluirLicao(dados: FormData) {
     select: {
       xpRecompensa: true,
       tipo: true,
+      // O título entra por causa do diário: a sugestão de registro
+      // precisa nomear a lição ("Concluiu a lição X"), e sem ele a frase
+      // seria um id opaco.
+      titulo: true,
       moduleId: true,
       module: { select: { titulo: true, pago: true } },
     },
@@ -350,9 +361,28 @@ export async function concluirLicao(dados: FormData) {
     });
   }
 
+  // ---- Diário: sugestão, nunca registro direto ----
+  // Concluir uma lição é estudo, não prática com a turma. Entra como
+  // sugestão silenciosa para quem quiser reconstituir o percurso ("em
+  // maio eu estava vendo avaliação"), e some sozinha se for ignorada.
+  // Só na primeira vez: reabrir uma lição concluída não é um novo fato.
+  if (!repetida) {
+    try {
+      await registrarLicaoConcluida(
+        user.id,
+        lessonId,
+        licao.titulo,
+        licao.module.titulo,
+      );
+    } catch (e) {
+      console.error("[acoes] diário não registrou a lição concluída:", e);
+    }
+  }
+
   revalidatePath("/app");
   revalidatePath("/app/trilha");
   revalidatePath("/app/conquistas");
+  revalidatePath("/app/diario");
 
   return {
     xpGanho: repetida ? 0 : licao.xpRecompensa,
@@ -579,7 +609,7 @@ export async function registrarPrompt(dados: FormData) {
     variaveis = {};
   }
 
-  await prisma.promptRun.create({
+  const execucao = await prisma.promptRun.create({
     data: {
       userId: user.id,
       promptTemplateId,
@@ -587,11 +617,47 @@ export async function registrarPrompt(dados: FormData) {
       variaveisPreenchidas: variaveis,
       promptFinal,
     },
+    select: { id: true },
   });
+
+  // ---- Diário de bordo, sem pedir nada ao professor ----
+  // Usar um prompt É trabalho pedagógico: ele escolheu um material,
+  // informou turma e tema e levou para a aula. Essa é exatamente a
+  // memória que ele não teria tempo de digitar depois. Os metadados vêm
+  // do catálogo e as variáveis foram preenchidas por ele — nada aqui é
+  // adivinhado, e nada afirma como a aula foi.
+  try {
+    const modelo = await prisma.promptTemplate.findUnique({
+      where: { id: promptTemplateId },
+      select: {
+        titulo: true,
+        categoria: true,
+        disciplina: true,
+        etapaEnsino: true,
+        tipoAtividade: true,
+      },
+    });
+    if (modelo) {
+      await registrarUsoDePrompt(user.id, execucao.id, {
+        tituloPrompt: modelo.titulo,
+        categoria: modelo.categoria,
+        disciplina: modelo.disciplina,
+        etapaEnsino: modelo.etapaEnsino,
+        tipoAtividade: modelo.tipoAtividade,
+        variaveis,
+        ferramenta,
+      });
+    }
+  } catch (e) {
+    // O diário é acessório: falhar aqui não pode custar ao professor a
+    // execução que ele acabou de fazer.
+    console.error("[acoes] diário não registrou o uso do prompt:", e);
+  }
 
   await atualizarOfensiva(user.id);
   await conferirConquistas(user.id);
   revalidatePath("/app");
+  revalidatePath("/app/diario");
 }
 
 /** Favoritos são privados ao professor: não alteram o catálogo editorial. */
@@ -611,17 +677,36 @@ export async function alternarFavoritoPrompt(dados: FormData) {
    DIÁRIO DE BORDO
    ============================================================ */
 
+/**
+ * Registro escrito pelo professor.
+ *
+ * Só o texto é obrigatório. Antes exigia também ferramenta de IA, e isso
+ * era incoerente com o que o diário passou a ser: "a atividade funcionou
+ * melhor em grupos" é memória pedagógica legítima e não envolve
+ * ferramenta nenhuma. Os minutos continuam existindo para quem quer medir
+ * tempo economizado, mas nunca são pedidos.
+ *
+ * O texto do professor NÃO é reescrito. A organização (categoria, tema,
+ * marcadores) entra ao lado, nunca no lugar: a frase dele é o registro.
+ */
 export async function registrarDiario(dados: FormData) {
   const user = await exigirAluno();
 
   const oQueFez = String(dados.get("oQueFez") ?? "").trim();
-  const ferramentaUsada = String(dados.get("ferramentaUsada") ?? "").trim();
-  if (!oQueFez || !ferramentaUsada) return;
+  if (!oQueFez) return;
+
+  const observacao = String(dados.get("observacao") ?? "").trim() || null;
+  const ferramentaUsada = String(dados.get("ferramentaUsada") ?? "").trim() || null;
 
   const numero = (campo: string) => {
     const v = Number(dados.get(campo));
     return Number.isFinite(v) && v > 0 ? Math.round(v) : null;
   };
+
+  // Classificação determinística do que ele escreveu. Se nada casar, o
+  // registro fica sem categoria — melhor que uma etiqueta errada, que
+  // faria o professor desconfiar de todas as outras.
+  const organizado = organizarRegistroManual(oQueFez, observacao);
 
   await prisma.diaryEntry.create({
     data: {
@@ -631,11 +716,161 @@ export async function registrarDiario(dados: FormData) {
       minutosAntes: numero("minutosAntes"),
       minutosAgora: numero("minutosAgora"),
       valeuAPena: dados.get("valeuAPena") !== "nao",
-      observacao: String(dados.get("observacao") ?? "").trim() || null,
+      observacao,
+      origem: "MANUAL",
+      categoria: organizado.categoria,
+      disciplina: organizado.disciplina,
+      etapa: organizado.etapa,
+      marcadores: organizado.marcadores,
     },
   });
 
   await atualizarOfensiva(user.id);
   revalidatePath("/app/diario");
   revalidatePath("/app");
+}
+
+/**
+ * "Já trabalhei este assunto?" — consulta ao próprio histórico.
+ *
+ * Usada pela Central de Conhecimento. É server action, e não dado
+ * carregado junto com a página, porque só interessa quando o professor
+ * pergunta: carregar o diário inteiro em toda visita à Central seria
+ * desperdício.
+ *
+ * Devolve só o que ELE registrou. O isolamento é garantido por
+ * `exigirAluno` + filtro por userId dentro de `jaTrabalhou`.
+ */
+export async function consultarHistorico(
+  assunto: string,
+): Promise<{ oQueFez: string; quando: string; categoria: string | null }[]> {
+  const user = await exigirAluno();
+  const achados = await jaTrabalhou(user.id, assunto);
+  return achados.map((r) => ({
+    oQueFez: r.oQueFez,
+    quando: new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(r.registradoEm),
+    categoria: r.categoria,
+  }));
+}
+
+/**
+ * Registra um prompt montado no gerador ou no criador guiado.
+ *
+ * Chamada quando ele copia ou abre a IA — o momento em que o rascunho
+ * vira uso real. Antes disso não registramos nada: digitar meia frase e
+ * desistir não é prática pedagógica.
+ */
+export async function registrarMontagemPrompt(dados: FormData) {
+  const user = await exigirAluno();
+
+  const ideia = String(dados.get("ideia") ?? "").trim();
+  if (ideia.length < 8) return;
+
+  const texto = (campo: string) => String(dados.get(campo) ?? "").trim() || null;
+
+  try {
+    await registrarPromptMontado(
+      user.id,
+      String(dados.get("chave") ?? "") || ideia.slice(0, 60),
+      {
+        ideia,
+        disciplina: texto("disciplina"),
+        etapa: texto("etapa"),
+        objetivo: texto("objetivo"),
+        ferramenta: texto("ferramenta"),
+      },
+    );
+  } catch (e) {
+    console.error("[acoes] diário não registrou a montagem do prompt:", e);
+  }
+
+  revalidatePath("/app/diario");
+}
+
+/**
+ * Aceita uma sugestão: ela vira memória confirmada.
+ *
+ * `CONFIRMADO` e não `MANUAL`: o texto continua sendo descrição de um
+ * evento, não a palavra do professor. A distinção importa para nunca
+ * apresentarmos frase nossa como se ele a tivesse escrito.
+ */
+export async function aceitarSugestaoDiario(dados: FormData) {
+  const user = await exigirAluno();
+  const id = String(dados.get("id") ?? "");
+  if (!id) return;
+
+  // `updateMany` com userId no filtro: um id de outro professor
+  // simplesmente não encontra linha nenhuma.
+  await prisma.diaryEntry.updateMany({
+    where: { id, userId: user.id, pendente: true },
+    data: { pendente: false, origem: "CONFIRMADO" },
+  });
+
+  revalidatePath("/app/diario");
+}
+
+/** Descarta uma sugestão. Sem pergunta de confirmação: é reversível refazendo a ação. */
+export async function ignorarSugestaoDiario(dados: FormData) {
+  const user = await exigirAluno();
+  const id = String(dados.get("id") ?? "");
+  if (!id) return;
+
+  await prisma.diaryEntry.deleteMany({
+    where: { id, userId: user.id, pendente: true },
+  });
+
+  revalidatePath("/app/diario");
+}
+
+/**
+ * Corrige a categoria de um registro.
+ *
+ * A classificação automática erra, e o professor precisa poder discordar
+ * sem reescrever o registro inteiro.
+ */
+export async function corrigirCategoriaDiario(dados: FormData) {
+  const user = await exigirAluno();
+  const id = String(dados.get("id") ?? "");
+  const categoria = String(dados.get("categoria") ?? "").trim();
+  if (!id) return;
+
+  const CATEGORIAS = [
+    "AULA", "PLANEJAMENTO", "ATIVIDADE", "AVALIACAO", "ESTRATEGIA",
+    "DIFICULDADE", "ADAPTACAO", "OBSERVACAO", "RESULTADO", "IDEIA_FUTURA",
+    "RECURSO", "REFLEXAO",
+  ];
+  // Vazio limpa a categoria; qualquer outro valor precisa ser do enum.
+  if (categoria && !CATEGORIAS.includes(categoria)) return;
+
+  await prisma.diaryEntry.updateMany({
+    where: { id, userId: user.id },
+    data: { categoria: categoria ? (categoria as never) : null },
+  });
+
+  revalidatePath("/app/diario");
+}
+
+/** Acrescenta uma observação a um registro já existente. */
+export async function anotarNoRegistro(dados: FormData) {
+  const user = await exigirAluno();
+  const id = String(dados.get("id") ?? "");
+  const texto = String(dados.get("observacao") ?? "").trim();
+  if (!id || !texto) return;
+
+  await prisma.diaryEntry.updateMany({
+    where: { id, userId: user.id },
+    data: { observacao: texto },
+  });
+
+  revalidatePath("/app/diario");
+}
+
+/** Apaga um registro do diário. */
+export async function excluirRegistroDiario(dados: FormData) {
+  const user = await exigirAluno();
+  const id = String(dados.get("id") ?? "");
+  if (!id) return;
+
+  await prisma.diaryEntry.deleteMany({ where: { id, userId: user.id } });
+  revalidatePath("/app/diario");
 }

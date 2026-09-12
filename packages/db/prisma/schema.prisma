@@ -705,22 +705,90 @@ model UserAchievement {
 // DIÁRIO DE BORDO
 // ============================================================
 
+/// Como o registro nasceu. Muda o que a interface mostra e, sobretudo, o
+/// que a aplicação pode afirmar sobre ele.
+enum OrigemRegistro {
+  /// O professor escreveu. É a palavra dele — nunca reescrita.
+  MANUAL
+  /// Derivado de uso real da aplicação (usou um prompt, concluiu uma
+  /// lição). Descreve o que aconteceu, jamais o que deu certo.
+  AUTOMATICO
+  /// Automático que o professor confirmou. Vale como manual daí em diante.
+  CONFIRMADO
+}
+
+/// O que o registro é, pedagogicamente. Atribuída por léxico
+/// determinístico; o professor pode corrigir.
+enum CategoriaRegistro {
+  AULA
+  PLANEJAMENTO
+  ATIVIDADE
+  AVALIACAO
+  ESTRATEGIA
+  DIFICULDADE
+  ADAPTACAO
+  OBSERVACAO
+  RESULTADO
+  IDEIA_FUTURA
+  RECURSO
+  REFLEXAO
+}
+
 model DiaryEntry {
   id     String @id @default(cuid())
   userId String
 
+  // ---- Campos originais ----
+  // Preservados: os registros que já existem continuam válidos e
+  // aparecem na linha do tempo sem migração de conteúdo.
+  //
+  // `ferramentaUsada` deixou de ser obrigatório. Nem toda prática
+  // pedagógica passa por uma ferramenta de IA, e exigir a escolha de uma
+  // era parte da burocracia que mantinha o diário vazio.
   oQueFez             String  @db.Text
-  ferramentaUsada     String
+  ferramentaUsada     String?
   minutosAntes        Int?
   minutosAgora        Int?
   valeuAPena          Boolean @default(true)
   observacao          String? @db.Text
 
+  // ---- Camada de conhecimento ----
+  origem    OrigemRegistro     @default(MANUAL)
+  categoria CategoriaRegistro?
+
+  /// Assunto trabalhado ("frações", "meio ambiente"). Extraído do que o
+  /// professor já preencheu em outro lugar — nunca adivinhado.
+  tema       String?
+  disciplina String?
+  /// Ano/série como o professor escreveu ("6º ano"), sem normalizar para
+  /// código: a forma dele é a que ele reconhece meses depois.
+  etapa      String?
+  /// Palavras-chave para busca e para os resumos.
+  marcadores String[] @default([])
+
+  /// De onde veio, quando automático: "promptRun", "licao". Com `fonteId`,
+  /// impede que o mesmo evento vire dois registros e permite abrir a
+  /// origem a partir da linha do tempo.
+  fonteTipo String?
+  fonteId   String?
+
+  /// Sugestão ainda não decidida. Sugestões não entram na linha do tempo
+  /// nem alimentam resumos: só viram memória se o professor aceitar. É o
+  /// que impede o diário de encher de coisa que ele não pediu.
+  pendente Boolean @default(false)
+
   registradoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, registradoEm])
+  @@index([userId, pendente])
+  @@index([userId, categoria])
+  /// Um evento, um registro. Reabrir a tela ou repetir a ação não duplica
+  /// a memória. (Em Postgres, NULLs não colidem: registros manuais, que
+  /// não têm fonte, ficam livres desta restrição.)
+  @@unique([userId, fonteTipo, fonteId])
   @@map("diary_entries")
 }
 

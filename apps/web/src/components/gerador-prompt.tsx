@@ -27,9 +27,18 @@ type Tool = {
 export function GeradorPrompt({
   ferramentas,
   ajuda = {},
+  aoUsar,
 }: {
   ferramentas: Tool[];
   ajuda?: Record<string, ItemAjuda>;
+  /**
+   * Avisa o diário que este prompt saiu daqui para ser usado.
+   *
+   * Opcional: sem ela o gerador funciona igual, apenas não deixa memória.
+   * Chamada só na cópia ou na abertura da IA — digitar e desistir não é
+   * prática pedagógica e não deve virar registro.
+   */
+  aoUsar?: (d: FormData) => Promise<void>;
 }) {
   const [ideia, setIdeia] = useState("");
   const [ano, setAno] = useState("");
@@ -74,14 +83,34 @@ export function GeradorPrompt({
     );
   }
 
+  /** Manda ao diário o contexto que ELE preencheu — nada inferido. */
+  function avisarDiario(ferramentaUsada: string | null) {
+    if (!aoUsar || !ideia.trim()) return;
+    const d = new FormData();
+    d.set("ideia", ideia.trim());
+    // A chave junta ideia e contexto: ajustar um campo e gerar de novo é
+    // uma montagem diferente; copiar duas vezes a mesma, não.
+    d.set("chave", `gerador:${[ideia, disc, ano, objetivo].join("|").slice(0, 120)}`);
+    if (disc) d.set("disciplina", disc);
+    if (ano) d.set("etapa", ano);
+    if (objetivo) d.set("objetivo", objetivo);
+    if (ferramentaUsada) d.set("ferramenta", ferramentaUsada);
+    // Sem `await`: registrar não pode atrasar a cópia nem a abertura da
+    // aba, que é o que a pessoa veio fazer.
+    void aoUsar(d).catch(() => {});
+  }
+
   async function copiar() {
-    if (resultado) await navigator.clipboard.writeText(resultado);
+    if (!resultado) return;
+    await navigator.clipboard.writeText(resultado);
+    avisarDiario(null);
   }
 
   async function abrir() {
     const f = ferramentas.find((x) => x.chave === tool);
     if (!f || !resultado) return;
-    await copiar();
+    await navigator.clipboard.writeText(resultado);
+    avisarDiario(f.chave);
     const url =
       f.metodoAbertura === "URL_COM_PROMPT" && f.urlComPrompt
         ? f.urlComPrompt.replace("{prompt}", encodeURIComponent(resultado))

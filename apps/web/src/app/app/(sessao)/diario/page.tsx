@@ -1,20 +1,52 @@
-import { prisma } from "@aprender/db";
+import {
+  aceitarSugestaoDiario,
+  excluirRegistroDiario,
+  ignorarSugestaoDiario,
+  registrarDiario,
+} from "@/server/acoes";
 import { exigirAluno } from "@/server/trilha";
-import { registrarDiario } from "@/server/acoes";
-import { LISTA_FERRAMENTAS } from "@aprender/ai-launcher";
+import {
+  limparSugestoesAntigas,
+  linhaDoTempo,
+  resumoDoPeriodo,
+  sugestoes,
+} from "@/server/diario";
+import { ROTULO_CATEGORIA, TOM_CATEGORIA } from "@/lib/motor-diario";
+import { DiarioLinhaTempo } from "@/components/diario-linha-tempo";
+import { DiarioRegistroRapido } from "@/components/diario-registro-rapido";
+import { DiarioSugestoes } from "@/components/diario-sugestoes";
 import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Diário de Bordo.
+ *
+ * A ordem da tela responde à pergunta que o professor traz: primeiro o
+ * que a plataforma guardou por ele (sugestões), depois o resumo da
+ * semana, depois o campo para escrever, e por fim a linha do tempo.
+ *
+ * Escrever vem DEPOIS de ver: quem abre o diário quase sempre quer
+ * consultar, não preencher. Pôr o formulário no topo, como estava,
+ * comunicava o contrário — que o diário é uma obrigação pendente.
+ */
 export default async function Diario() {
   const user = await exigirAluno();
-  const registros = await prisma.diaryEntry.findMany({
-    where: { userId: user.id },
-    orderBy: { registradoEm: "desc" },
-    take: 30,
-  });
 
-  const total = registros.reduce(
+  // Sugestões velhas somem antes de a tela montar: sem isso, quem nunca
+  // clica acumula uma dívida crescente de decisões.
+  await limparSugestoesAntigas(user.id);
+
+  const seteDiasAtras = new Date();
+  seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+
+  const [registros, pendentes, semana] = await Promise.all([
+    linhaDoTempo(user.id),
+    sugestoes(user.id),
+    resumoDoPeriodo(user.id, seteDiasAtras),
+  ]);
+
+  const totalEconomizado = registros.reduce(
     (s, r) => s + Math.max(0, (r.minutosAntes ?? 0) - (r.minutosAgora ?? 0)),
     0,
   );
@@ -26,116 +58,155 @@ export default async function Diario() {
           Diário de bordo
           <Termo slug="diario-bordo" contexto="diario" rotulo="Diário de bordo" />
         </h1>
-        <p className="mt-1 text-tinta-clara">
-          Quanto tempo a IA te devolveu. Este registro é só seu.
+        <p className="mt-1 max-w-2xl text-tinta-clara">
+          A memória do seu trabalho. Boa parte se escreve sozinha conforme você
+          usa a plataforma — o resto é só quando você quiser.
           <Termo slug="privacidade" contexto="diario" rotulo="Privacidade de estudantes" />
         </p>
       </div>
 
-      {total > 0 && (
-        <div className="mb-6 rounded-lg bg-verde-soft p-5 text-center">
-          <p className="font-titulo text-2xl font-extrabold text-verde-dark">
-            {Math.floor(total / 60)}h {total % 60}min economizados
+      <DiarioSugestoes
+        sugestoes={pendentes.map((s) => ({
+          id: s.id,
+          oQueFez: s.oQueFez,
+          categoria: s.categoria,
+          tema: s.tema,
+          disciplina: s.disciplina,
+          etapa: s.etapa,
+          registradoEm: s.registradoEm.toISOString(),
+        }))}
+        aoAceitar={aceitarSugestaoDiario}
+        aoIgnorar={ignorarSugestaoDiario}
+      />
+
+      {/* ---- Resumo da semana ---- */}
+      {semana.total > 0 && (
+        <section className="mb-6 rounded-xl border border-borda bg-white p-5 sm:p-6">
+          <h2 className="font-titulo text-lg font-bold">Esta semana</h2>
+          <p className="mt-0.5 text-sm text-tinta-clara">
+            {semana.total} {semana.total === 1 ? "registro" : "registros"} nos últimos 7 dias
           </p>
-          <p className="mt-1 text-verde-dark">no total dos seus registros</p>
-        </div>
-      )}
 
-      <div className="card mb-6">
-        <h2 className="font-titulo text-lg font-bold">Novo registro</h2>
-        <form action={registrarDiario} className="mt-4 space-y-4">
-          <div>
-            <label htmlFor="oQueFez" className="mb-1 block font-titulo text-sm font-bold">
-              O que você fez?
-            </label>
-            <input
-              id="oQueFez" name="oQueFez" required maxLength={500}
-              placeholder="Ex: escrevi 12 pareceres descritivos"
-              className="campo"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label htmlFor="ferramentaUsada" className="mb-1 block font-titulo text-sm font-bold">
-                Ferramenta
-              </label>
-              <select id="ferramentaUsada" name="ferramentaUsada" required className="campo">
-                {LISTA_FERRAMENTAS.map((f) => (
-                  <option key={f.id} value={f.id}>{f.nome}</option>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {semana.temas.length > 0 && (
+              <BlocoResumo titulo="Assuntos trabalhados">
+                {semana.temas.map((t) => (
+                  <span key={t} className="selo-indigo">{t}</span>
                 ))}
-                <option value="outra">Outra</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="minutosAntes" className="mb-1 block font-titulo text-sm font-bold">
-                Levava (min)
-              </label>
-              <input
-                id="minutosAntes" name="minutosAntes" type="number" min={0} max={6000}
-                placeholder="240" className="campo"
-              />
-            </div>
-            <div>
-              <label htmlFor="minutosAgora" className="mb-1 block font-titulo text-sm font-bold">
-                Levou agora (min)
-              </label>
-              <input
-                id="minutosAgora" name="minutosAgora" type="number" min={0} max={6000}
-                placeholder="20" className="campo"
-              />
-            </div>
+              </BlocoResumo>
+            )}
+
+            {semana.disciplinas.length > 0 && (
+              <BlocoResumo titulo="Disciplinas">
+                {semana.disciplinas.map((d) => (
+                  <span key={d} className="selo-cinza">{d}</span>
+                ))}
+              </BlocoResumo>
+            )}
+
+            {semana.porCategoria.length > 0 && (
+              <BlocoResumo titulo="Tipos de registro">
+                {semana.porCategoria.map(({ categoria, quantidade }) => (
+                  <span key={categoria} className={TOM_CATEGORIA[categoria]}>
+                    {ROTULO_CATEGORIA[categoria]} · {quantidade}
+                  </span>
+                ))}
+              </BlocoResumo>
+            )}
+
+            {semana.etapas.length > 0 && (
+              <BlocoResumo titulo="Turmas">
+                {semana.etapas.map((e) => (
+                  <span key={e} className="selo-cinza">{e}</span>
+                ))}
+              </BlocoResumo>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="observacao" className="mb-1 block font-titulo text-sm font-bold">
-              Observação <span className="font-normal text-cinza">(opcional)</span>
-            </label>
-            <textarea
-              id="observacao" name="observacao" rows={2} maxLength={1000}
-              placeholder="O que funcionou? O que você ajustaria?"
-              className="campo"
-            />
-          </div>
+          {/* Dificuldades e ideias são o que ele mais relê: "o que travou"
+              e "o que eu queria ter feito". Ficam citadas na íntegra,
+              sem resumo nosso por cima. */}
+          {(semana.dificuldades.length > 0 || semana.ideias.length > 0) && (
+            <div className="mt-4 grid gap-4 border-t border-borda pt-4 sm:grid-cols-2">
+              {semana.dificuldades.length > 0 && (
+                <div>
+                  <p className="font-titulo text-sm font-bold text-vermelho-dark">
+                    Dificuldades registradas
+                  </p>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {semana.dificuldades.map((d) => (
+                      <li key={d.id} className="text-sm leading-relaxed text-tinta-clara">
+                        {d.oQueFez}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {semana.ideias.length > 0 && (
+                <div>
+                  <p className="font-titulo text-sm font-bold text-amarelo-dark">
+                    Para retomar depois
+                  </p>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {semana.ideias.map((i) => (
+                      <li key={i.id} className="text-sm leading-relaxed text-tinta-clara">
+                        {i.oQueFez}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
-          <button type="submit" className="btn-primario">Registrar</button>
-        </form>
-      </div>
-
-      {registros.length === 0 ? (
-        <div className="card text-center">
-          <p className="py-8 text-cinza">
-            Nenhum registro ainda. Anote sua primeira prática acima.
+      {totalEconomizado > 0 && (
+        <div className="mb-6 rounded-lg bg-verde-soft p-4 text-center">
+          <p className="font-titulo text-xl font-extrabold text-verde-dark">
+            {Math.floor(totalEconomizado / 60)}h {totalEconomizado % 60}min economizados
+          </p>
+          <p className="mt-0.5 text-sm text-verde-dark">
+            segundo os seus próprios registros de tempo
           </p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {registros.map((r) => {
-            const economia = Math.max(0, (r.minutosAntes ?? 0) - (r.minutosAgora ?? 0));
-            return (
-              <div key={r.id} className="card">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold">{r.oQueFez}</p>
-                    <p className="mt-1 text-sm text-cinza">
-                      {r.ferramentaUsada} ·{" "}
-                      {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(r.registradoEm)}
-                    </p>
-                    {r.observacao && (
-                      <p className="mt-2 text-sm text-tinta-clara">{r.observacao}</p>
-                    )}
-                  </div>
-                  {economia > 0 && (
-                    <span className="selo-verde shrink-0">
-                      −{economia} min
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       )}
+
+      <DiarioRegistroRapido aoRegistrar={registrarDiario} />
+
+      <DiarioLinhaTempo
+        registros={registros.map((r) => ({
+          id: r.id,
+          oQueFez: r.oQueFez,
+          observacao: r.observacao,
+          categoria: r.categoria,
+          origem: r.origem,
+          tema: r.tema,
+          disciplina: r.disciplina,
+          etapa: r.etapa,
+          marcadores: r.marcadores,
+          ferramentaUsada: r.ferramentaUsada,
+          minutosAntes: r.minutosAntes,
+          minutosAgora: r.minutosAgora,
+          registradoEm: r.registradoEm.toISOString(),
+        }))}
+        aoExcluir={excluirRegistroDiario}
+      />
+    </div>
+  );
+}
+
+function BlocoResumo({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="font-titulo text-sm font-bold text-tinta">{titulo}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">{children}</div>
     </div>
   );
 }

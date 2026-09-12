@@ -52,6 +52,7 @@ export function BibliotecaPrompts({
   onExecutar,
   onFavoritar,
   ajuda = {},
+  aoMontarPrompt,
 }: {
   prompts: Item[];
   ferramentas: Tool[];
@@ -59,6 +60,8 @@ export function BibliotecaPrompts({
   onFavoritar: (d: FormData) => Promise<void>;
   /** Verbetes já carregados pela página, indexados por slug. */
   ajuda?: Record<string, ItemAjuda>;
+  /** Registra no diário um prompt montado no gerador. */
+  aoMontarPrompt?: (d: FormData) => Promise<void>;
 }) {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("todas");
@@ -98,7 +101,7 @@ export function BibliotecaPrompts({
 
   return (
     <div className="space-y-6">
-      <GeradorPrompt ferramentas={ferramentas} ajuda={ajuda} />
+      <GeradorPrompt ferramentas={ferramentas} ajuda={ajuda} aoUsar={aoMontarPrompt} />
 
       <div className="rounded-xl border border-borda bg-indigo-soft p-4">
         <div className="flex flex-wrap gap-3">
