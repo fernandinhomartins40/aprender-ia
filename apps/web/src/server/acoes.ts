@@ -150,8 +150,13 @@ async function conferirConquistas(userId: string) {
  * suspenso continuar ganhando XP por POST direto — server action é
  * endpoint público, esconder a tela não basta.
  */
-async function matriculaComAcesso(userId: string) {
-  const matricula = await garantirMatricula(userId);
+async function matriculaComAcesso(userId: string, lessonId?: string) {
+  const origem = lessonId
+    ? await prisma.lesson.findUnique({ where: { id: lessonId }, select: { module: { select: { courseId: true } } } })
+    : null;
+  const matricula = origem
+    ? await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId: origem.module.courseId } } })
+    : await garantirMatricula(userId);
   if (!matricula) return null;
 
   const veredito = await verificarAcessoCurso(userId, matricula.courseId);
@@ -168,7 +173,7 @@ export async function concluirLicao(dados: FormData) {
   const anotacoes = String(dados.get("anotacoes") ?? "").trim() || null;
   if (!lessonId) return null;
 
-  const matricula = await matriculaComAcesso(user.id);
+  const matricula = await matriculaComAcesso(user.id, lessonId);
   if (!matricula) return null;
 
   const licao = await prisma.lesson.findUnique({
@@ -425,7 +430,7 @@ export async function analisarResposta(
   if (!lessonId) return { analise, salvo: false };
 
   const user = await exigirAluno();
-  const matricula = await matriculaComAcesso(user.id);
+  const matricula = await matriculaComAcesso(user.id, lessonId);
   // Sem acesso ao curso a análise ainda volta — quem perdeu o plano no
   // meio da lição recebe a devolutiva, apenas não fica registrada.
   if (!matricula) return { analise, salvo: false };
@@ -514,7 +519,7 @@ export async function salvarEtapas(dados: FormData): Promise<void> {
   }
   if (estado.length > 4_000) return;
 
-  const matricula = await matriculaComAcesso(user.id);
+  const matricula = await matriculaComAcesso(user.id, lessonId);
   if (!matricula) return;
 
   try {

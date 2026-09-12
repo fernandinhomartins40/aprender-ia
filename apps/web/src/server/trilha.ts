@@ -47,6 +47,25 @@ export async function garantirMatricula(userId: string) {
   });
 }
 
+/** Cursos matriculados para a porta de entrada da trilha. */
+export async function listarCursosDoAluno(userId: string) {
+  await garantirMatricula(userId);
+  const matriculas = await prisma.enrollment.findMany({
+    where: { userId, course: { publicado: true } },
+    orderBy: { iniciadoEm: "asc" },
+    include: { course: { select: { id: true, titulo: true, subtitulo: true, cargaHoraria: true, capa: true, modulos: { select: { licoes: { select: { id: true } } } } } } },
+  });
+  return matriculas.map((m) => ({
+    id: m.course.id,
+    titulo: m.course.titulo,
+    subtitulo: m.course.subtitulo,
+    cargaHoraria: m.course.cargaHoraria,
+    capa: m.course.capa,
+    progressoPct: m.progressoPct,
+    totalLicoes: m.course.modulos.reduce((s, modulo) => s + modulo.licoes.length, 0),
+  }));
+}
+
 /**
  * A trilha completa, com o status de cada lição.
  *
@@ -54,8 +73,10 @@ export async function garantirMatricula(userId: string) {
  * e as seguintes, BLOQUEADAS. Calculamos na leitura em vez de gravar,
  * assim mudanças no conteúdo não deixam progresso inconsistente.
  */
-export async function carregarTrilha(userId: string) {
-  const matricula = await garantirMatricula(userId);
+export async function carregarTrilha(userId: string, courseId?: string) {
+  const matricula = courseId
+    ? await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } })
+    : await garantirMatricula(userId);
   if (!matricula) return null;
 
   const curso = await prisma.course.findUnique({
@@ -176,7 +197,14 @@ export async function carregarTrilha(userId: string) {
 
 /** Carrega uma lição, garantindo que o aluno tem acesso a ela. */
 export async function carregarLicao(userId: string, lessonId: string) {
-  const trilha = await carregarTrilha(userId);
+  // A lição pode pertencer a qualquer curso do aluno; nunca presuma que a
+  // primeira matrícula é a dona dela.
+  const origem = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    select: { module: { select: { courseId: true } } },
+  });
+  if (!origem) return null;
+  const trilha = await carregarTrilha(userId, origem.module.courseId);
   if (!trilha) return null;
   if (trilha.bloqueado) {
     return {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { exigirAluno, carregarTrilha } from "@/server/trilha";
+import { exigirAluno, carregarTrilha, listarCursosDoAluno } from "@/server/trilha";
 import { IconeApp } from "@/components/icone-app";
 import { ICONE_POR_TIPO, ICONE_POR_ENCONTRO } from "@/lib/icones-trilha";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
@@ -13,9 +13,38 @@ const NOME_TIPO: Record<string, string> = {
   AQUECIMENTO: "Aquecimento", NO_CELULAR: "Prática no celular", EMERGENCIA: "Guia de emergência",
 };
 
-export default async function Trilha() {
+export default async function Trilha({ searchParams }: { searchParams: Promise<{ curso?: string }> }) {
   const user = await exigirAluno();
-  const trilha = await carregarTrilha(user.id);
+  const { curso } = await searchParams;
+  const cursos = await listarCursosDoAluno(user.id);
+
+  // Com mais de um curso, a trilha vira uma porta de entrada: o aluno
+  // escolhe o curso e só então vê suas etapas, sem misturar progressos.
+  if (!curso && cursos.length > 1) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="font-titulo text-3xl font-extrabold">Meus cursos</h1>
+          <p className="mt-1 text-tinta-clara">Escolha um curso para continuar sua trilha.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {cursos.map((c) => (
+            <Link key={c.id} href={`/app/trilha?curso=${c.id}`} className="card group block transition-all hover:border-indigo hover:shadow-md">
+              <div className="flex items-start gap-4">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-soft"><IconeApp nome="trilhas" tamanho={36} /></span>
+                <div className="min-w-0 flex-1"><h2 className="font-titulo text-lg font-extrabold group-hover:text-indigo">{c.titulo}</h2><p className="mt-1 line-clamp-2 text-sm text-tinta-clara">{c.subtitulo ?? "Sua formação"}</p></div>
+              </div>
+              <div className="mt-5 flex items-center justify-between text-sm font-bold"><span className="text-tinta-clara">{c.totalLicoes} lições · {c.cargaHoraria}h</span><span className="text-indigo">Abrir →</span></div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-borda"><div className="h-full rounded-full bg-grad-marca" style={{ width: `${c.progressoPct}%` }} /></div>
+              <p className="mt-2 text-xs font-bold text-indigo">{c.progressoPct}% concluído</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const trilha = await carregarTrilha(user.id, curso);
 
   if (!trilha) {
     return (
