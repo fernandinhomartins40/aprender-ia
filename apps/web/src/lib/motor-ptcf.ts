@@ -389,3 +389,8 @@ export function analisarPtcf(entrada: string): Analise {
     veredito: montarVeredito(dimensoes),
   };
 }
+
+/** Uma única composição para o criador guiado e o gerador inteligente. */
+export function montarPromptPtcf({ papel, tarefa, contexto, formato, revisao }: Record<Dimensao | "revisao", string>) {
+  return `Papel: ${papel || "[papel desejado]"}.\n\nTarefa: ${tarefa || "[o que você quer produzir]"}.\n\nContexto: ${contexto || "[turma, tempo, recursos e restrições]"}.\n\nFormato: ${formato || "[como quer receber a resposta]"}.\n\nAntes de finalizar, verifique: ${revisao || "fatos, adequação pedagógica, acessibilidade e privacidade"}. Se faltar informação, faça até 3 perguntas objetivas antes de responder.`;
+}
