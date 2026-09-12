@@ -1,15 +1,21 @@
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
-import { registrarPrompt } from "@/server/acoes";
+import { alternarFavoritoPrompt, registrarPrompt } from "@/server/acoes";
 import { BibliotecaPrompts } from "@/components/biblioteca-prompts";
 
 export const dynamic = "force-dynamic";
 
 export default async function Prompts() {
-  await exigirAluno();
-  const prompts = await prisma.promptTemplate.findMany({
+  const user = await exigirAluno();
+  const [prompts, ferramentas, favoritos, execucoes] = await Promise.all([
+    prisma.promptTemplate.findMany({
     orderBy: { titulo: "asc" },
-  });
+    }),
+    prisma.aiTool.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] }),
+    prisma.promptFavorite.findMany({ where: { userId: user.id }, select: { promptTemplateId: true } }),
+    prisma.promptRun.groupBy({ by: ["promptTemplateId"], _count: { id: true } }),
+  ]);
+  const usos = new Map(execucoes.map((e) => [e.promptTemplateId, e._count.id]));
 
   return (
     <div>
@@ -30,10 +36,19 @@ export default async function Prompts() {
           dica: p.dica,
           origem: p.origem,
           faixa: p.faixa,
+          etapaEnsino: p.etapaEnsino,
+          objetivoPedagogico: p.objetivoPedagogico,
+          tipoAtividade: p.tipoAtividade,
+          nivelDificuldade: p.nivelDificuldade,
+          tags: p.tags,
+          usos: usos.get(p.id) ?? 0,
+          favorito: favoritos.some((f) => f.promptTemplateId === p.id),
           variaveis: (p.variaveis as any) ?? [],
           ferramentasSugeridas: p.ferramentasSugeridas,
         }))}
         onExecutar={registrarPrompt}
+        onFavoritar={alternarFavoritoPrompt}
+        ferramentas={ferramentas.map((f) => ({ chave: f.chave, nome: f.nome, descricao: f.descricao, url: f.url, capacidades: f.capacidades, metodoAbertura: f.metodoAbertura, urlComPrompt: f.urlComPrompt, observacaoIntegracao: f.observacaoIntegracao }))}
       />
     </div>
   );

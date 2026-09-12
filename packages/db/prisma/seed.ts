@@ -29,10 +29,10 @@ const CURSO = {
 };
 
 const FERRAMENTAS_IA = [
-  { chave: "chatgpt", nome: "ChatGPT", descricao: "Conversa, escrita, planejamento e revisão de materiais.", categoria: "Assistente de texto", url: "https://chatgpt.com/", urlCadastro: "https://chatgpt.com/", ordem: 0 },
-  { chave: "gemini", nome: "Gemini", descricao: "Assistente do Google para pesquisa, ideias e materiais didáticos.", categoria: "Assistente de texto", url: "https://gemini.google.com/", urlCadastro: "https://gemini.google.com/", ordem: 1 },
-  { chave: "deepseek", nome: "DeepSeek", descricao: "Assistente de texto para testar variações de prompts.", categoria: "Assistente de texto", url: "https://chat.deepseek.com/", urlCadastro: "https://chat.deepseek.com/", ordem: 2 },
-  { chave: "notebooklm", nome: "NotebookLM", descricao: "Leitura assistida de fontes próprias, com citações para conferência.", categoria: "Pesquisa com fontes", url: "https://notebooklm.google.com/", urlCadastro: "https://notebooklm.google.com/", ordem: 3 },
+  { chave: "chatgpt", nome: "ChatGPT", descricao: "Conversa, escrita, planejamento e revisão de materiais.", categoria: "Assistente de texto", url: "https://chatgpt.com/", urlCadastro: "https://chatgpt.com/", ordem: 0, capacidades: ["textos", "planejamento", "avaliacao", "ideias", "imagens"], entradas: ["texto", "imagem", "arquivo"], saidas: ["texto", "imagem"], metodoAbertura: "COPIAR_E_ABRIR", observacaoIntegracao: "A interface abre o ChatGPT e copia o prompt. Não enviamos dados pela URL." },
+  { chave: "gemini", nome: "Gemini", descricao: "Assistente do Google para pesquisa, ideias e materiais didáticos.", categoria: "Assistente de texto", url: "https://gemini.google.com/", urlCadastro: "https://gemini.google.com/", ordem: 1, capacidades: ["textos", "planejamento", "pesquisa", "avaliacao", "imagens"], entradas: ["texto", "imagem", "arquivo"], saidas: ["texto", "imagem"], metodoAbertura: "COPIAR_E_ABRIR", observacaoIntegracao: "A interface abre o Gemini e copia o prompt; a colagem é feita pelo professor." },
+  { chave: "deepseek", nome: "DeepSeek", descricao: "Assistente de texto para testar variações de prompts.", categoria: "Assistente de texto", url: "https://chat.deepseek.com/", urlCadastro: "https://chat.deepseek.com/", ordem: 2, capacidades: ["textos", "planejamento", "avaliacao", "raciocinio"], entradas: ["texto"], saidas: ["texto"], metodoAbertura: "COPIAR_E_ABRIR", observacaoIntegracao: "Sem integração de conta ou URL de preenchimento adotada." },
+  { chave: "notebooklm", nome: "NotebookLM", descricao: "Leitura assistida de fontes próprias, com citações para conferência.", categoria: "Pesquisa com fontes", url: "https://notebooklm.google.com/", urlCadastro: "https://notebooklm.google.com/", ordem: 3, capacidades: ["pesquisa", "documentos", "planejamento"], entradas: ["texto", "arquivo", "link"], saidas: ["texto", "citacoes"], metodoAbertura: "COPIAR_E_ABRIR", observacaoIntegracao: "Abra, escolha ou crie um caderno com fontes e cole o prompt. Não há API pública do NotebookLM comum." },
 ];
 
 /*
@@ -911,6 +911,15 @@ async function main() {
       select: { id: true },
     });
 
+    const categoriaParaMeta: Record<string, { objetivo: string; atividade: string; tags: string[] }> = {
+      planejamento: { objetivo: "Planejar experiências de aprendizagem", atividade: "planejamento de aula", tags: ["planejamento", "aula"] },
+      avaliacao: { objetivo: "Avaliar e dar devolutivas", atividade: "avaliação", tags: ["avaliação", "feedback"] },
+      inclusao: { objetivo: "Adaptar para diferentes ritmos e necessidades", atividade: "adaptação pedagógica", tags: ["inclusão", "diferenciação"] },
+      materiais: { objetivo: "Criar material didático", atividade: "material para aula", tags: ["material", "atividade"] },
+      emergencias: { objetivo: "Resolver uma situação imediata de sala", atividade: "ação rápida", tags: ["urgente", "sala de aula"] },
+      etica: { objetivo: "Promover uso responsável de IA", atividade: "orientação", tags: ["ética", "privacidade"] },
+    };
+    const meta = categoriaParaMeta[p.categoria] ?? { objetivo: "Apoiar a prática pedagógica", atividade: "atividade pedagógica", tags: ["educação"] };
     const dados = {
       titulo: p.titulo,
       corpo: p.corpo,
@@ -923,6 +932,11 @@ async function main() {
       dica: `Da apostila — ${p.origem}.`,
       origem: p.origem,
       faixa: "Gratuito",
+      etapaEnsino: p.disciplina === "Educação Infantil" ? "Educação Infantil" : "Educação Básica",
+      objetivoPedagogico: meta.objetivo,
+      tipoAtividade: meta.atividade,
+      nivelDificuldade: "Flexível",
+      tags: [...meta.tags, ...(p.disciplina ? [p.disciplina.toLowerCase()] : [])],
       ferramentasSugeridas: ["gemini", "deepseek", "chatgpt"],
     };
 

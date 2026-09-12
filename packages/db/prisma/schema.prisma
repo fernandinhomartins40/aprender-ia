@@ -83,6 +83,7 @@ model User {
   tokensSenha      PasswordResetToken[]
   matriculas       Enrollment[]
   execucoesPrompt  PromptRun[]
+  favoritosPrompt  PromptFavorite[]
   ofensiva         Streak?
   conquistas       UserAchievement[]
   membroTurmas     CohortMember[]
@@ -415,6 +416,11 @@ model PromptTemplate {
   /// Gratuito, Extra ou Avançado. A biblioteca usa esta faixa para não
   /// prometer a usuários FREE um material que o servidor bloqueia.
   faixa     String  @default("Gratuito")
+  etapaEnsino String?
+  objetivoPedagogico String?
+  tipoAtividade String?
+  nivelDificuldade String?
+  tags String[] @default([])
 
   ferramentasSugeridas String[] // ["gemini", "deepseek", "chatgpt"]
 
@@ -423,9 +429,11 @@ model PromptTemplate {
 
   lesson    Lesson?     @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   execucoes PromptRun[]
+  favoritos PromptFavorite[]
 
   @@index([categoria])
   @@index([disciplina])
+  @@index([etapaEnsino])
   @@map("prompt_templates")
 }
 
@@ -441,11 +449,33 @@ model AiTool {
   urlCadastro  String?
   ativo        Boolean  @default(true)
   ordem        Int      @default(0)
+  /// Capacidades normalizadas: textos, planejamento, pesquisa, imagens, apresentação...
+  capacidades  String[] @default([])
+  entradas     String[] @default(["texto"])
+  saidas       String[] @default(["texto"])
+  /// COPIAR_E_ABRIR é o padrão seguro; URL_COM_PROMPT só com URL oficial verificada.
+  metodoAbertura String @default("COPIAR_E_ABRIR")
+  urlComPrompt String?
+  observacaoIntegracao String? @db.Text
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   @@index([ativo, ordem])
   @@map("ai_tools")
+}
+
+model PromptFavorite {
+  id String @id @default(cuid())
+  userId String
+  promptTemplateId String
+  criadoEm DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt PromptTemplate @relation(fields: [promptTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promptTemplateId])
+  @@index([userId, criadoEm])
+  @@map("prompt_favorites")
 }
 
 model PromptRun {

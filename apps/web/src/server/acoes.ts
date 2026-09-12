@@ -594,6 +594,19 @@ export async function registrarPrompt(dados: FormData) {
   revalidatePath("/app");
 }
 
+/** Favoritos são privados ao professor: não alteram o catálogo editorial. */
+export async function alternarFavoritoPrompt(dados: FormData) {
+  const user = await exigirAluno();
+  const promptTemplateId = String(dados.get("promptTemplateId") ?? "");
+  if (!promptTemplateId) return;
+  const existente = await prisma.promptFavorite.findUnique({
+    where: { userId_promptTemplateId: { userId: user.id, promptTemplateId } },
+  });
+  if (existente) await prisma.promptFavorite.delete({ where: { id: existente.id } });
+  else await prisma.promptFavorite.create({ data: { userId: user.id, promptTemplateId } });
+  revalidatePath("/app/prompts");
+}
+
 /* ============================================================
    DIÁRIO DE BORDO
    ============================================================ */
