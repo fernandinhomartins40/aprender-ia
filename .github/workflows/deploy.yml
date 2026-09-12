@@ -19,7 +19,11 @@ env:
   CANONICAL_URL: https://aprenderia.site
   SSL_EMAIL: admin@aprenderia.site
   SITE_NAME: aprenderia
-  SSH_OPTS: -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -o NumberOfPasswordPrompts=1 -o ConnectTimeout=20
+  # O build da imagem pode levar vários minutos sem produzir saída. Alguns
+  # firewalls/NATs encerram esse TCP ocioso e o runner recebe exit 255
+  # mesmo depois de o Docker terminar. Keepalives SSH independem da saída
+  # do build e mantêm a sessão viva; 20 tentativas dão 10 min de margem.
+  SSH_OPTS: -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -o NumberOfPasswordPrompts=1 -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes
 
 jobs:
   deploy:
