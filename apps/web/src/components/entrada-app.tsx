@@ -21,9 +21,6 @@ import { Logo } from "@/components/logo";
  * do aplicativo.
  */
 
-// O vídeo encerra a abertura normalmente. Este limite evita que uma falha de
-// rede, cache ou decodificação deixe a pessoa presa na tela inicial.
-const DURACAO_MAXIMA_ABERTURA = 3500;
 const CHAVE_IDENTIFICADOR = "aprenderia:identificador";
 
 export function EntradaApp({ proximo }: { proximo: string }) {
@@ -42,8 +39,6 @@ export function EntradaApp({ proximo }: { proximo: string }) {
       setAbrindo(false);
       return;
     }
-    const t = setTimeout(() => setAbrindo(false), DURACAO_MAXIMA_ABERTURA);
-    return () => clearTimeout(t);
   }, []);
 
   // O identificador salvo no aparelho poupa digitação a cada abertura.
