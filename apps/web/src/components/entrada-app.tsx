@@ -21,7 +21,9 @@ import { Logo } from "@/components/logo";
  * do aplicativo.
  */
 
-const DURACAO_ABERTURA = 1100;
+// O vídeo encerra a abertura normalmente. Este limite evita que uma falha de
+// rede, cache ou decodificação deixe a pessoa presa na tela inicial.
+const DURACAO_MAXIMA_ABERTURA = 3500;
 const CHAVE_IDENTIFICADOR = "aprenderia:identificador";
 
 export function EntradaApp({ proximo }: { proximo: string }) {
@@ -40,7 +42,7 @@ export function EntradaApp({ proximo }: { proximo: string }) {
       setAbrindo(false);
       return;
     }
-    const t = setTimeout(() => setAbrindo(false), DURACAO_ABERTURA);
+    const t = setTimeout(() => setAbrindo(false), DURACAO_MAXIMA_ABERTURA);
     return () => clearTimeout(t);
   }, []);
 
@@ -99,15 +101,18 @@ export function EntradaApp({ proximo }: { proximo: string }) {
           abrindo ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        {/* A abertura mostra a logo escrita, não o ícone quadrado: o
-            quadradinho é o símbolo da tela inicial do aparelho, e aqui a
-            tela inteira está disponível para a marca. */}
-        <Logo
-          href={null}
-          largura={260}
-          prioridade
-          className={`h-auto w-60 max-w-[70vw] ${abrindo ? "animate-pulsar" : ""}`}
-        />
+        <video
+          className="h-full w-full object-cover"
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          onEnded={() => setAbrindo(false)}
+          onError={() => setAbrindo(false)}
+        >
+          <source src="/abertura/video_abertura.mp4" type="video/mp4" />
+        </video>
       </div>
 
       {/* ---- Login ---- */}
