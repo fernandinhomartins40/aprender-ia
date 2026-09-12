@@ -17,6 +17,7 @@ import {
   PlayerEmergencia,
   type Analisar,
 } from "./players";
+import type { TermoDetectavel } from "./texto-explicado";
 import {
   FeedbackConclusao,
   type ResultadoConclusao,
@@ -35,6 +36,7 @@ export function LicaoCliente({
   salvarEtapas,
   concluidaInicialmente = false,
   respostasAbertas = {},
+  termos = {},
 }: {
   tipo: string;
   conteudo: any;
@@ -42,6 +44,14 @@ export function LicaoCliente({
   proximaId?: string | null;
   concluidaInicialmente?: boolean;
   respostasAbertas?: Record<string, string>;
+  /**
+   * Verbetes para marcação automática no texto da lição.
+   *
+   * Chega pronto da página (Server Component) para que este componente
+   * client não busque nada: o conteúdo do curso vem do banco e não dá
+   * para marcar os termos à mão dentro dele.
+   */
+  termos?: Record<string, TermoDetectavel>;
   salvarEtapas?: (d: FormData) => Promise<void>;
   template?: {
     id: string;
@@ -158,7 +168,7 @@ export function LicaoCliente({
     case "TEORIA":
       player = (
         <>
-          <PlayerTeoria blocos={conteudo.blocos ?? []} />
+          <PlayerTeoria blocos={conteudo.blocos ?? []} termos={termos} />
           <button
             onClick={finalizar}
             disabled={concluida}

@@ -3,6 +3,7 @@ import { exigirAluno, carregarTrilha, listarCursosDoAluno } from "@/server/trilh
 import { IconeApp } from "@/components/icone-app";
 import { ICONE_POR_TIPO, ICONE_POR_ENCONTRO } from "@/lib/icones-trilha";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
@@ -65,9 +66,13 @@ export default async function Trilha({ searchParams }: { searchParams: Promise<{
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-titulo text-3xl font-extrabold">Sua trilha</h1>
+        <h1 className="font-titulo text-3xl font-extrabold">
+          Sua trilha
+          <Termo slug="trilha-formacao" contexto="trilha" rotulo="Trilha" />
+        </h1>
         <p className="mt-1 text-tinta-clara">
           {trilha.totalConcluidas} de {trilha.totalLicoes} lições concluídas
+          <Termo slug="licao" contexto="trilha" rotulo="Lição" />
         </p>
         <div className="mt-4 h-3 overflow-hidden rounded-full bg-borda">
           <div

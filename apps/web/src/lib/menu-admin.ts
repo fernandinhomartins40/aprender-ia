@@ -56,6 +56,10 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     titulo: "Conteúdo",
     itens: [
       { href: "/admin/cursos", rotulo: "Cursos", icone: "cursos" },
+      // Fica em Conteúdo, e não em Sistema: editar um termo muda o que o
+      // professor lê nos ícones ⓘ de várias telas ao mesmo tempo — é
+      // material didático, não configuração.
+      { href: "/admin/conhecimento", rotulo: "Base de Conhecimento", icone: "ideias" },
       { href: "/admin/ferramentas-ia", rotulo: "Ferramentas de IA", icone: "ferramentas" },
       { href: "/admin/gamificacao", rotulo: "Gamificação", icone: "recompensas" },
       { href: "/admin/landing", rotulo: "Página inicial", icone: "inicio" },

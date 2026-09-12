@@ -2,6 +2,7 @@ import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 import { IconeApp } from "@/components/icone-app";
 import { iconeGamificacao } from "@/lib/icones-gamificacao";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,10 @@ export default async function Conquistas() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Conquistas</h1>
+        <h1 className="font-titulo text-3xl font-extrabold">
+          Conquistas
+          <Termo slug="conquista" contexto="conquistas" rotulo="Conquistas" />
+        </h1>
         <p className="mt-1 text-tinta-clara">
           {minhas.length} de {todas.length} conquistadas
         </p>

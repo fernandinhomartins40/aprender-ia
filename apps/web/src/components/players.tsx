@@ -5,6 +5,7 @@ import { CardPrompt } from "./card-prompt";
 import { IconeApp } from "./icone-app";
 import { FeedbackVisual } from "./feedback-visual";
 import { AnalisePtcf, ProximoPasso } from "./analise-ptcf";
+import { TextoExplicado, type TermoDetectavel } from "./texto-explicado";
 import type { Analise } from "@/lib/motor-ptcf";
 
 /**
@@ -69,7 +70,32 @@ type Bloco = {
   itens?: string[];
 };
 
-export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
+export function PlayerTeoria({
+  blocos,
+  termos = {},
+}: {
+  blocos: Bloco[];
+  /**
+   * Verbetes da Base de Conhecimento, para marcação automática.
+   *
+   * O texto da lição vem do banco e muda com o conteúdo do curso: marcar
+   * termo por termo à mão aqui seria impossível. `TextoExplicado` acende
+   * o primeiro uso de cada termo conhecido, com teto de ícones por bloco
+   * para o material não virar uma fileira de ⓘ.
+   *
+   * Vazio (o padrão) desliga a marcação e o texto sai igual ao original.
+   */
+  termos?: Record<string, TermoDetectavel>;
+}) {
+  const temTermos = Object.keys(termos).length > 0;
+
+  /** O texto do bloco, com ou sem marcação — decidido em um lugar só. */
+  function Texto({ valor, limite = 2 }: { valor?: string; limite?: number }) {
+    if (!valor) return null;
+    if (!temTermos) return <>{valor}</>;
+    return <TextoExplicado texto={valor} termos={termos} contexto="licao" limite={limite} />;
+  }
+
   return (
     <div className="space-y-5">
       {blocos.map((b, i) => {
@@ -84,6 +110,9 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
                   <IconeApp nome="documentos" tamanho={22} />
                   Traduzindo: {b.titulo}
                 </p>
+                {/* Sem marcação: este bloco já É a explicação de um
+                    termo, e explicar conceitos dentro dele seria
+                    explicação sobre explicação. */}
                 <p className="mt-2 text-verde-dark">{b.texto}</p>
               </div>
             );
@@ -105,7 +134,9 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
                 <p className="font-titulo font-bold text-indigo-dark">
                   {b.titulo}
                 </p>
-                <p className="mt-2 text-indigo-dark">{b.texto}</p>
+                <p className="mt-2 text-indigo-dark">
+                  <Texto valor={b.texto} limite={1} />
+                </p>
               </div>
             );
           case "lista":
@@ -120,7 +151,11 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
                       <span className="text-indigo" aria-hidden="true">
                         •
                       </span>
-                      <span>{it}</span>
+                      {/* Um ícone por item, no máximo: uma lista de seis
+                          itens com dois cada viraria doze ícones. */}
+                      <span>
+                        <Texto valor={it} limite={1} />
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -129,7 +164,7 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
           default:
             return (
               <p key={i} className="text-lg leading-relaxed text-tinta-clara">
-                {b.texto}
+                <Texto valor={b.texto} />
               </p>
             );
         }

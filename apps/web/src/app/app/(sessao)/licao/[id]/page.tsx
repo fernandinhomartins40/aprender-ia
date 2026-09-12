@@ -11,8 +11,30 @@ import {
 import { LicaoCliente } from "@/components/licao-cliente";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 import { IconeApp } from "@/components/icone-app";
+import { verbetes } from "@/server/conhecimento";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Termos que NÃO entram na marcação automática do texto da lição.
+ *
+ * "Lição", "trilha", "XP", "conquista" e "missão" são vocabulário da
+ * própria plataforma: dentro do material do curso eles aparecem em
+ * sentido comum ("nesta lição você vai…") e acender um ícone ali
+ * explicaria o óbvio, poluindo o texto que o professor está lendo.
+ */
+const FORA_DA_MARCACAO = new Set([
+  "licao",
+  "trilha-formacao",
+  "xp",
+  "nivel",
+  "ofensiva",
+  "missao",
+  "conquista",
+  "diario-bordo",
+  "banco-prompts",
+]);
 
 export default async function Licao({
   params,
@@ -21,7 +43,10 @@ export default async function Licao({
 }) {
   const user = await exigirAluno();
   const { id } = await params;
-  const dados = await carregarLicao(user.id, id);
+  const [dados, todosVerbetes] = await Promise.all([
+    carregarLicao(user.id, id),
+    verbetes(),
+  ]);
 
   if (!dados) notFound();
 
@@ -55,6 +80,12 @@ export default async function Licao({
   const { licao, resumo, proxima, posicao, totalLicoes } = dados;
   const template = licao.promptTemplates[0];
 
+  const termos = Object.fromEntries(
+    todosVerbetes
+      .filter((v) => !FORA_DA_MARCACAO.has(v.slug))
+      .map((v) => [v.slug, v]),
+  );
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
@@ -73,6 +104,7 @@ export default async function Licao({
           </span>
           <span className="text-sm text-cinza">
             Lição {posicao} de {totalLicoes} · {resumo.xp} XP
+            <Termo slug="xp" contexto="trilha" rotulo="XP" />
           </span>
         </div>
         <h1 className="mt-3 font-titulo text-3xl font-extrabold">
@@ -108,6 +140,7 @@ export default async function Licao({
         salvarEtapas={salvarEtapas}
         concluidaInicialmente={resumo.status === "CONCLUIDA"}
         respostasAbertas={dados.respostasAbertas}
+        termos={termos}
       />
     </div>
   );

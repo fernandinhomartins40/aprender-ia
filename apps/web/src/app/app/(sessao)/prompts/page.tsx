@@ -2,31 +2,59 @@ import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 import { alternarFavoritoPrompt, registrarPrompt } from "@/server/acoes";
 import { BibliotecaPrompts } from "@/components/biblioteca-prompts";
+import { mapaVerbetes } from "@/server/conhecimento";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Os termos explicados nesta tela.
+ *
+ * Carregados de uma vez e passados ao componente client: ele é quem
+ * desenha os rótulos dos filtros e dos campos, onde o vocabulário
+ * técnico está.
+ */
+const TERMOS = [
+  "prompt",
+  "ptcf",
+  "variavel-prompt",
+  "banco-prompts",
+  "etapa-ensino",
+  "objetivo-pedagogico",
+  "componente-curricular",
+  "privacidade",
+  "ferramenta-ia",
+  "alucinacao",
+];
+
 export default async function Prompts() {
   const user = await exigirAluno();
-  const [prompts, ferramentas, favoritos, execucoes] = await Promise.all([
+  const [prompts, ferramentas, favoritos, execucoes, ajuda] = await Promise.all([
     prisma.promptTemplate.findMany({
     orderBy: { titulo: "asc" },
     }),
     prisma.aiTool.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] }),
     prisma.promptFavorite.findMany({ where: { userId: user.id }, select: { promptTemplateId: true } }),
     prisma.promptRun.groupBy({ by: ["promptTemplateId"], _count: { id: true } }),
+    mapaVerbetes(TERMOS),
   ]);
   const usos = new Map(execucoes.map((e) => [e.promptTemplateId, e._count.id]));
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Banco de prompts</h1>
+        <h1 className="font-titulo text-3xl font-extrabold">
+          Banco de prompts
+          <Termo slug="banco-prompts" contexto="prompts" rotulo="Banco de prompts" />
+        </h1>
         <p className="mt-1 text-tinta-clara">
           Personalize, abra na IA que preferir e use na sua próxima aula.
+          <Termo slug="privacidade" contexto="prompts" rotulo="Privacidade de estudantes" />
         </p>
       </div>
 
       <BibliotecaPrompts
+        ajuda={ajuda}
         prompts={prompts.map((p) => ({
           id: p.id,
           titulo: p.titulo,

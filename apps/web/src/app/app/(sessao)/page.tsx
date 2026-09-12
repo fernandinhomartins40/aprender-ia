@@ -5,6 +5,7 @@ import { IconeApp } from "@/components/icone-app";
 import { nivelDoXp, xpAteProximoNivel } from "@/lib/gamificacao";
 import { iconeGamificacao } from "@/lib/icones-gamificacao";
 import { missoesDoAluno } from "@/server/missoes";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,10 @@ export default async function PainelAluno() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-indigo-dark">Nível {nivel.numero}</p>
-              <h2 className="font-titulo text-xl font-extrabold">{nivel.titulo}</h2>
+              <h2 className="font-titulo text-xl font-extrabold">
+                {nivel.titulo}
+                <Termo slug="nivel" contexto="inicio" rotulo="Nível" />
+              </h2>
               <p className="mt-1 text-sm text-tinta-clara">Faltam {faltamNivel} XP para o próximo nível.</p>
             </div>
           </div>
@@ -107,7 +111,10 @@ export default async function PainelAluno() {
           <p className="font-titulo text-3xl font-extrabold text-xp">
             {trilha?.xpTotal ?? 0}
           </p>
-          <p className="mt-1 text-sm text-tinta-clara">XP acumulado</p>
+          <p className="mt-1 text-sm text-tinta-clara">
+            XP acumulado
+            <Termo slug="xp" contexto="inicio" />
+          </p>
         </div>
         <div className="card text-center">
           <p className="flex items-center justify-center gap-1 font-titulo text-3xl font-extrabold text-streak">
@@ -115,6 +122,7 @@ export default async function PainelAluno() {
           </p>
           <p className="mt-1 text-sm text-tinta-clara">
             {resumo.ofensiva === 1 ? "dia seguido" : "dias seguidos"}
+            <Termo slug="ofensiva" contexto="inicio" rotulo="Ofensiva" />
           </p>
         </div>
         <div className="card text-center">
@@ -140,6 +148,7 @@ export default async function PainelAluno() {
           </p>
           <p className="mt-1 text-verde-dark">
             segundo os seus próprios registros no diário de bordo
+            <Termo slug="diario-bordo" contexto="inicio" rotulo="Diário de bordo" />
           </p>
         </div>
       )}
@@ -147,7 +156,10 @@ export default async function PainelAluno() {
       {/* ---- Progresso por encontro ---- */}
       {trilha && (
         <section className="mt-8">
-          <h2 className="font-titulo text-xl font-extrabold">Seus encontros</h2>
+          <h2 className="font-titulo text-xl font-extrabold">
+            Seus encontros
+            <Termo slug="trilha-formacao" contexto="inicio" rotulo="Trilha" />
+          </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {trilha.modulos.map((m) => (
               <div key={m.id} className="card border-l-8" style={{ borderLeftColor: m.cor }}>
@@ -178,7 +190,10 @@ export default async function PainelAluno() {
       {resumo.conquistasRecentes.length > 0 && (
         <section className="mt-8">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-titulo text-xl font-extrabold">Conquistas recentes</h2>
+            <h2 className="font-titulo text-xl font-extrabold">
+              Conquistas recentes
+              <Termo slug="conquista" contexto="conquistas" rotulo="Conquistas" />
+            </h2>
             <Link href="/app/conquistas" className="text-sm font-bold text-indigo">Ver todas</Link>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">

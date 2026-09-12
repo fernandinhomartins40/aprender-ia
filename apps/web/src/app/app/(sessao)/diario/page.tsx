@@ -2,6 +2,7 @@ import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 import { registrarDiario } from "@/server/acoes";
 import { LISTA_FERRAMENTAS } from "@aprender/ai-launcher";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,13 @@ export default async function Diario() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-titulo text-3xl font-extrabold">Diário de bordo</h1>
+        <h1 className="font-titulo text-3xl font-extrabold">
+          Diário de bordo
+          <Termo slug="diario-bordo" contexto="diario" rotulo="Diário de bordo" />
+        </h1>
         <p className="mt-1 text-tinta-clara">
           Quanto tempo a IA te devolveu. Este registro é só seu.
+          <Termo slug="privacidade" contexto="diario" rotulo="Privacidade de estudantes" />
         </p>
       </div>
 

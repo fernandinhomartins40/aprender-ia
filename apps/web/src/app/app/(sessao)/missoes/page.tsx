@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { IconeApp } from "@/components/icone-app";
 import { minhasMissoes, minhasRecompensas } from "@/server/missoes";
+import { Termo } from "@/components/termo";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export default async function Missoes() {
   const [missoes, recompensas] = await Promise.all([minhasMissoes(), minhasRecompensas()]);
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="flex items-center gap-4"><div className="rounded-2xl bg-amarelo-soft p-3"><IconeApp nome="metas" tamanho={48} prioridade /></div><div><h1 className="font-titulo text-3xl font-extrabold">Missões</h1><p className="text-tinta-clara">Objetivos opcionais que acompanham sua aprendizagem real.</p></div></div>
+      <div className="flex items-center gap-4"><div className="rounded-2xl bg-amarelo-soft p-3"><IconeApp nome="metas" tamanho={48} prioridade /></div><div><h1 className="font-titulo text-3xl font-extrabold">Missões<Termo slug="missao" contexto="missoes" rotulo="Missões" /></h1><p className="text-tinta-clara">Objetivos opcionais que acompanham sua aprendizagem real.</p></div></div>
       <div className="mt-7 space-y-4">
         {missoes.map((m) => {
           const secreta = m.oculto && !m.concluida;

@@ -6,7 +6,7 @@
  *
  * É idempotente: pode rodar quantas vezes for preciso sem duplicar.
  */
-import { PrismaClient, TipoLicao } from "@prisma/client";
+import { Prisma, PrismaClient, TipoLicao } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { BANCO_PROMPTS } from "./banco-prompts";
 import { BASE_CONHECIMENTO } from "./base-conhecimento";
@@ -953,7 +953,18 @@ async function main() {
   );
 
   for (const item of BASE_CONHECIMENTO) {
-    await prisma.knowledgeEntry.upsert({ where: { slug: item.slug }, update: item, create: item });
+    // `importancias` é Json? no schema: `null` em TypeScript significaria
+    // "não mexa neste campo" para o Prisma, e o verbete manteria o valor
+    // antigo. `Prisma.DbNull` é o que grava NULL de verdade.
+    const dados = {
+      ...item,
+      importancias: item.importancias ?? Prisma.DbNull,
+    };
+    await prisma.knowledgeEntry.upsert({
+      where: { slug: item.slug },
+      update: dados,
+      create: dados,
+    });
   }
   console.log(`  base de conhecimento: ${BASE_CONHECIMENTO.length} termos`);
 
