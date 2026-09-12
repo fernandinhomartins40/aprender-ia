@@ -280,6 +280,17 @@ export default async function Alunos({
                               </span>
                             );
                           })()}
+                          {/* Planos e acessos efetivos têm tela própria:
+                              não cabem na linha de uma tabela, e é lá que
+                              se administra o que o aluno alcança. */}
+                          <div className="mt-2">
+                            <Link
+                              href={`/admin/alunos/${u.id}`}
+                              className="text-sm font-bold text-indigo hover:underline"
+                            >
+                              Planos e acessos →
+                            </Link>
+                          </div>
                           {u.papel === "ALUNO" && (
                             <div className="mt-2">
                               <AcoesAcessoAluno

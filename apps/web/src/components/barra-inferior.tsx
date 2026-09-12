@@ -38,6 +38,7 @@ const SECUNDARIOS: Posicao[] = [
   { href: "/app/conhecimento", rotulo: "Conhecimento", icone: "ideias" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
   { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
+  { href: "/app/meus-planos", rotulo: "Meus planos", icone: "planos" },
   { href: "/app/acesso", rotulo: "Meu acesso", icone: "seguranca" },
 ];
 

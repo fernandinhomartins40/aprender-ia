@@ -23,14 +23,18 @@ export const dynamic = "force-dynamic";
 const FILTROS: { valor?: StatusAssinatura; rotulo: string }[] = [
   { valor: undefined, rotulo: "Todas" },
   { valor: "ATIVA", rotulo: "Ativas" },
+  { valor: "PENDENTE", rotulo: "Aguardando pagamento" },
   { valor: "INADIMPLENTE", rotulo: "Inadimplentes" },
+  { valor: "SUSPENSA", rotulo: "Suspensas" },
   { valor: "CANCELADA", rotulo: "Canceladas" },
   { valor: "EXPIRADA", rotulo: "Expiradas" },
 ];
 
 const COR_STATUS: Record<StatusAssinatura, string> = {
   ATIVA: "bg-verde-soft text-verde-dark",
+  PENDENTE: "bg-indigo-soft text-indigo-dark",
   INADIMPLENTE: "bg-vermelho-soft text-vermelho-dark",
+  SUSPENSA: "bg-vermelho-soft text-vermelho-dark",
   CANCELADA: "bg-borda text-cinza",
   EXPIRADA: "bg-amarelo-soft text-amarelo-dark",
 };

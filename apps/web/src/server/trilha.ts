@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@aprender/auth";
 import { prisma, type StatusLicao } from "@aprender/db";
-import { avaliarAcesso, SELECT_ACESSO, type Veredito } from "./acesso";
+import { acessoDoAluno, avaliarAcesso, SELECT_ACESSO, type Veredito } from "./acesso";
+import { podeVerCurso, podeVerModulo } from "@/lib/motor-acesso";
 
 /**
  * Garante sessão e devolve o usuário.
@@ -90,19 +91,15 @@ export async function carregarTrilha(userId: string, courseId?: string) {
   });
   if (!curso) return null;
 
-  // O acesso é reavaliado a cada carregamento: um aluno matriculado
-  // pode ter sido suspenso ou ter o prazo vencido depois da matrícula.
-  const dono = await prisma.user.findUnique({
-    where: { id: userId },
-    select: SELECT_ACESSO,
-  });
-  const veredito = dono
-    ? avaliarAcesso(dono, curso)
-    : ({
-        permitido: false,
-        motivo: "conta-suspensa",
-        mensagem: "Conta indisponível.",
-      } as Veredito);
+  // O acesso é reavaliado a cada carregamento: um aluno matriculado pode
+  // ter sido suspenso, ter o prazo vencido ou ter ganhado um plano novo
+  // depois da matrícula.
+  //
+  // Quem decide é o motor (`aluno → assinaturas → planos → cursos e
+  // módulos`), a mesma fonte que o painel administrativo consulta — é o
+  // que impede esta tela de divergir do que o servidor autoriza.
+  const acesso = await acessoDoAluno(userId);
+  const veredito = podeVerCurso(acesso, curso.id);
 
   if (!veredito.permitido) {
     return {
@@ -122,13 +119,7 @@ export async function carregarTrilha(userId: string, courseId?: string) {
     // A faixa avançada vive no mesmo curso da parte gratuita. A checagem é
     // feita no servidor, por módulo, para que esconder um link no cliente
     // nunca seja a única barreira de acesso.
-    const acessoModulo = dono
-      ? avaliarAcesso(dono, { pago: m.pago })
-      : ({
-          permitido: false,
-          motivo: "curso-pago-plano-free",
-          mensagem: "Módulo indisponível.",
-        } as Veredito);
+    const acessoModulo = podeVerModulo(acesso, curso.id, m.id);
     const licoes = m.licoes.map((l) => {
       const p = porLicao.get(l.id);
       let status: StatusLicao;

@@ -18,6 +18,7 @@ export type PlanoParaForm = {
   periodicidade: Periodicidade;
   diasAcesso: number | null;
   diasTeste: number;
+  gratuito: boolean;
   ativo: boolean;
   publico: boolean;
   destaque: boolean;
@@ -206,6 +207,18 @@ export function FormPlano({
               className="h-4 w-4"
             />
             Destaque
+          </label>
+          {/* O plano gratuito da plataforma: define o que recebe quem não
+              tem plano pago. Só um pode existir por vez (o servidor
+              recusa o segundo) e o preço é zerado ao salvar. */}
+          <label className="flex items-center gap-2 text-sm font-bold text-indigo-dark">
+            <input
+              type="checkbox"
+              name="gratuito"
+              defaultChecked={plano?.gratuito ?? false}
+              className="h-4 w-4"
+            />
+            É o plano gratuito
           </label>
         </div>
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listarPlanos, salvarPlano, excluirPlano } from "@/server/assinaturas";
 import { FormPlano } from "@/components/form-plano";
 import { reais } from "@/lib/dinheiro";
@@ -42,6 +43,7 @@ export default async function Planos() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="font-titulo text-lg font-bold">{p.nome}</h2>
+                        {p.gratuito && <span className="selo-indigo">Plano gratuito</span>}
                         {!p.ativo && <span className="selo-cinza">Inativo</span>}
                         {p.ativo && !p.publico && (
                           <span className="selo-amarelo">Fora da landing</span>
@@ -51,6 +53,28 @@ export default async function Planos() {
                       {p.descricao && (
                         <p className="mt-1 text-sm text-tinta-clara">{p.descricao}</p>
                       )}
+                      {/* O que o plano libera é a informação que mais
+                          faltava nesta tela: sem ela, não havia como
+                          saber se um plano dá acesso a alguma coisa. */}
+                      <p className="mt-2 text-sm">
+                        {p._count.cursos === 0 ? (
+                          <span className="font-semibold text-amarelo-dark">
+                            Não libera conteúdo nenhum
+                          </span>
+                        ) : (
+                          <span className="text-tinta-clara">
+                            Libera {p._count.cursos} curso(s)
+                          </span>
+                        )}
+                        {" · "}
+                        <Link
+                          href={`/admin/planos/${p.id}`}
+                          className="font-bold text-indigo hover:underline"
+                        >
+                          Configurar conteúdo →
+                        </Link>
+                      </p>
+
                       <p className="mt-2 font-mono text-xs text-cinza">{p.slug}</p>
                     </div>
 
@@ -143,6 +167,7 @@ export default async function Planos() {
                         periodicidade: p.periodicidade,
                         diasAcesso: p.diasAcesso,
                         diasTeste: p.diasTeste,
+                        gratuito: p.gratuito,
                         ativo: p.ativo,
                         publico: p.publico,
                         destaque: p.destaque,

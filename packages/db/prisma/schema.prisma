@@ -325,6 +325,7 @@ model Course {
   modulos    Module[]
   matriculas Enrollment[]
   turmas     Cohort[]
+  planos     PlanCourse[]
 
   @@map("courses")
 }
@@ -346,8 +347,9 @@ model Module {
   /// Selo curto na trilha ("Extra", "Avançado"). Nulo nos encontros.
   faixa String?
 
-  course Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   licoes Lesson[]
+  planos PlanModule[]
 
   @@unique([courseId, ordem])
   @@map("modules")
@@ -823,16 +825,46 @@ enum Periodicidade {
 /// INADIMPLENTE não é o mesmo que CANCELADA: o vínculo continua de pé e o
 /// aluno volta ao quitar. Só CANCELADA e EXPIRADA encerram a assinatura.
 enum StatusAssinatura {
+  /// Vale acesso.
   ATIVA
+  /// Criada, aguardando confirmação do primeiro pagamento. NÃO vale
+  /// acesso — é o estado de quem escolheu um plano e ainda não pagou.
+  PENDENTE
+  /// Cobrança vencida. Vale acesso até o fim do ciclo já pago; depois
+  /// disso o prazo é que decide, não o status.
   INADIMPLENTE
+  /// Suspensa pela administração, sem cancelar o vínculo. Não vale
+  /// acesso enquanto durar.
+  SUSPENSA
+  /// Encerrada pelo aluno ou pelo admin. Vale acesso até o fim do ciclo
+  /// já pago — quem pagou o mês tem direito ao mês.
   CANCELADA
+  /// Prazo esgotado. Não vale acesso.
   EXPIRADA
 }
 
-/// Um plano vendável.
+/// Como um plano concede conteúdo.
+///
+/// Distingue os dois casos que antes se confundiam: o plano que dá o
+/// curso inteiro (e continua dando quando módulos novos são publicados)
+/// e o plano que dá um recorte fixo de módulos.
+enum AbrangenciaPlano {
+  /// Curso inteiro, incluindo módulos criados depois.
+  CURSO_COMPLETO
+  /// Apenas os módulos listados em `PlanModule`.
+  MODULOS_ESPECIFICOS
+}
+
+/// Um plano vendável — ou o plano gratuito da plataforma.
 ///
 /// O preço mora aqui e não no código: criar uma promoção não deve exigir
 /// deploy, que é justamente o objetivo do painel.
+///
+/// O que este modelo ganhou: um plano agora DIZ QUE CONTEÚDO LIBERA
+/// (`cursos`). Antes definia só preço e cobrança, e o acesso era decidido
+/// à parte por um enum no usuário — de modo que pagar não liberava nada
+/// por si só, e não havia como um plano dar um curso e outro plano dar
+/// outro.
 model Plan {
   id        String  @id @default(cuid())
   nome      String
@@ -842,6 +874,17 @@ model Plan {
 
   precoCentavos Int
   periodicidade Periodicidade @default(MENSAL)
+
+  /// O plano gratuito da plataforma.
+  ///
+  /// Existe como plano de verdade, e não como condição especial no
+  /// código: o administrador escolhe que cursos e módulos o acesso
+  /// gratuito inclui, do mesmo jeito que faz com qualquer plano pago.
+  ///
+  /// Só um pode ser o gratuito ao mesmo tempo (garantido por índice
+  /// parcial na migration): dois planos FREE simultâneos tornariam
+  /// indefinido qual deles vale para quem não assinou nada.
+  gratuito Boolean @default(false)
 
   /// Só para periodicidade UNICA: quantos dias de acesso a compra libera.
   /// Nulo num plano recorrente, onde o ciclo já define o prazo.
@@ -864,9 +907,56 @@ model Plan {
   atualizadoEm DateTime @updatedAt
 
   assinaturas Subscription[]
+  cursos      PlanCourse[]
 
   @@index([ativo])
+  @@index([gratuito])
   @@map("plans")
+}
+
+/// Um curso que um plano libera.
+///
+/// A abrangência mora aqui, e não no plano, porque o mesmo plano pode dar
+/// um curso inteiro e apenas parte de outro — que é exatamente o controle
+/// granular que faltava.
+model PlanCourse {
+  id       String @id @default(cuid())
+  planId   String
+  courseId String
+
+  abrangencia AbrangenciaPlano @default(CURSO_COMPLETO)
+
+  criadoEm DateTime @default(now())
+
+  plan    Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  /// Sem cascade: apagar um curso que planos vendem é erro, não intenção.
+  course  Course       @relation(fields: [courseId], references: [id])
+  modulos PlanModule[]
+
+  /// Um curso aparece uma vez por plano. Duas linhas para o mesmo par
+  /// tornariam ambígua a abrangência.
+  @@unique([planId, courseId])
+  @@index([courseId])
+  @@map("plan_courses")
+}
+
+/// Um módulo específico liberado por um plano.
+///
+/// Só tem efeito quando a abrangência do `PlanCourse` é
+/// MODULOS_ESPECIFICOS. Em CURSO_COMPLETO estas linhas são ignoradas de
+/// propósito: guardá-las permite o administrador alternar a abrangência
+/// para frente e para trás sem perder a seleção que já tinha feito.
+model PlanModule {
+  id           String @id @default(cuid())
+  planCourseId String
+  moduleId     String
+
+  planCourse PlanCourse @relation(fields: [planCourseId], references: [id], onDelete: Cascade)
+  module     Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([planCourseId, moduleId])
+  @@index([moduleId])
+  @@map("plan_modules")
 }
 
 /// Assinatura de um aluno a um plano.
@@ -902,6 +992,18 @@ model Subscription {
   /// suspensão por inadimplência.
   falhasSeguidas Int @default(0)
 
+  /// Acesso sem data de término (vitalício, ou cortesia permanente).
+  ///
+  /// Precisa ser explícito: `cicloFimEm` nulo já significa "ainda não
+  /// calculado", e usar o mesmo nulo para "nunca expira" tornaria
+  /// impossível distinguir os dois casos.
+  semExpiracao Boolean @default(false)
+
+  /// Concedida pelo administrador, sem cobrança (bolsa, cortesia,
+  /// parceria). Aparece no painel como concessão, não como venda, e não
+  /// entra no faturamento.
+  concedidaManualmente Boolean @default(false)
+
   gatewayProvedor String?
   gatewayId       String?
   gatewayStatus   String?
@@ -916,7 +1018,14 @@ model Subscription {
   plan      Plan      @relation(fields: [planId], references: [id])
   cobrancas Payment[]
 
+  // Um aluno pode ter VÁRIAS assinaturas ativas ao mesmo tempo, de
+  // planos diferentes — o acesso efetivo é a união do que cada uma
+  // libera. O que não pode é a mesma pessoa ter duas assinaturas vivas
+  // do MESMO plano, que seria cobrança dobrada pelo mesmo conteúdo; isso
+  // é barrado em `criarAssinatura`, e não por índice único, porque o
+  // histórico precisa guardar as assinaturas encerradas do mesmo plano.
   @@index([userId])
+  @@index([userId, status])
   @@index([status])
   @@index([proximaEm])
   @@map("subscriptions")

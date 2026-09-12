@@ -25,6 +25,7 @@ const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
   { href: "/app/diario", rotulo: "Diário", icone: "documentos" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
   { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
+  { href: "/app/meus-planos", rotulo: "Meus planos", icone: "planos" },
   { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
 ];
 

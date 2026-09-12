@@ -7,6 +7,7 @@ import {
   type StatusAssinatura,
 } from "@aprender/db";
 import { exigirAdmin } from "./admin";
+import { sincronizarPlanoLegado } from "./acesso";
 import { registrarAcao } from "./auditoria";
 import { notificar } from "./notificacoes";
 import { lerNumero } from "./configuracoes";
@@ -76,19 +77,42 @@ export async function salvarPlano(
     .map((l) => l.trim())
     .filter(Boolean);
 
+  const gratuito = String(dados.get("gratuito") ?? "") === "on";
+
+  // Plano gratuito com preço seria contraditório, e o preço é o que a
+  // landing exibe. Zeramos em vez de recusar: marcar "gratuito" já
+  // declara a intenção com clareza suficiente.
+  const precoCentavos = gratuito ? 0 : Math.round(precoReais * 100);
+
   const base = {
     nome,
     descricao: descricao || null,
-    precoCentavos: Math.round(precoReais * 100),
+    precoCentavos,
     periodicidade,
     diasAcesso: periodicidade === "UNICA" ? Math.round(diasAcesso) : null,
     diasTeste: Number.isFinite(diasTeste) && diasTeste > 0 ? Math.round(diasTeste) : 0,
+    gratuito,
     ativo,
     publico,
     destaque,
     ordem,
     beneficios,
   };
+
+  // Só um plano pode ser o gratuito. O banco garante por índice parcial;
+  // aqui damos a mensagem antes de o erro cru do Postgres subir.
+  if (gratuito) {
+    const outro = await prisma.plan.findFirst({
+      where: { gratuito: true, ...(id ? { id: { not: id } } : {}) },
+      select: { nome: true },
+    });
+    if (outro) {
+      return {
+        ok: false,
+        mensagem: `"${outro.nome}" já é o plano gratuito. Desmarque-o antes de definir outro.`,
+      };
+    }
+  }
 
   if (id) {
     const antes = await prisma.plan.findUnique({ where: { id } });
@@ -183,9 +207,11 @@ export async function listarPlanos() {
   await exigirAdmin();
   try {
     return await prisma.plan.findMany({
-      orderBy: [{ ativo: "desc" }, { ordem: "asc" }, { precoCentavos: "asc" }],
+      // O gratuito primeiro: é o plano que define o piso de acesso de
+      // todo mundo, e vê-lo no topo evita configurá-lo por último.
+      orderBy: [{ gratuito: "desc" }, { ativo: "desc" }, { ordem: "asc" }, { precoCentavos: "asc" }],
       include: {
-        _count: { select: { assinaturas: true } },
+        _count: { select: { assinaturas: true, cursos: true } },
         assinaturas: {
           where: { status: { in: ["ATIVA", "INADIMPLENTE"] } },
           select: { precoCentavos: true, periodicidade: true, status: true },
@@ -306,6 +332,12 @@ export async function criarAssinatura(
     });
   });
 
+  // O enum `User.plano` é espelho, não fonte: recalculado a partir do
+  // conjunto de assinaturas. A transação acima já o marcou PREMIUM, mas
+  // só esta chamada acerta `premiumAte` quando o aluno tem mais de um
+  // plano — o maior prazo entre eles é que vale.
+  await sincronizarPlanoLegado(userId);
+
   await registrarAcao({
     acao: "assinatura.criada",
     entidade: "Subscription",
@@ -379,6 +411,12 @@ export async function cancelarAssinatura(dados: FormData): Promise<void> {
       data: { status: "CANCELADO" },
     });
   });
+
+  // Sem isto o aluno cancelado continuava PREMIUM no enum para sempre —
+  // ninguém o rebaixava. E quem tem outro plano ativo NÃO deve perder o
+  // PREMIUM ao cancelar um só: por isso recalculamos do conjunto, em vez
+  // de escrever FREE direto.
+  await sincronizarPlanoLegado(assinatura.user.id);
 
   await registrarAcao({
     acao: "assinatura.cancelada",
@@ -680,14 +718,29 @@ export async function conciliarVencimentos(): Promise<{
     }
 
     // 4. Assinatura cujo ciclo terminou e não tem mais cobrança: EXPIRADA.
-    const expiradas = await prisma.subscription.updateMany({
+    //
+    // `semExpiracao` fica de fora: um acesso vitalício nunca vence, e sem
+    // esta condição a conciliação o expiraria junto com os demais.
+    const paraExpirar = await prisma.subscription.findMany({
       where: {
         status: { in: ["ATIVA", "INADIMPLENTE"] },
         periodicidade: "UNICA",
+        semExpiracao: false,
         cicloFimEm: { lt: hoje },
       },
+      select: { id: true, userId: true },
+    });
+
+    const expiradas = await prisma.subscription.updateMany({
+      where: { id: { in: paraExpirar.map((s) => s.id) } },
       data: { status: "EXPIRADA", proximaEm: null },
     });
+
+    // Quem perdeu a última assinatura paga volta a FREE no enum. Sem
+    // isto, o espelho ficaria PREMIUM para sempre depois de expirar.
+    for (const userId of new Set(paraExpirar.map((s) => s.userId))) {
+      await sincronizarPlanoLegado(userId);
+    }
 
     return {
       atrasadas: atrasadas.count,

@@ -27,9 +27,30 @@ export const ROTULO_PERIODO: Record<Periodicidade, string> = {
 
 export const ROTULO_STATUS: Record<StatusAssinatura, string> = {
   ATIVA: "Ativa",
+  PENDENTE: "Aguardando pagamento",
   INADIMPLENTE: "Inadimplente",
+  SUSPENSA: "Suspensa",
   CANCELADA: "Cancelada",
   EXPIRADA: "Expirada",
+};
+
+/**
+ * Este status, sozinho, permite acesso?
+ *
+ * Só o status — o prazo é avaliado à parte, em `lib/motor-acesso`. Serve
+ * para a interface explicar um bloqueio sem reimplementar a regra.
+ *
+ * CANCELADA e INADIMPLENTE aparecem como `true` de propósito: quem pagou
+ * o ciclo tem direito ao ciclo, mesmo tendo cancelado no dia seguinte.
+ * Nesses casos é a data que encerra o acesso, não o status.
+ */
+export const STATUS_DA_ACESSO: Record<StatusAssinatura, boolean> = {
+  ATIVA: true,
+  INADIMPLENTE: true,
+  CANCELADA: true,
+  PENDENTE: false,
+  SUSPENSA: false,
+  EXPIRADA: false,
 };
 
 /**

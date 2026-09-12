@@ -968,6 +968,67 @@ async function main() {
   }
   console.log(`  base de conhecimento: ${BASE_CONHECIMENTO.length} termos`);
 
+  // ---- Plano gratuito ----
+  //
+  // O acesso gratuito precisa ser um PLANO de verdade, e não uma condição
+  // especial no código: é ele que determina o que recebe quem não tem
+  // plano pago, e o administrador precisa poder editá-lo como qualquer
+  // outro.
+  //
+  // O conteúdo inicial reproduz o que já valia: os módulos não marcados
+  // como `pago`. Assim ninguém ganha nem perde acesso na migração.
+  {
+    const planoFree = await prisma.plan.upsert({
+      where: { slug: "gratuito" },
+      update: { gratuito: true },
+      create: {
+        slug: "gratuito",
+        nome: "Acesso gratuito",
+        descricao: "O que todo professor recebe ao entrar na plataforma.",
+        precoCentavos: 0,
+        periodicidade: "MENSAL",
+        gratuito: true,
+        ativo: true,
+        // Fora da vitrine: não é algo que se compre.
+        publico: false,
+        ordem: 0,
+        beneficios: ["Encontros iniciais da formação", "Banco de prompts", "Central de Conhecimento"],
+      },
+      select: { id: true },
+    });
+
+    const cursoBase = await prisma.course.findFirst({
+      where: { publicado: true },
+      orderBy: { ordem: "asc" },
+      select: {
+        id: true,
+        modulos: { where: { pago: false }, select: { id: true } },
+      },
+    });
+
+    // Só semeia quando o plano ainda não tem conteúdo: reexecutar o seed
+    // não pode desfazer o que o administrador configurou depois.
+    const jaConfigurado = await prisma.planCourse.count({ where: { planId: planoFree.id } });
+
+    if (cursoBase && jaConfigurado === 0 && cursoBase.modulos.length > 0) {
+      const vinculo = await prisma.planCourse.create({
+        data: {
+          planId: planoFree.id,
+          courseId: cursoBase.id,
+          abrangencia: "MODULOS_ESPECIFICOS",
+        },
+        select: { id: true },
+      });
+      await prisma.planModule.createMany({
+        data: cursoBase.modulos.map((m) => ({ planCourseId: vinculo.id, moduleId: m.id })),
+        skipDuplicates: true,
+      });
+      console.log(`  plano gratuito: ${cursoBase.modulos.length} módulos liberados`);
+    } else {
+      console.log("  plano gratuito: já configurado");
+    }
+  }
+
   // ---- Conquistas ----
   for (const c of CONQUISTAS) {
     await prisma.achievement.upsert({
