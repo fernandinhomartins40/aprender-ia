@@ -3,6 +3,7 @@ import { exigirAluno, carregarTrilha, resumoAluno } from "@/server/trilha";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 import { IconeApp } from "@/components/icone-app";
 import { nivelDoXp, xpAteProximoNivel } from "@/lib/gamificacao";
+import { iconeGamificacao } from "@/lib/icones-gamificacao";
 import { missoesDoAluno } from "@/server/missoes";
 
 export const dynamic = "force-dynamic";
@@ -182,9 +183,14 @@ export default async function PainelAluno() {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {resumo.conquistasRecentes.map((c) => (
-              <div key={`${c.titulo}-${c.conquistadoEm.toISOString()}`} className="card flex items-center gap-3 p-4">
-                <span className="text-3xl" aria-hidden="true">{c.icone}</span>
-                <p className="font-titulo text-sm font-bold">{c.titulo}</p>
+              <div
+                key={`${c.titulo}-${c.conquistadoEm.toISOString()}`}
+                className="card flex min-h-[88px] items-center gap-3 p-4"
+              >
+                <span className="shrink-0 rounded-xl bg-indigo-soft p-2" aria-hidden="true">
+                  <IconeApp nome={iconeGamificacao(c.icone)} tamanho={40} />
+                </span>
+                <p className="min-w-0 font-titulo text-sm font-bold leading-snug">{c.titulo}</p>
               </div>
             ))}
           </div>
