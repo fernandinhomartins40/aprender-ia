@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { IconeApp, type NomeIconeApp } from "./icone-app";
 import { iconeGamificacao } from "@/lib/icones-gamificacao";
@@ -167,6 +168,21 @@ export function FeedbackConclusao({
 }) {
   const reduzir = useReducedMotion();
   const e = evento(resultado);
+
+  /**
+   * Some com a navegação inferior enquanto a recompensa está na tela.
+   *
+   * A barra é `z-30` e o modal `z-70`, mas o botão central tem
+   * `backdrop-blur`, e `backdrop-filter` cria contexto de empilhamento
+   * próprio — o botão furava o overlay e ficava boiando sobre o modal no
+   * celular. Marcar o `body` resolve sem mexer no z-index de ninguém nem
+   * alterar o componente da barra.
+   */
+  useEffect(() => {
+    document.body.setAttribute("data-recompensa-aberta", "1");
+    return () => document.body.removeAttribute("data-recompensa-aberta");
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"

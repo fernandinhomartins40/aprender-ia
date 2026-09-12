@@ -114,6 +114,16 @@
     .tabela-responsiva tbody td[data-rotulo=""]::before { @apply hidden; }
   }
 
+  /* A navegação inferior sai de cena enquanto uma recompensa está
+     aberta. O botão central da barra usa `backdrop-blur`, que cria
+     contexto de empilhamento próprio e o fazia aparecer por cima do
+     modal mesmo com z-index menor. */
+  body[data-recompensa-aberta] nav[aria-label="Navegação principal"] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease-out;
+  }
+
   .selo { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-titulo font-bold; }
   .selo-verde { @apply selo bg-verde-soft text-verde-dark; }
   .selo-amarelo { @apply selo bg-amarelo-soft text-amarelo-dark; }
