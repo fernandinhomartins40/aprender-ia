@@ -127,7 +127,12 @@ async function conferirConquistas(userId: string) {
       if (c.recompensaTitulo) {
         await prisma.userReward.upsert({
           where: { userId_origem: { userId, origem: `conquista:${c.id}` } },
-          create: { userId, origem: `conquista:${c.id}`, titulo: c.recompensaTitulo, icone: c.icone },
+          create: {
+            userId,
+            origem: `conquista:${c.id}`,
+            titulo: c.recompensaTitulo,
+            icone: c.icone,
+          },
           update: {},
         });
       }
@@ -168,14 +173,22 @@ export async function concluirLicao(dados: FormData) {
 
   const licao = await prisma.lesson.findUnique({
     where: { id: lessonId },
-    select: { xpRecompensa: true, tipo: true, moduleId: true, module: { select: { titulo: true, pago: true } } },
+    select: {
+      xpRecompensa: true,
+      tipo: true,
+      moduleId: true,
+      module: { select: { titulo: true, pago: true } },
+    },
   });
   if (!licao) return null;
 
   // Não basta a tela esconder a faixa avançada: uma chamada direta à ação
   // também precisa respeitar o plano do módulo.
   if (licao.module.pago) {
-    const conta = await prisma.user.findUnique({ where: { id: user.id }, select: SELECT_ACESSO });
+    const conta = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: SELECT_ACESSO,
+    });
     if (!conta || !avaliarAcesso(conta, { pago: true }).permitido) return null;
   }
 
@@ -215,11 +228,31 @@ export async function concluirLicao(dados: FormData) {
     data: { lidoEm: new Date() },
   });
 
-  // Recalcula o progresso do curso
+  // Recalcula com a mesma faixa de acesso exibida na trilha. Antes, uma
+  // conta FREE concluía 100% do conteúdo disponível, mas o banco dividia
+  // também pelas lições Premium bloqueadas.
+  const contaParaProgresso = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: SELECT_ACESSO,
+  });
+  const podePremium = Boolean(
+    contaParaProgresso &&
+    avaliarAcesso(contaParaProgresso, { pago: true }).permitido,
+  );
+  const filtroLicoesAcessiveis = {
+    module: {
+      courseId: matricula.courseId,
+      ...(podePremium ? {} : { pago: false }),
+    },
+  };
   const [totalLicoes, feitas, somaXp] = await Promise.all([
-    prisma.lesson.count({ where: { module: { courseId: matricula.courseId } } }),
+    prisma.lesson.count({ where: filtroLicoesAcessiveis }),
     prisma.lessonProgress.count({
-      where: { enrollmentId: matricula.id, status: "CONCLUIDA" },
+      where: {
+        enrollmentId: matricula.id,
+        status: "CONCLUIDA",
+        lesson: filtroLicoesAcessiveis,
+      },
     }),
     prisma.lessonProgress.aggregate({
       where: { enrollmentId: matricula.id },
@@ -242,7 +275,9 @@ export async function concluirLicao(dados: FormData) {
   const novasConquistas = await conferirConquistas(user.id);
 
   const inicioSemana = new Date();
-  inicioSemana.setDate(inicioSemana.getDate() - ((inicioSemana.getDay() + 6) % 7));
+  inicioSemana.setDate(
+    inicioSemana.getDate() - ((inicioSemana.getDay() + 6) % 7),
+  );
   inicioSemana.setHours(0, 0, 0, 0);
   const [totalModulo, feitasModulo, licoesNaSemana] = await Promise.all([
     prisma.lesson.count({ where: { moduleId: licao.moduleId } }),
@@ -254,10 +289,15 @@ export async function concluirLicao(dados: FormData) {
       },
     }),
     prisma.lessonProgress.count({
-      where: { enrollment: { userId: user.id }, status: "CONCLUIDA", concluidoEm: { gte: inicioSemana } },
+      where: {
+        enrollment: { userId: user.id },
+        status: "CONCLUIDA",
+        concluidoEm: { gte: inicioSemana },
+      },
     }),
   ]);
-  const encontroConcluido = !repetida && totalModulo > 0 && feitasModulo === totalModulo;
+  const encontroConcluido =
+    !repetida && totalModulo > 0 && feitasModulo === totalModulo;
   const xpTotal = somaXp._sum.xpGanho ?? 0;
   const nivel = nivelDoXp(xpTotal);
   const novasMissoes = await avaliarMissoes(user.id);
@@ -266,7 +306,10 @@ export async function concluirLicao(dados: FormData) {
     await notificar({
       userId: user.id,
       assunto: `conquista.${lessonId}`,
-      titulo: novasConquistas.length === 1 ? "Nova conquista desbloqueada" : "Novas conquistas desbloqueadas",
+      titulo:
+        novasConquistas.length === 1
+          ? "Nova conquista desbloqueada"
+          : "Novas conquistas desbloqueadas",
       corpo: novasConquistas.map((c) => c.titulo).join(" · "),
       link: "/app/conquistas",
       categoria: "CONQUISTA",
@@ -280,7 +323,8 @@ export async function concluirLicao(dados: FormData) {
       userId: user.id,
       assunto: `progresso.encontro.${licao.moduleId}`,
       titulo: `${licao.module.titulo} concluído`,
-      corpo: "Seu progresso foi salvo e a próxima etapa da trilha já está disponível.",
+      corpo:
+        "Seu progresso foi salvo e a próxima etapa da trilha já está disponível.",
       link: "/app/trilha",
       categoria: "ESTUDO",
       dedupeHoras: 8_760,
@@ -331,12 +375,21 @@ export async function registrarDesempenho(dados: FormData): Promise<void> {
   const total = Math.max(1, Number(dados.get("total") ?? 1));
   if (!lessonId || acertos > total) return;
   const permitido = await prisma.lesson.findFirst({
-    where: { id: lessonId, tipo: { in: ["QUIZ", "CACA_ERRO"] } }, select: { id: true },
+    where: { id: lessonId, tipo: { in: ["QUIZ", "CACA_ERRO"] } },
+    select: { id: true },
   });
   if (!permitido) return;
-  const tentativas = await prisma.activityPerformance.count({ where: { userId: user.id, lessonId } });
+  const tentativas = await prisma.activityPerformance.count({
+    where: { userId: user.id, lessonId },
+  });
   await prisma.activityPerformance.create({
-    data: { userId: user.id, lessonId, acertos, total, tentativa: tentativas + 1 },
+    data: {
+      userId: user.id,
+      lessonId,
+      acertos,
+      total,
+      tentativa: tentativas + 1,
+    },
   });
   revalidatePath("/app");
 }
@@ -382,7 +435,9 @@ export async function analisarResposta(
     // vezes, a primeira coisa que a pessoa faz na lição. Criamos como
     // EM_ANDAMENTO — sem XP, que só vem ao concluir.
     const progresso = await prisma.lessonProgress.upsert({
-      where: { enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId } },
+      where: {
+        enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId },
+      },
       update: {},
       create: {
         enrollmentId: matricula.id,
@@ -419,6 +474,83 @@ export async function analisarResposta(
   }
 
   return { analise, salvo: true };
+}
+
+/* ============================================================
+   PROGRESSO PARCIAL DAS ATIVIDADES DE ETAPAS
+   ============================================================ */
+
+/**
+ * Guarda o meio do caminho de uma atividade.
+ *
+ * Os passos marcados de um "No celular", os itens de um checkpoint e a
+ * opção escolhida num aquecimento viviam só em `useState`: atualizar a
+ * página no meio da prática devolvia a atividade zerada. Quem alterna
+ * entre esta tela e a da IA — que é exatamente o que o formato pede —
+ * perdia o lugar onde estava.
+ *
+ * Reusa `RespostaAberta` em vez de criar tabela nova: ela já é o registro
+ * de "o que esta pessoa produziu nesta lição", já tem unicidade por
+ * `[progressId, chave]` e já é lida por `carregarLicao`. A chave `etapas`
+ * separa este registro das respostas de texto livre, e o conteúdo vai em
+ * JSON no mesmo campo de texto.
+ *
+ * Não passa pelo motor P.T.C.F.: `analisarResposta` descarta texto curto
+ * (e faria sentido — três palavras não são uma prática), mas aqui o que
+ * se grava é estado de interface, não redação.
+ */
+export async function salvarEtapas(dados: FormData): Promise<void> {
+  const user = await exigirAluno();
+  const lessonId = String(dados.get("lessonId") ?? "");
+  const estado = String(dados.get("estado") ?? "");
+  if (!lessonId || !estado) return;
+
+  // Um estado corrompido não pode virar linha no banco nem derrubar a
+  // atividade: validamos que é JSON antes de gravar.
+  try {
+    JSON.parse(estado);
+  } catch {
+    return;
+  }
+  if (estado.length > 4_000) return;
+
+  const matricula = await matriculaComAcesso(user.id);
+  if (!matricula) return;
+
+  try {
+    const progresso = await prisma.lessonProgress.upsert({
+      where: {
+        enrollmentId_lessonId: { enrollmentId: matricula.id, lessonId },
+      },
+      // Uma lição já concluída não volta a EM_ANDAMENTO por causa de um
+      // toque: o `update` vazio preserva o status que já existe.
+      update: {},
+      create: {
+        enrollmentId: matricula.id,
+        lessonId,
+        status: "EM_ANDAMENTO",
+        iniciadoEm: new Date(),
+        tentativas: 0,
+      },
+      select: { id: true },
+    });
+
+    await prisma.respostaAberta.upsert({
+      where: { progressId_chave: { progressId: progresso.id, chave: "etapas" } },
+      update: { texto: estado },
+      create: {
+        progressId: progresso.id,
+        chave: "etapas",
+        texto: estado,
+        completas: 0,
+        tentativa: 1,
+      },
+    });
+  } catch (e) {
+    // Falhar ao guardar não pode interromper a atividade: a pessoa
+    // continua praticando, apenas sem o marcador salvo.
+    console.error("[acoes] falha ao guardar etapas:", e);
+  }
 }
 
 /* ============================================================

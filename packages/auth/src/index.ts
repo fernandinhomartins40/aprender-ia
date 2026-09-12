@@ -62,6 +62,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
 
   /**
+   * O segredo é aceito pelos dois nomes de propósito.
+   *
+   * O Auth.js v5 procura `AUTH_SECRET`; este projeto nasceu com
+   * `NEXTAUTH_SECRET`, que é o nome injetado pelo compose de produção e
+   * gerado pelo workflow de deploy. Sem aceitar ambos, todas as rotas de
+   * `/api/auth` respondem 500 com `error=Configuration` enquanto o resto
+   * da aplicação continua de pé — um sintoma que não aponta para a causa.
+   */
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+
+  /**
    * "Manter conectado" de verdade.
    *
    * O cookie é declarado SEM `maxAge`, o que o torna um cookie de sessão:

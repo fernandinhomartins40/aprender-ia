@@ -15,7 +15,9 @@ import type { Analise } from "@/lib/motor-ptcf";
  * como campo de escrita — apenas sem devolutiva. Nenhuma tela quebra por
  * falta dela.
  */
-export type Analisar = (dados: FormData) => Promise<{ analise: Analise; salvo: boolean }>;
+export type Analisar = (
+  dados: FormData,
+) => Promise<{ analise: Analise; salvo: boolean }>;
 
 /**
  * Estado comum das atividades de texto livre.
@@ -25,7 +27,11 @@ export type Analisar = (dados: FormData) => Promise<{ analise: Analise; salvo: b
  * revelava texto fixo sem ler nada — e resolver em três lugares
  * diferentes seria o caminho mais curto para os três voltarem a divergir.
  */
-function useAnalise(analisar: Analisar | undefined, lessonId: string | undefined, chave: string) {
+function useAnalise(
+  analisar: Analisar | undefined,
+  lessonId: string | undefined,
+  chave: string,
+) {
   const [analise, setAnalise] = useState<Analise | null>(null);
   const [analisando, setAnalisando] = useState(false);
 
@@ -56,7 +62,12 @@ function useAnalise(analisar: Analisar | undefined, lessonId: string | undefined
    TEORIA — mesma linguagem visual dos quadros da apostila
    ============================================================ */
 
-type Bloco = { tipo: string; titulo?: string; texto?: string; itens?: string[] };
+type Bloco = {
+  tipo: string;
+  titulo?: string;
+  texto?: string;
+  itens?: string[];
+};
 
 export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
   return (
@@ -65,34 +76,50 @@ export function PlayerTeoria({ blocos }: { blocos: Bloco[] }) {
         switch (b.tipo) {
           case "traduzindo":
             return (
-              <div key={i} className="rounded-lg border-l-4 border-verde bg-verde-soft p-5">
-                <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark"><IconeApp nome="documentos" tamanho={22} />Traduzindo: {b.titulo}</p>
+              <div
+                key={i}
+                className="rounded-lg border-l-4 border-verde bg-verde-soft p-5"
+              >
+                <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark">
+                  <IconeApp nome="documentos" tamanho={22} />
+                  Traduzindo: {b.titulo}
+                </p>
                 <p className="mt-2 text-verde-dark">{b.texto}</p>
               </div>
             );
           case "atencao":
             return (
-              <FeedbackVisual key={i} estado="atencao" titulo={b.titulo}>{b.texto}</FeedbackVisual>
+              <FeedbackVisual key={i} estado="atencao" titulo={b.titulo}>
+                {b.texto}
+              </FeedbackVisual>
             );
           case "dica":
             return (
-              <FeedbackVisual key={i} estado="dica" titulo={b.titulo}>{b.texto}</FeedbackVisual>
+              <FeedbackVisual key={i} estado="dica" titulo={b.titulo}>
+                {b.texto}
+              </FeedbackVisual>
             );
           case "destaque":
             return (
               <div key={i} className="rounded-lg bg-indigo-soft p-5">
-                <p className="font-titulo font-bold text-indigo-dark">{b.titulo}</p>
+                <p className="font-titulo font-bold text-indigo-dark">
+                  {b.titulo}
+                </p>
                 <p className="mt-2 text-indigo-dark">{b.texto}</p>
               </div>
             );
           case "lista":
             return (
               <div key={i} className="card">
-                {b.titulo && <p className="mb-2 font-titulo font-bold">{b.titulo}</p>}
+                {b.titulo && (
+                  <p className="mb-2 font-titulo font-bold">{b.titulo}</p>
+                )}
                 <ul className="space-y-2">
                   {b.itens?.map((it, j) => (
                     <li key={j} className="flex gap-2 text-tinta-clara">
-                      <span className="text-indigo" aria-hidden="true">•</span>
+                      <span className="text-indigo" aria-hidden="true">
+                        •
+                      </span>
                       <span>{it}</span>
                     </li>
                   ))}
@@ -134,7 +161,10 @@ export function PlayerAquecimento({
   onCompleto: () => void;
 }) {
   const [escolha, setEscolha] = useState<number | null>(null);
-  const opcoes = conteudo.opcoes ?? ["Sim, já aconteceu comigo", "Nunca aconteceu"];
+  const opcoes = conteudo.opcoes ?? [
+    "Sim, já aconteceu comigo",
+    "Nunca aconteceu",
+  ];
 
   return (
     <div className="space-y-6">
@@ -162,7 +192,9 @@ export function PlayerAquecimento({
           >
             <span
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-                escolha === i ? "border-laranja bg-laranja text-white" : "border-borda"
+                escolha === i
+                  ? "border-laranja bg-laranja text-white"
+                  : "border-borda"
               }`}
               aria-hidden="true"
             >
@@ -198,6 +230,8 @@ export function PlayerAquecimento({
 export function PlayerNoCelular({
   conteudo,
   onCompleto,
+  etapas,
+  aoMudarEtapas,
 }: {
   conteudo: {
     titulo: string;
@@ -206,14 +240,20 @@ export function PlayerNoCelular({
     porque?: string;
   };
   onCompleto: () => void;
+  etapas?: number[];
+  aoMudarEtapas?: (marcados: number[]) => void;
 }) {
-  const [feitos, setFeitos] = useState<Set<number>>(new Set());
+  const [feitos, setFeitos] = useState<Set<number>>(new Set(etapas ?? []));
 
   function alternar(i: number) {
     setFeitos((s) => {
       const novo = new Set(s);
       if (novo.has(i)) novo.delete(i);
       else novo.add(i);
+      // O servidor recebe o estado inteiro, não o toque: assim um
+      // clique perdido no meio do caminho não desalinha o que ficou
+      // guardado.
+      aoMudarEtapas?.([...novo]);
       return novo;
     });
   }
@@ -227,8 +267,12 @@ export function PlayerNoCelular({
           <IconeApp nome="ferramentas" tamanho={20} />
           No celular
         </p>
-        <h3 className="mt-1 font-titulo text-2xl font-extrabold">{conteudo.titulo}</h3>
-        {conteudo.tempo && <p className="mt-1 text-sm opacity-90">{conteudo.tempo}</p>}
+        <h3 className="mt-1 font-titulo text-2xl font-extrabold">
+          {conteudo.titulo}
+        </h3>
+        {conteudo.tempo && (
+          <p className="mt-1 text-sm opacity-90">{conteudo.tempo}</p>
+        )}
       </div>
 
       <ol className="space-y-3">
@@ -241,7 +285,9 @@ export function PlayerNoCelular({
             >
               <span
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-titulo text-sm font-bold ${
-                  feitos.has(i) ? "bg-verde text-white" : "bg-indigo-soft text-indigo-dark"
+                  feitos.has(i)
+                    ? "bg-verde text-white"
+                    : "bg-indigo-soft text-indigo-dark"
                 }`}
                 aria-hidden="true"
               >
@@ -267,8 +313,8 @@ export function PlayerNoCelular({
 
       {todos && (
         <p className="rounded-lg border-l-4 border-verde bg-verde-soft p-4 text-verde-dark">
-          Você fez o passo a passo inteiro. É assim na sala dos professores,
-          na fila do banco e no sofá de casa.
+          Você fez o passo a passo inteiro. É assim na sala dos professores, na
+          fila do banco e no sofá de casa.
         </p>
       )}
 
@@ -393,7 +439,7 @@ export function PlayerQuiz({
 
   function confirmar() {
     setRevelado(true);
-    setAcertosSeguidos((atual) => escolha === correta ? atual + 1 : 0);
+    setAcertosSeguidos((atual) => (escolha === correta ? atual + 1 : 0));
     if (escolha === correta) setAcertos((atual) => atual + 1);
   }
 
@@ -422,27 +468,48 @@ export function PlayerQuiz({
               onClick={() => setEscolha(o.id)}
               className={`flex w-full items-center gap-3 rounded-md border-2 p-4 text-left transition-colors ${estilo}`}
             >
-              <span className="font-titulo font-bold uppercase text-cinza">{o.id}</span>
+              <span className="font-titulo font-bold uppercase text-cinza">
+                {o.id}
+              </span>
               <span className="flex-1">{o.texto}</span>
-              {revelado && o.correta && <IconeApp nome="conquistas" tamanho={22} />}
-              {revelado && escolhida && !o.correta && <IconeApp nome="seguranca" tamanho={22} />}
+              {revelado && o.correta && (
+                <IconeApp nome="conquistas" tamanho={22} />
+              )}
+              {revelado && escolhida && !o.correta && (
+                <IconeApp nome="seguranca" tamanho={22} />
+              )}
             </button>
           );
         })}
       </div>
 
       {revelado && (
-        <FeedbackVisual estado={escolha === correta ? "correta" : "incorreta"} titulo={escolha === correta ? "Resposta correta — raciocínio confirmado." : "Ainda não — use a explicação para ajustar o raciocínio:"} compacto className="mt-5">
+        <FeedbackVisual
+          estado={escolha === correta ? "correta" : "incorreta"}
+          titulo={
+            escolha === correta
+              ? "Resposta correta — raciocínio confirmado."
+              : "Ainda não — use a explicação para ajustar o raciocínio:"
+          }
+          compacto
+          className="mt-5"
+        >
           <p>{p.explicacao}</p>
           {escolha === correta && acertosSeguidos >= 2 && (
-            <p className="mt-2 font-semibold">Sequência de {acertosSeguidos} acertos nesta atividade.</p>
+            <p className="mt-2 font-semibold">
+              Sequência de {acertosSeguidos} acertos nesta atividade.
+            </p>
           )}
         </FeedbackVisual>
       )}
 
       <div className="mt-6">
         {!revelado ? (
-          <button disabled={!escolha} onClick={confirmar} className="btn-primario">
+          <button
+            disabled={!escolha}
+            onClick={confirmar}
+            className="btn-primario"
+          >
             Confirmar resposta
           </button>
         ) : (
@@ -464,6 +531,7 @@ export function PlayerDuelo({
   onCompleto,
   analisar,
   lessonId,
+  rascunho,
 }: {
   conteudo: {
     contexto: string;
@@ -477,9 +545,14 @@ export function PlayerDuelo({
   onCompleto: () => void;
   analisar?: Analisar;
   lessonId?: string;
+  rascunho?: string;
 }) {
-  const [minhaVersao, setMinhaVersao] = useState("");
-  const { analise, analisando, enviar } = useAnalise(analisar, lessonId, "duelo");
+  const [minhaVersao, setMinhaVersao] = useState(rascunho ?? "");
+  const { analise, analisando, enviar } = useAnalise(
+    analisar,
+    lessonId,
+    "duelo",
+  );
 
   return (
     <div className="space-y-6">
@@ -487,19 +560,29 @@ export function PlayerDuelo({
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-lg border-2 border-vermelho-soft bg-vermelho-soft p-5">
-          <p className="flex items-center gap-2 font-titulo font-bold text-vermelho-dark"><IconeApp nome="seguranca" tamanho={24} />O que quase todo mundo escreve</p>
+          <p className="flex items-center gap-2 font-titulo font-bold text-vermelho-dark">
+            <IconeApp nome="seguranca" tamanho={24} />O que quase todo mundo
+            escreve
+          </p>
           <pre className="mt-3 whitespace-pre-wrap rounded-md bg-prompt-bg p-4 font-mono text-sm text-prompt-txt">
             {conteudo.promptRuim}
           </pre>
-          <p className="mt-3 text-sm text-vermelho-dark">{conteudo.resultadoRuim}</p>
+          <p className="mt-3 text-sm text-vermelho-dark">
+            {conteudo.resultadoRuim}
+          </p>
         </div>
 
         <div className="rounded-lg border-2 border-verde-soft bg-verde-soft p-5">
-          <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark"><IconeApp nome="conquistas" tamanho={24} />O mesmo pedido com P.T.C.F.</p>
+          <p className="flex items-center gap-2 font-titulo font-bold text-verde-dark">
+            <IconeApp nome="conquistas" tamanho={24} />O mesmo pedido com
+            P.T.C.F.
+          </p>
           <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-prompt-bg p-4 font-mono text-sm text-prompt-txt">
             {conteudo.promptBom}
           </pre>
-          <p className="mt-3 text-sm text-verde-dark">{conteudo.resultadoBom}</p>
+          <p className="mt-3 text-sm text-verde-dark">
+            {conteudo.resultadoBom}
+          </p>
         </div>
       </div>
 
@@ -515,8 +598,8 @@ export function PlayerDuelo({
             prompt a corrigir aparece rotulado, e o que a análise vai
             procurar está dito antes de escrever. */}
         <p className="mt-2 text-laranja-dark">
-          Reescreva o prompt abaixo incluindo as quatro letras. Depois toque
-          em <strong>Analisar a minha versão</strong>: eu leio o seu texto e
+          Reescreva o prompt abaixo incluindo as quatro letras. Depois toque em{" "}
+          <strong>Analisar a minha versão</strong>: eu leio o seu texto e
           mostro, letra por letra, o que já está lá e o que falta.
         </p>
 
@@ -605,7 +688,10 @@ export function PlayerCacaErro({
       </div>
 
       <div>
-        <p className="flex items-center gap-2 font-titulo text-lg font-bold"><IconeApp nome="pesquisa" tamanho={26} />{conteudo.pergunta}</p>
+        <p className="flex items-center gap-2 font-titulo text-lg font-bold">
+          <IconeApp nome="pesquisa" tamanho={26} />
+          {conteudo.pergunta}
+        </p>
         <div className="mt-4 space-y-3">
           {conteudo.opcoes.map((o) => {
             const escolhida = escolha === o.id;
@@ -632,22 +718,41 @@ export function PlayerCacaErro({
 
       {revelado && (
         <>
-          <FeedbackVisual estado={acertou ? "correta" : "incorreta"} titulo={acertou ? "Você encontrou o ponto crítico." : "Vale olhar mais uma vez:"}>
+          <FeedbackVisual
+            estado={acertou ? "correta" : "incorreta"}
+            titulo={
+              acertou
+                ? "Você encontrou o ponto crítico."
+                : "Vale olhar mais uma vez:"
+            }
+          >
             {conteudo.gabarito}
           </FeedbackVisual>
           <div className="rounded-lg border-l-4 border-amarelo bg-amarelo-soft p-5">
-            <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark"><IconeApp nome="ideias" tamanho={22} />A lição</p>
+            <p className="flex items-center gap-2 font-titulo font-bold text-amarelo-dark">
+              <IconeApp nome="ideias" tamanho={22} />A lição
+            </p>
             <p className="mt-2 text-amarelo-dark">{conteudo.licao}</p>
           </div>
         </>
       )}
 
       {!revelado ? (
-        <button disabled={!escolha} onClick={() => setRevelado(true)} className="btn-primario">
+        <button
+          disabled={!escolha}
+          onClick={() => setRevelado(true)}
+          className="btn-primario"
+        >
           Confirmar
         </button>
       ) : (
-        <button onClick={async () => { await onDesempenho?.(acertou ? 1 : 0, 1); onCompleto(); }} className="btn-primario">
+        <button
+          onClick={async () => {
+            await onDesempenho?.(acertou ? 1 : 0, 1);
+            onCompleto();
+          }}
+          className="btn-primario"
+        >
           Concluir lição
         </button>
       )}
@@ -791,6 +896,7 @@ export function PlayerCaso({
   onCompleto,
   analisar,
   lessonId,
+  rascunho,
 }: {
   conteudo: {
     cena: string;
@@ -803,10 +909,15 @@ export function PlayerCaso({
   onCompleto: () => void;
   analisar?: Analisar;
   lessonId?: string;
+  rascunho?: string;
 }) {
-  const [resposta, setResposta] = useState("");
+  const [resposta, setResposta] = useState(rascunho ?? "");
   const [revelado, setRevelado] = useState(false);
-  const { analise, analisando, enviar } = useAnalise(analisar, lessonId, "caso");
+  const { analise, analisando, enviar } = useAnalise(
+    analisar,
+    lessonId,
+    "caso",
+  );
 
   return (
     <div className="space-y-5">
@@ -825,8 +936,8 @@ export function PlayerCaso({
             escrevia e quem não escrevia recebiam exatamente a mesma
             tela. */}
         <p className="mt-1 text-sm text-tinta-clara">
-          Escreva o prompt que você usaria para resolver isso. A análise
-          mostra quais das quatro letras já estão no seu texto.
+          Escreva o prompt que você usaria para resolver isso. A análise mostra
+          quais das quatro letras já estão no seu texto.
         </p>
 
         <div className="mt-3">
@@ -858,7 +969,9 @@ export function PlayerCaso({
             <IconeApp nome="ideias" tamanho={22} />
             Uma solução possível (existem várias)
           </p>
-          <p className="mt-2 whitespace-pre-wrap text-verde-dark">{conteudo.solucao}</p>
+          <p className="mt-2 whitespace-pre-wrap text-verde-dark">
+            {conteudo.solucao}
+          </p>
           {conteudo.promptExemplo && (
             <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-prompt-bg p-4 font-mono text-sm text-prompt-txt">
               {conteudo.promptExemplo}
@@ -886,21 +999,32 @@ export function PlayerCheckpoint({
   onCompleto,
   analisar,
   lessonId,
+  rascunho,
+  etapas,
+  aoMudarEtapas,
 }: {
   conteudo: { titulo: string; itens: string[]; tarefa?: string };
   onCompleto: () => void;
   analisar?: Analisar;
   lessonId?: string;
+  rascunho?: string;
+  etapas?: number[];
+  aoMudarEtapas?: (marcados: number[]) => void;
 }) {
-  const [marcados, setMarcados] = useState<Set<number>>(new Set());
-  const [plano, setPlano] = useState("");
-  const { analise, analisando, enviar } = useAnalise(analisar, lessonId, "checkpoint");
+  const [marcados, setMarcados] = useState<Set<number>>(new Set(etapas ?? []));
+  const [plano, setPlano] = useState(rascunho ?? "");
+  const { analise, analisando, enviar } = useAnalise(
+    analisar,
+    lessonId,
+    "checkpoint",
+  );
 
   function alternar(i: number) {
     setMarcados((s) => {
       const novo = new Set(s);
       if (novo.has(i)) novo.delete(i);
       else novo.add(i);
+      aoMudarEtapas?.([...novo]);
       return novo;
     });
   }
@@ -909,7 +1033,9 @@ export function PlayerCheckpoint({
     <div className="space-y-5">
       <div className="rounded-xl bg-grad-marca p-6 text-center text-white">
         <IconeApp nome="conquistas" tamanho={64} />
-        <h3 className="mt-2 font-titulo text-2xl font-extrabold">{conteudo.titulo}</h3>
+        <h3 className="mt-2 font-titulo text-2xl font-extrabold">
+          {conteudo.titulo}
+        </h3>
       </div>
 
       <div className="card">
@@ -922,13 +1048,19 @@ export function PlayerCheckpoint({
               >
                 <span
                   className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 transition-all ${
-                    marcados.has(i) ? "border-verde bg-verde text-white" : "border-borda"
+                    marcados.has(i)
+                      ? "border-verde bg-verde text-white"
+                      : "border-borda"
                   }`}
                   aria-hidden="true"
                 >
                   {marcados.has(i) && "✓"}
                 </span>
-                <span className={marcados.has(i) ? "text-cinza line-through" : "text-tinta"}>
+                <span
+                  className={
+                    marcados.has(i) ? "text-cinza line-through" : "text-tinta"
+                  }
+                >
                   {it}
                 </span>
               </button>
@@ -939,7 +1071,10 @@ export function PlayerCheckpoint({
 
       {conteudo.tarefa && (
         <div className="rounded-lg border-l-4 border-laranja bg-laranja-soft p-5">
-          <p className="flex items-center gap-2 font-titulo font-bold text-laranja-dark"><IconeApp nome="metas" tamanho={22} />Tarefa da semana</p>
+          <p className="flex items-center gap-2 font-titulo font-bold text-laranja-dark">
+            <IconeApp nome="metas" tamanho={22} />
+            Tarefa da semana
+          </p>
           <p className="mt-1 text-laranja-dark">{conteudo.tarefa}</p>
 
           {/* A tarefa da semana era só uma frase para ler. Aqui a pessoa

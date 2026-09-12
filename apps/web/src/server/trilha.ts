@@ -77,10 +77,18 @@ export async function carregarTrilha(userId: string) {
   });
   const veredito = dono
     ? avaliarAcesso(dono, curso)
-    : ({ permitido: false, motivo: "conta-suspensa", mensagem: "Conta indisponível." } as Veredito);
+    : ({
+        permitido: false,
+        motivo: "conta-suspensa",
+        mensagem: "Conta indisponível.",
+      } as Veredito);
 
   if (!veredito.permitido) {
-    return { bloqueado: true as const, veredito, curso: { titulo: curso.titulo } };
+    return {
+      bloqueado: true as const,
+      veredito,
+      curso: { titulo: curso.titulo },
+    };
   }
 
   const progressos = await prisma.lessonProgress.findMany({
@@ -95,7 +103,11 @@ export async function carregarTrilha(userId: string) {
     // nunca seja a única barreira de acesso.
     const acessoModulo = dono
       ? avaliarAcesso(dono, { pago: m.pago })
-      : ({ permitido: false, motivo: "curso-pago-plano-free", mensagem: "Módulo indisponível." } as Veredito);
+      : ({
+          permitido: false,
+          motivo: "curso-pago-plano-free",
+          mensagem: "Módulo indisponível.",
+        } as Veredito);
     const licoes = m.licoes.map((l) => {
       const p = porLicao.get(l.id);
       let status: StatusLicao;
@@ -142,7 +154,10 @@ export async function carregarTrilha(userId: string) {
   // O percentual FREE não inclui uma faixa que ainda não pode ser cursada.
   const modulosAcessiveis = modulos.filter((m) => !m.bloqueadoPorPlano);
   const totalLicoes = modulosAcessiveis.reduce((s, m) => s + m.total, 0);
-  const totalConcluidas = modulosAcessiveis.reduce((s, m) => s + m.concluidas, 0);
+  const totalConcluidas = modulosAcessiveis.reduce(
+    (s, m) => s + m.concluidas,
+    0,
+  );
   const xpTotal = progressos.reduce((s, p) => s + p.xpGanho, 0);
 
   return {
@@ -153,7 +168,9 @@ export async function carregarTrilha(userId: string) {
     totalLicoes,
     totalConcluidas,
     xpTotal,
-    progressoPct: totalLicoes ? Math.round((totalConcluidas / totalLicoes) * 100) : 0,
+    progressoPct: totalLicoes
+      ? Math.round((totalConcluidas / totalLicoes) * 100)
+      : 0,
   };
 }
 
@@ -162,7 +179,11 @@ export async function carregarLicao(userId: string, lessonId: string) {
   const trilha = await carregarTrilha(userId);
   if (!trilha) return null;
   if (trilha.bloqueado) {
-    return { semAcesso: true as const, bloqueada: false as const, veredito: trilha.veredito };
+    return {
+      semAcesso: true as const,
+      bloqueada: false as const,
+      veredito: trilha.veredito,
+    };
   }
 
   const todas = trilha.modulos.flatMap((m) =>
@@ -182,11 +203,24 @@ export async function carregarLicao(userId: string, lessonId: string) {
   });
   if (!licao) return null;
 
+  // As respostas de atividades abertas já foram persistidas no servidor.
+  // Devolvê-las ao player impede que uma atualização da página transforme uma
+  // prática em andamento em uma atividade aparentemente nova.
+  const respostasAbertas = await prisma.respostaAberta.findMany({
+    where: {
+      progress: { enrollmentId: trilha.matriculaId, lessonId },
+    },
+    select: { chave: true, texto: true },
+  });
+
   return {
     semAcesso: false as const,
     bloqueada: false as const,
     licao,
     resumo,
+    respostasAbertas: Object.fromEntries(
+      respostasAbertas.map(({ chave, texto }) => [chave, texto]),
+    ),
     matriculaId: trilha.matriculaId,
     proxima: todas[indice + 1] ?? null,
     posicao: indice + 1,
@@ -201,7 +235,15 @@ export async function resumoAluno(userId: string) {
   inicioSemana.setDate(inicioSemana.getDate() - ((dia + 6) % 7));
   inicioSemana.setHours(0, 0, 0, 0);
 
-  const [ofensiva, execucoes, conquistas, diario, licoesNaSemana, recentes, desempenhos] = await Promise.all([
+  const [
+    ofensiva,
+    execucoes,
+    conquistas,
+    diario,
+    licoesNaSemana,
+    recentes,
+    desempenhos,
+  ] = await Promise.all([
     prisma.streak.findUnique({ where: { userId } }),
     prisma.promptRun.count({ where: { userId } }),
     prisma.userAchievement.count({ where: { userId } }),
@@ -211,7 +253,11 @@ export async function resumoAluno(userId: string) {
       take: 5,
     }),
     prisma.lessonProgress.count({
-      where: { enrollment: { userId }, status: "CONCLUIDA", concluidoEm: { gte: inicioSemana } },
+      where: {
+        enrollment: { userId },
+        status: "CONCLUIDA",
+        concluidoEm: { gte: inicioSemana },
+      },
     }),
     prisma.userAchievement.findMany({
       where: { userId },
@@ -239,19 +285,40 @@ export async function resumoAluno(userId: string) {
     .map((d) => Math.round((d.acertos / d.total) * 100));
   const atuais = percentuais.slice(0, 3);
   const anteriores = percentuais.slice(3, 6);
-  const media = (valores: number[]) => valores.length
-    ? Math.round(valores.reduce((soma, valor) => soma + valor, 0) / valores.length)
-    : null;
+  const media = (valores: number[]) =>
+    valores.length
+      ? Math.round(
+          valores.reduce((soma, valor) => soma + valor, 0) / valores.length,
+        )
+      : null;
   const mediaAtual = media(atuais);
   const mediaAnterior = media(anteriores);
-  const feedbackDesempenho = mediaAtual === null ? null
-    : mediaAnterior !== null && mediaAtual >= mediaAnterior + 5
-      ? { tom: "melhora" as const, titulo: "Seu desempenho melhorou", texto: `Sua precisão recente chegou a ${mediaAtual}%, acima dos ${mediaAnterior}% anteriores.` }
-      : mediaAtual >= 80
-        ? { tom: "forte" as const, titulo: "Excelente precisão", texto: `Você acertou, em média, ${mediaAtual}% nas atividades avaliadas mais recentes.` }
-        : mediaAtual < 60
-          ? { tom: "atencao" as const, titulo: "Vale revisar com calma", texto: `Sua precisão recente está em ${mediaAtual}%. Reveja as explicações antes do próximo desafio.` }
-          : { tom: "estavel" as const, titulo: "Bom progresso", texto: `Sua precisão recente está em ${mediaAtual}%. Continue praticando para consolidar.` };
+  const feedbackDesempenho =
+    mediaAtual === null
+      ? null
+      : mediaAnterior !== null && mediaAtual >= mediaAnterior + 5
+        ? {
+            tom: "melhora" as const,
+            titulo: "Seu desempenho melhorou",
+            texto: `Sua precisão recente chegou a ${mediaAtual}%, acima dos ${mediaAnterior}% anteriores.`,
+          }
+        : mediaAtual >= 80
+          ? {
+              tom: "forte" as const,
+              titulo: "Excelente precisão",
+              texto: `Você acertou, em média, ${mediaAtual}% nas atividades avaliadas mais recentes.`,
+            }
+          : mediaAtual < 60
+            ? {
+                tom: "atencao" as const,
+                titulo: "Vale revisar com calma",
+                texto: `Sua precisão recente está em ${mediaAtual}%. Reveja as explicações antes do próximo desafio.`,
+              }
+            : {
+                tom: "estavel" as const,
+                titulo: "Bom progresso",
+                texto: `Sua precisão recente está em ${mediaAtual}%. Continue praticando para consolidar.`,
+              };
 
   return {
     ofensiva: ofensiva?.diasSeguidos ?? 0,
@@ -260,7 +327,10 @@ export async function resumoAluno(userId: string) {
     conquistas,
     diario,
     licoesNaSemana,
-    conquistasRecentes: recentes.map((r) => ({ ...r.achievement, conquistadoEm: r.conquistadoEm })),
+    conquistasRecentes: recentes.map((r) => ({
+      ...r.achievement,
+      conquistadoEm: r.conquistadoEm,
+    })),
     feedbackDesempenho,
     minutosEconomizados: Math.max(0, antes - agora),
   };

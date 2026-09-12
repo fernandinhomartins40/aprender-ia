@@ -1,14 +1,24 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirAluno, carregarLicao } from "@/server/trilha";
-import { concluirLicao, registrarPrompt, analisarResposta, registrarDesempenho } from "@/server/acoes";
+import {
+  concluirLicao,
+  registrarPrompt,
+  analisarResposta,
+  registrarDesempenho,
+  salvarEtapas,
+} from "@/server/acoes";
 import { LicaoCliente } from "@/components/licao-cliente";
 import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 import { IconeApp } from "@/components/icone-app";
 
 export const dynamic = "force-dynamic";
 
-export default async function Licao({ params }: { params: Promise<{ id: string }> }) {
+export default async function Licao({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const user = await exigirAluno();
   const { id } = await params;
   const dados = await carregarLicao(user.id, id);
@@ -25,8 +35,12 @@ export default async function Licao({ params }: { params: Promise<{ id: string }
     return (
       <div className="card text-center">
         <div className="py-10">
-          <div className="mx-auto flex justify-center" aria-hidden="true"><IconeApp nome="seguranca" tamanho={56} prioridade /></div>
-          <h1 className="mt-3 font-titulo text-xl font-bold">Lição bloqueada</h1>
+          <div className="mx-auto flex justify-center" aria-hidden="true">
+            <IconeApp nome="seguranca" tamanho={56} prioridade />
+          </div>
+          <h1 className="mt-3 font-titulo text-xl font-bold">
+            Lição bloqueada
+          </h1>
           <p className="mt-2 text-tinta-clara">
             Conclua as lições anteriores para liberar esta.
           </p>
@@ -44,7 +58,10 @@ export default async function Licao({ params }: { params: Promise<{ id: string }
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <Link href="/app/trilha" className="text-sm font-bold text-indigo hover:underline">
+        <Link
+          href="/app/trilha"
+          className="text-sm font-bold text-indigo hover:underline"
+        >
           ← Voltar para a trilha
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -58,9 +75,13 @@ export default async function Licao({ params }: { params: Promise<{ id: string }
             Lição {posicao} de {totalLicoes} · {resumo.xp} XP
           </span>
         </div>
-        <h1 className="mt-3 font-titulo text-3xl font-extrabold">{licao.titulo}</h1>
+        <h1 className="mt-3 font-titulo text-3xl font-extrabold">
+          {licao.titulo}
+        </h1>
         {licao.capituloRef && (
-          <p className="mt-1 text-sm text-cinza">Apostila · {licao.capituloRef}</p>
+          <p className="mt-1 text-sm text-cinza">
+            Apostila · {licao.capituloRef}
+          </p>
         )}
       </div>
 
@@ -84,6 +105,9 @@ export default async function Licao({ params }: { params: Promise<{ id: string }
         registrar={registrarPrompt}
         analisar={analisarResposta}
         registrarDesempenho={registrarDesempenho}
+        salvarEtapas={salvarEtapas}
+        concluidaInicialmente={resumo.status === "CONCLUIDA"}
+        respostasAbertas={dados.respostasAbertas}
       />
     </div>
   );
