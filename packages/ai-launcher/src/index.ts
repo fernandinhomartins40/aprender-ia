@@ -48,8 +48,10 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
     descricao: "O mais conhecido. Versátil para tarefas do dia a dia.",
     cor: "#10A37F",
     url: "https://chatgpt.com",
-    metodo: "url",
-    montarUrl: (p) => `https://chatgpt.com/?q=${encodeURIComponent(p)}`,
+    // Não há deep link público/documentado para enviar conteúdo ao chat.
+    // Evitamos expor prompts (inclusive dados pedagógicos sensíveis) em URL.
+    metodo: "copiar-e-abrir",
+    montarUrl: () => "https://chatgpt.com/",
     selo: "amarelo",
     observacao: "Após várias perguntas pesadas, troca para um modelo mais simples.",
     bomPara: ["geral", "textos", "ideias"],
@@ -86,8 +88,8 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
     descricao: "Escrita natural e empática. Bom para pareceres e comunicados.",
     cor: "#D97757",
     url: "https://claude.ai/new",
-    metodo: "url",
-    montarUrl: (p) => `https://claude.ai/new?q=${encodeURIComponent(p)}`,
+    metodo: "copiar-e-abrir",
+    montarUrl: () => "https://claude.ai/new",
     selo: "amarelo",
     bomPara: ["pareceres", "comunicados", "textos-longos"],
   },
