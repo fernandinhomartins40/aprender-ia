@@ -35,6 +35,7 @@ const SECUNDARIOS: Posicao[] = [
   { href: "/app/prompts", rotulo: "Banco de prompts", icone: "prompt" },
   { href: "/app/criar-prompt", rotulo: "Criar prompt guiado", icone: "ideias" },
   { href: "/app/ferramentas", rotulo: "Ferramentas de IA", icone: "ferramentas" },
+  { href: "/app/conhecimento", rotulo: "Conhecimento", icone: "ideias" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
   { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
   { href: "/app/acesso", rotulo: "Meu acesso", icone: "seguranca" },

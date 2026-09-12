@@ -478,6 +478,29 @@ model PromptFavorite {
   @@map("prompt_favorites")
 }
 
+/// Base editorial reutilizada pela Central e pelos popovers contextuais.
+model KnowledgeEntry {
+  id String @id @default(cuid())
+  slug String @unique
+  termo String
+  sinonimos String[] @default([])
+  categoria String
+  resumo String @db.Text
+  explicacao String @db.Text
+  importancias Json? // { planejamento: "...", prompts: "..." }
+  fonteNome String?
+  fonteUrl String?
+  saibaMaisUrl String?
+  relacionadoSlugs String[] @default([])
+  publicado Boolean @default(true)
+  atualizadoEm DateTime @updatedAt
+  criadoEm DateTime @default(now())
+
+  @@index([publicado, categoria])
+  @@index([termo])
+  @@map("knowledge_entries")
+}
+
 model PromptRun {
   id               String @id @default(cuid())
   userId           String

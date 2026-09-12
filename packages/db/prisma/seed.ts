@@ -9,6 +9,7 @@
 import { PrismaClient, TipoLicao } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { BANCO_PROMPTS } from "./banco-prompts";
+import { BASE_CONHECIMENTO } from "./base-conhecimento";
 import {
   CACAS,
   CASOS,
@@ -950,6 +951,11 @@ async function main() {
   console.log(
     `  banco de prompts: ${BANCO_PROMPTS.length} (${novosPrompts} novos)`,
   );
+
+  for (const item of BASE_CONHECIMENTO) {
+    await prisma.knowledgeEntry.upsert({ where: { slug: item.slug }, update: item, create: item });
+  }
+  console.log(`  base de conhecimento: ${BASE_CONHECIMENTO.length} termos`);
 
   // ---- Conquistas ----
   for (const c of CONQUISTAS) {
