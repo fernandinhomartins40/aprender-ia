@@ -91,15 +91,20 @@ for i in $(seq 1 30); do
 done
 
 echo "==> Aplicando migrations..."
-# O binário do prisma não existe em node_modules/.bin no estágio runner:
-# ele é devDependency e o pnpm não cria o symlink na imagem final. Por
-# isso localizamos o pacote no store do pnpm e chamamos o build/index.js
-# diretamente com node.
+# O binário do prisma não fica em node_modules/.bin na imagem final, então
+# chamamos o build/index.js diretamente com node.
+#
+# Procuramos em dois layouts porque a imagem mudou de empacotamento: a
+# árvore achatada do npm (atual, vinda do standalone) e o store do pnpm
+# (anterior). O `find` cobre o caso de mudar de novo — fixar um caminho
+# só foi exatamente o que quebrou este passo quando o standalone entrou.
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
   run --rm --entrypoint sh web -c '
     set -e
     cd /app
-    PRISMA_CLI=$(ls -d node_modules/.pnpm/prisma@*/node_modules/prisma/build/index.js 2>/dev/null | head -1)
+    PRISMA_CLI=$(ls -d node_modules/prisma/build/index.js 2>/dev/null | head -1)
+    [ -z "$PRISMA_CLI" ] && PRISMA_CLI=$(ls -d node_modules/.pnpm/prisma@*/node_modules/prisma/build/index.js 2>/dev/null | head -1)
+    [ -z "$PRISMA_CLI" ] && PRISMA_CLI=$(find node_modules -path "*/prisma/build/index.js" -print -quit 2>/dev/null)
     if [ -z "$PRISMA_CLI" ]; then
       echo "ERRO: CLI do Prisma não encontrado na imagem." >&2
       exit 1
@@ -115,14 +120,21 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
 echo "==> Semeando conteúdo..."
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE"   run --rm --entrypoint sh web -c '
     cd /app
-    # O tsx tem layout de arquivos variável entre versões; procuramos o
-    # entrypoint real em vez de fixar um caminho que quebra a cada bump.
-    # O bin declarado pelo tsx é dist/cli.mjs. Resolvemos pelo glob do
-    # store do pnpm, com fallback para .cjs em versões mais antigas.
+    # O seed agora chega compilado (seed.mjs), gerado no build: o Node o
+    # executa direto, sem transpilador na imagem de runtime.
+    #
+    # O caminho antigo (tsx + seed.ts) continua como reserva para uma
+    # imagem construída antes desta mudança — durante um rollback, por
+    # exemplo.
+    if [ -f seed.mjs ]; then
+      echo "    usando seed.mjs (compilado)"
+      node seed.mjs
+      exit $?
+    fi
     TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.mjs 2>/dev/null | head -1)
     [ -z "$TSX" ] && TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.cjs 2>/dev/null | head -1)
     if [ -z "$TSX" ]; then
-      echo "    tsx não encontrado; seed ignorado nesta release." >&2
+      echo "    seed não encontrado nesta imagem; ignorado." >&2
       exit 0
     fi
     echo "    usando $TSX"

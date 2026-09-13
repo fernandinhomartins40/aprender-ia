@@ -71,6 +71,30 @@ ENV NODE_ENV=production
 # COPY do estágio runner falharia se o repo não a trouxesse.
 RUN mkdir -p apps/web/public && pnpm --filter @aprender/web build
 
+# Seed compilado para JavaScript.
+#
+# O deploy roda o seed dentro do container, e o arquivo é TypeScript — o
+# que exigia o `tsx` na imagem final. Com o standalone ele deixou de
+# existir lá, e manter um transpilador só para isso seria carregar
+# ferramenta de build no runtime.
+#
+# O esbuild que o Next já traz resolve: sai um arquivo único que o Node
+# executa direto.
+#
+# Só `@prisma/client` fica externo, e por necessidade: embuti-lo quebra a
+# resolução do motor nativo, que é carregado por caminho em runtime. O
+# `bcryptjs` é JavaScript puro e vai embutido — deixá-lo externo fazia o
+# seed morrer com "Cannot find package 'bcryptjs'", porque ele não existe
+# na árvore enxuta da imagem final.
+RUN set -e; \
+    esb="$(find node_modules/.pnpm -type f -path '*/esbuild/bin/esbuild' -print -quit)"; \
+    [ -n "$esb" ] || { echo "ERRO: esbuild não encontrado no build." >&2; exit 1; }; \
+    node "$esb" packages/db/prisma/seed.ts \
+      --bundle --platform=node --format=esm --target=node22 \
+      --external:@prisma/client \
+      --outfile=/app/seed.mjs; \
+    echo "seed compilado: $(wc -c < /app/seed.mjs) bytes"
+
 # ------------------------------------------------------------
 # 2b) Prisma para runtime
 #
@@ -99,12 +123,17 @@ RUN set -e; \
     npm install --no-audit --no-fund --omit=dev \
       "@prisma/client@$versao" "prisma@$versao"; \
     npx prisma generate --schema ./prisma/schema.prisma; \
-    npm remove prisma; \
     npm cache clean --force; \
-    # O generate deixa o motor em três lugares (~60 MB cada) e só o de
-    # `.prisma/client` é carregado em runtime — os outros são resíduo da
-    # CLI e dos pacotes de engines. Remover os dois corta ~120 MB.
-    rm -rf node_modules/prisma node_modules/@prisma/engines; \
+    # A CLI e `@prisma/engines` FICAM na imagem, e ambos por necessidade:
+    # o deploy aplica as migrations de dentro do container
+    # (`prisma migrate deploy`), e a CLI exige `@prisma/engines` para
+    # carregar. Removê-los rendia ~120 MB e quebrava o deploy — a
+    # aplicação servia páginas, mas o banco nunca migrava.
+    #
+    # Sai só o motor de query duplicado dentro do próprio pacote `prisma`:
+    # esse a CLI não usa (ela carrega o de @prisma/engines) e ninguém o
+    # carrega em runtime.
+    rm -f node_modules/prisma/libquery_engine-*.so.node; \
     find node_modules -name 'libquery_engine*' | sed 's/^/  motor: /'
 
 # ------------------------------------------------------------
@@ -155,6 +184,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 # aqui quebraria em silêncio.
 COPY --from=prisma-deploy --chown=nextjs:nodejs /prisma-runtime/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/packages/db/prisma ./packages/db/prisma
+# Seed já em JavaScript: o deploy o executa com `node`, sem precisar de
+# transpilador na imagem de runtime.
+COPY --from=builder --chown=nextjs:nodejs /app/seed.mjs ./seed.mjs
 
 # O bundle carrega o caminho do pnpm COM HASH gravado em tempo de build
 # ("node_modules/.pnpm/@prisma+client@6.19.3_.../.prisma/client"), que não
