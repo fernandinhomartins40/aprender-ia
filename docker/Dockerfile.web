@@ -19,7 +19,21 @@ COPY packages/auth/package.json ./packages/auth/
 COPY packages/types/package.json ./packages/types/
 COPY packages/config/package.json ./packages/config/
 COPY packages/ai-launcher/package.json ./packages/ai-launcher/
-RUN pnpm install --frozen-lockfile
+
+# O cache montado guarda a store do pnpm ENTRE builds, e é o que salva o
+# deploy quando o lockfile muda.
+#
+# Sem ele, qualquer alteração em `pnpm-lock.yaml` invalida esta camada e
+# obriga a rebaixar os ~217 pacotes do zero. Na VPS isso levou mais de 38
+# minutos e estourou o `timeout-minutes: 45` do workflow — um deploy
+# perdido por causa de uma dependência de desenvolvimento adicionada.
+#
+# Com o cache, só os pacotes realmente novos são baixados; os demais saem
+# da store local (aparecem como `reused` no log) e o install volta à casa
+# dos segundos.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
+    pnpm config set store-dir /pnpm-store && \
+    pnpm install --frozen-lockfile
 
 # ------------------------------------------------------------
 # 2) Build
