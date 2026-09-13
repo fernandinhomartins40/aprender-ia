@@ -31,9 +31,21 @@ COPY packages/ai-launcher/package.json ./packages/ai-launcher/
 # Com o cache, só os pacotes realmente novos são baixados; os demais saem
 # da store local (aparecem como `reused` no log) e o install volta à casa
 # dos segundos.
+#
+# `network-concurrency` e `child-concurrency` baixos são deliberados: no
+# padrão (16), o build chegou a escrever 215 dos 217 pacotes e parou ali,
+# sem erro — comportamento de I/O saturado, não de rede. Menos paralelismo
+# torna o install um pouco mais lento em máquina folgada e muito mais
+# previsível nesta VPS, que é onde ele precisa terminar.
+#
+# `--prefer-offline` completa o efeito do cache: com a store quente, o
+# pnpm nem consulta o registry para o que já tem.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm config set store-dir /pnpm-store && \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile \
+      --prefer-offline \
+      --network-concurrency 4 \
+      --child-concurrency 2
 
 # ------------------------------------------------------------
 # 2) Build

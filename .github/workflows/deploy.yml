@@ -29,7 +29,15 @@ jobs:
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 45 min não bastavam quando o `pnpm-lock.yaml` muda: a camada `deps`
+    # é invalidada e a VPS rebaixa os ~217 pacotes, o que já consumiu 27
+    # min só de download. O job era cortado no meio do install e o deploy
+    # se perdia — com a versão antiga seguindo no ar.
+    #
+    # O cache da store do pnpm (ver docker/Dockerfile.web) resolve isso a
+    # partir da segunda execução; esta folga cobre justamente a primeira,
+    # quando o cache ainda está vazio.
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
