@@ -59,6 +59,12 @@ COPY . .
 # O Prisma Client precisa existir antes do build do Next
 RUN pnpm --filter @aprender/db exec prisma generate
 
+# Guarda o nome do diretório do pnpm (com hash) em que o Prisma foi
+# resolvido. O bundle do Next grava esse caminho no código compilado, e o
+# runner precisa recriá-lo — sem fixar o hash em lugar nenhum.
+RUN ls -1 node_modules/.pnpm | grep -m1 '^@prisma+client@' > prisma-pnpm-dir.txt \
+ && cat prisma-pnpm-dir.txt
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 # Garante que public/ exista: o git não versiona diretório vazio e o
@@ -66,10 +72,45 @@ ENV NODE_ENV=production
 RUN mkdir -p apps/web/public && pnpm --filter @aprender/web build
 
 # ------------------------------------------------------------
+# 2b) Prisma para runtime
+#
+# O standalone do Next não consegue levar o Prisma: o cliente é gerado em
+# build e depende de um binário nativo (.so.node) que nenhum rastreador de
+# imports enxerga.
+#
+# Instalamos aqui com npm, numa árvore achatada e isolada, e geramos o
+# cliente contra o mesmo schema. Sai um `node_modules` pequeno, com o
+# motor no lugar previsto — e sem os caminhos com hash do pnpm, que mudam
+# a cada atualização e quebrariam um COPY fixo em silêncio.
+# ------------------------------------------------------------
+FROM node:22-alpine AS prisma-deploy
+WORKDIR /prisma-runtime
+COPY packages/db/prisma ./prisma
+# A versão vem do que o build de fato resolveu, lida do próprio cliente
+# gerado. Fixar um número aqui criaria divergência silenciosa na próxima
+# atualização do Prisma: o cliente seria gerado por uma versão e o motor
+# carregado por outra.
+COPY --from=builder /app/node_modules/.pnpm /tmp/pnpm-versoes
+RUN set -e; \
+    pkg="$(find /tmp/pnpm-versoes -type f -path '*/@prisma/client/package.json' -print -quit)"; \
+    versao="$(node -p "require('$pkg').version")"; \
+    rm -rf /tmp/pnpm-versoes; \
+    echo "Prisma resolvido no build: $versao"; \
+    npm install --no-audit --no-fund --omit=dev \
+      "@prisma/client@$versao" "prisma@$versao"; \
+    npx prisma generate --schema ./prisma/schema.prisma; \
+    npm remove prisma; \
+    npm cache clean --force; \
+    # O generate deixa o motor em três lugares (~60 MB cada) e só o de
+    # `.prisma/client` é carregado em runtime — os outros são resíduo da
+    # CLI e dos pacotes de engines. Remover os dois corta ~120 MB.
+    rm -rf node_modules/prisma node_modules/@prisma/engines; \
+    find node_modules -name 'libquery_engine*' | sed 's/^/  motor: /'
+
+# ------------------------------------------------------------
 # 3) Runtime — só o necessário para servir
 # ------------------------------------------------------------
 FROM node:22-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -77,19 +118,63 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Teto de heap do V8.
+#
+# O Node herda o limite do cgroup, mas só decide expandir a heap DEPOIS
+# de passar do que o container permite — e aí o kernel mata o processo
+# (OOM) em vez de o coletor de lixo agir. Um teto explícito abaixo do
+# limite do container faz o GC trabalhar antes de estourar.
+# 320 MB contra os 512 MB do compose deixa margem para o resto do
+# processo (buffers, pilha nativa), conforme a prática de manter a heap
+# em 60–75% do limite.
+ENV NODE_OPTIONS="--max-old-space-size=320"
+
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-# Copiamos já com o dono correto. Um `chown -R` depois percorreria
-# dezenas de milhares de arquivos de node_modules — é lento e falha
-# com I/O error em alguns storage drivers do Docker.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
+# A saída `standalone` do Next já traz o servidor e SÓ os módulos que o
+# código realmente importa — nada de TypeScript, Tailwind ou Vitest, que
+# existem apenas para construir.
+#
+# Em monorepo ela vem com a árvore do repositório preservada, por isso o
+# server.js fica em `apps/web/`.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+# Estáticos e públicos ficam fora do standalone de propósito: o Next
+# espera servi-los do disco, e sem estas duas cópias o site sobe sem CSS
+# nem imagens.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/package.json ./apps/web/
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/next.config.mjs ./apps/web/
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
+
+# O Prisma fica FORA do standalone, e não por descuido do rastreador: o
+# cliente é gerado em tempo de build e carrega um binário nativo
+# (.so.node), que não é um import de JavaScript rastreável. Sem isto o
+# container sobe e morre na primeira consulta, com "engine not found".
+#
+# `prisma-deploy` (estágio acima) resolve as dependências reais de runtime
+# do @prisma/client com a árvore achatada do npm, o que evita depender dos
+# caminhos com hash do pnpm — eles mudam a cada atualização e fixá-los
+# aqui quebraria em silêncio.
+COPY --from=prisma-deploy --chown=nextjs:nodejs /prisma-runtime/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/packages/db/prisma ./packages/db/prisma
+
+# O bundle carrega o caminho do pnpm COM HASH gravado em tempo de build
+# ("node_modules/.pnpm/@prisma+client@6.19.3_.../.prisma/client"), que não
+# existe numa árvore achatada do npm. O cliente ainda encontrava o motor
+# por um caminho alternativo, mas só depois de registrar um erro de
+# inicialização a cada boot — e depender desse acaso em produção quebra na
+# primeira atualização.
+#
+# Recriamos o caminho esperado como link para o motor real. O nome com
+# hash vem do próprio build (`PRISMA_PNPM_DIR`), nunca fixado aqui.
+COPY --from=builder /app/prisma-pnpm-dir.txt ./prisma-pnpm-dir.txt
+USER root
+RUN set -e; \
+    alvo="node_modules/.pnpm/$(cat prisma-pnpm-dir.txt)/node_modules"; \
+    mkdir -p "$alvo"; \
+    ln -sfn /app/node_modules/.prisma "$alvo/.prisma"; \
+    ln -sfn /app/node_modules/@prisma/client "$alvo/@prisma-client-link" 2>/dev/null || true; \
+    rm -f prisma-pnpm-dir.txt; \
+    chown -R nextjs:nodejs node_modules/.pnpm; \
+    echo "caminho do pnpm recriado: $alvo"
 
 USER nextjs
 
@@ -98,5 +183,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-WORKDIR /app/apps/web
-CMD ["node_modules/.bin/next", "start"]
+# O servidor do standalone é um Node puro: não passa por pnpm nem pela
+# CLI do Next, o que remove duas camadas de processo do container.
+CMD ["node", "apps/web/server.js"]

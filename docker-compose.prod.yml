@@ -22,11 +22,35 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      # Sem isto o Postgres dimensiona os caches pela RAM da MÁQUINA (15 GB),
+      # não pela que ele deveria usar — numa VPS com ~20 aplicações, é
+      # reservar memória que não lhe cabe. Valores para uma base pequena:
+      # 25% do limite do container em shared_buffers, conforme a
+      # recomendação do próprio projeto.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=384MB
+      - -c
+      - max_connections=30
+      - -c
+      - work_mem=4MB
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    # A VPS é compartilhada. Sem teto, um pico nosso tira recurso dos
+    # outros projetos — e o limite é o que dá sentido aos valores acima.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
+      # Era 10s — 8.640 verificações por dia num banco estável. Em 30s
+      # ainda detecta queda rápido, com um terço do custo.
+      interval: 30s
       timeout: 5s
       retries: 10
       start_period: 20s
@@ -62,6 +86,14 @@ services:
       CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - notification-media:/app/apps/web/public/uploads/notificacoes
+    # 512 MB contra os 320 MB de heap do Node (ver Dockerfile): a folga
+    # cobre buffers, pilha nativa e o próprio runtime. Medido em produção,
+    # o container usava 143 MB — o teto existe para conter um vazamento,
+    # não para apertar o uso normal.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     depends_on:
       postgres:
         condition: service_healthy

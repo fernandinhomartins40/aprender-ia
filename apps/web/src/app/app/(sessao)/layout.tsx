@@ -36,18 +36,30 @@ function dataLonga(d: Date): string {
 export default async function LayoutAluno({ children }: { children: React.ReactNode }) {
   const user = await exigirAluno();
 
-  // Contas criadas em lote entram com senha provisória. Barramos o acesso
-  // à trilha até que o aluno defina a sua — a provisória é adivinhável
-  // por quem tem a lista de chamada.
-  const conta = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: {
-      precisaTrocarSenha: true,
-      plano: true,
-      freeAte: true,
-      freeRevogadoEm: true,
-    },
-  });
+  // Este layout roda em TODA navegação do aluno — são 16 páginas. As
+  // quatro leituras eram sequenciais, cada uma esperando a anterior:
+  // somavam quatro idas ao banco em série no caminho crítico. Em
+  // paralelo, o custo passa a ser o da mais lenta.
+  //
+  // Nenhuma depende do resultado da outra, então não há o que ordenar.
+  const [conta, avisarDiasAntes, avisos, chavePush] = await Promise.all([
+    // Contas criadas em lote entram com senha provisória. Barramos o
+    // acesso à trilha até que o aluno defina a sua — a provisória é
+    // adivinhável por quem tem a lista de chamada.
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        precisaTrocarSenha: true,
+        plano: true,
+        freeAte: true,
+        freeRevogadoEm: true,
+      },
+    }),
+    lerNumero("free.avisar_dias_antes"),
+    minhasNotificacoes(),
+    chavePublicaPush(),
+  ]);
+
   // Dentro do escopo `/app`: a tela equivalente em `/trocar-senha` fica
   // fora dele e expulsava do aplicativo instalado quem tinha senha
   // provisória — logo no primeiro acesso.
@@ -56,14 +68,10 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
   // Aviso de prazo: um acesso que expira sem avisar é uma porta que
   // fecha na cara de quem estava estudando. Só aparece na janela
   // configurada, e não para quem tem plano completo.
-  const avisarDiasAntes = await lerNumero("free.avisar_dias_antes");
   const situacaoFree =
     conta && conta.plano !== "PREMIUM"
       ? avaliarFree(conta, avisarDiasAntes || 7)
       : null;
-
-  const avisos = await minhasNotificacoes();
-  const chavePush = await chavePublicaPush();
 
   return (
     // O respiro inferior soma a altura da barra, o botão central elevado

@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { prisma } from "@aprender/db";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
 import { CONFIGS, PADROES } from "@/lib/configuracoes-catalogo";
+import { TAG_CONFIGURACOES } from "@/lib/tags-cache";
 
 /**
  * Configurações da plataforma.
@@ -54,17 +55,35 @@ export async function lerConfiguracoes(): Promise<Record<string, string>> {
   return mapa;
 }
 
+/**
+ * Leitura crua, sob cache.
+ *
+ * O layout do aluno lê uma configuração em TODA navegação, e um valor que
+ * passa meses sem mudar não justifica uma ida ao banco por página. A tag
+ * é derrubada ao salvar, então a edição do administrador vale na hora.
+ *
+ * A chave entra nos argumentos, e o Next a inclui na identidade da
+ * entrada: chaves diferentes não compartilham cache.
+ */
+const lerTextoComCache = unstable_cache(
+  async (chave: string): Promise<string> => {
+    const salva = await tolerandoTabelaAusente(
+      () =>
+        prisma.platformSetting.findUnique({
+          where: { chave },
+          select: { valor: true },
+        }),
+      null as { valor: string } | null,
+      `lerTexto(${chave})`,
+    );
+    return salva?.valor ?? PADROES.get(chave)?.padrao ?? "";
+  },
+  ["configuracao"],
+  { tags: [TAG_CONFIGURACOES] },
+);
+
 export async function lerTexto(chave: string): Promise<string> {
-  const salva = await tolerandoTabelaAusente(
-    () =>
-      prisma.platformSetting.findUnique({
-        where: { chave },
-        select: { valor: true },
-      }),
-    null as { valor: string } | null,
-    `lerTexto(${chave})`,
-  );
-  return salva?.valor ?? PADROES.get(chave)?.padrao ?? "";
+  return lerTextoComCache(chave);
 }
 
 export async function lerNumero(chave: string): Promise<number> {
@@ -176,6 +195,9 @@ export async function salvarConfiguracoes(
     dados: { alteracoes },
   });
 
+  // Sem derrubar a tag, a leitura cacheada continuaria servindo o valor
+  // antigo e a edição pareceria não ter surtido efeito.
+  revalidateTag(TAG_CONFIGURACOES);
   revalidatePath("/admin/configuracoes");
   revalidatePath("/admin");
   return {
@@ -200,5 +222,6 @@ export async function restaurarPadrao(dados: FormData): Promise<void> {
     resumo: `${def.rotulo} voltou ao padrão ("${def.padrao}")`,
   });
 
+  revalidateTag(TAG_CONFIGURACOES);
   revalidatePath("/admin/configuracoes");
 }

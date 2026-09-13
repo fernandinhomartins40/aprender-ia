@@ -9,3 +9,13 @@
  */
 
 export const TAG_CONHECIMENTO = "conhecimento";
+
+/**
+ * Configurações da plataforma.
+ *
+ * Lidas em toda navegação (o layout do aluno pede o prazo de aviso do
+ * acesso gratuito) e alteradas por um administrador de tempos em tempos.
+ * Sem cache, cada página custava uma ida ao banco para reler um número
+ * que passa meses igual.
+ */
+export const TAG_CONFIGURACOES = "configuracoes";

@@ -219,7 +219,11 @@ jobs:
             PG_USER="$(get_env "POSTGRES_USER" | tr -d '\r')"
             PG_PASS="$(get_env "POSTGRES_PASSWORD" | tr -d '\r')"
             PG_DB="$(get_env "POSTGRES_DB" | tr -d '\r')"
-            upsert_env "DATABASE_URL" "postgresql://${PG_USER}:${PG_PASS}@postgres:5432/${PG_DB}?schema=public"
+            # `connection_limit=5`: sem ele o Prisma abre CPUs×2+1 — 9
+            # conexões nesta VPS —, e cada conexão custa 5–10 MB no
+            # Postgres. Para o volume desta aplicação, 5 sobra; o que
+            # excede é memória reservada e nunca usada.
+            upsert_env "DATABASE_URL" "postgresql://${PG_USER}:${PG_PASS}@postgres:5432/${PG_DB}?schema=public&connection_limit=5&pool_timeout=20"
 
             chmod 600 "$ENV_FILE"
             echo "Arquivo .env pronto."
