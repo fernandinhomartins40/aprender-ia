@@ -760,22 +760,155 @@ MODULOS.push(
 
 void MODULOS_INICIAIS;
 
+/**
+ * Conquistas — marcos permanentes, avaliados em `server/acoes.ts`.
+ *
+ * O avaliador reconhece CINCO tipos de critério, e só eles:
+ *
+ *   licoes    total de lições concluídas (acumulado, nunca zera)
+ *   prompts   total de prompts executados
+ *   ofensiva  dias seguidos na maior sequência atual
+ *   curso     progressoPct da matrícula (0 a 100)
+ *   modulo    quantos módulos estão 100% concluídos
+ *
+ * Diferença para as missões: conquista não tem ciclo. Uma vez obtida, fica.
+ * Por isso os alvos são crescentes e cobrem toda a jornada — de 1 lição a 82.
+ *
+ * `oculto: true` esconde a conquista até ser obtida: usado nas surpresas, para
+ * que descobrir seja parte da graça. As demais ficam visíveis como metas.
+ *
+ * Ícones limitados aos 10 de `lib/icones-gamificacao.ts`.
+ */
 const CONQUISTAS = [
-  { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira lição", icone: "conquistas", criterio: { tipo: "licoes", valor: 1 }, ordem: 0, recompensaTitulo: "Iniciante em IA" },
+  // ---- Primeiros passos ----------------------------------------------
+  { chave: "primeira-licao", titulo: "Primeiro passo", descricao: "Concluiu a primeira atividade", icone: "conquistas", criterio: { tipo: "licoes", valor: 1 }, ordem: 0, recompensaTitulo: "Iniciante em IA" },
   { chave: "primeiro-prompt", titulo: "Mão na massa", descricao: "Executou seu primeiro prompt numa IA", icone: "prompt", criterio: { tipo: "prompts", valor: 1 }, ordem: 1, recompensaTitulo: "Professor que experimenta" },
-  { chave: "cinco-licoes", titulo: "Pegando o ritmo", descricao: "Concluiu 5 lições", icone: "progresso", criterio: { tipo: "licoes", valor: 5 }, ordem: 2, recompensaTitulo: "Ritmo de aprendizagem" },
-  { chave: "encontro-1", titulo: "Encontro 1 completo", descricao: "Terminou o primeiro encontro", icone: "recompensas", criterio: { tipo: "modulo", valor: 1 }, ordem: 3, recompensaTitulo: "Explorador de possibilidades" },
-  { chave: "ofensiva-3", titulo: "Três dias seguidos", descricao: "Manteve a ofensiva por 3 dias", icone: "calendario", criterio: { tipo: "ofensiva", valor: 3 }, ordem: 4, recompensaTitulo: "Professor consistente" },
-  { chave: "curso-completo", titulo: "Formação concluída", descricao: "Completou todos os encontros", icone: "certificados", criterio: { tipo: "curso", valor: 100 }, ordem: 5, recompensaTitulo: "Educador com IA" },
-  { chave: "primeira-fase-avancada", titulo: "Prática avançada", descricao: "Concluiu a primeira fase da formação avançada", icone: "progresso", criterio: { tipo: "modulo", valor: 6 }, ordem: 6, recompensaTitulo: "Projetista pedagógico" },
-  { chave: "formacao-avancada", titulo: "Formação avançada concluída", descricao: "Concluiu todas as fases premium", icone: "certificados", criterio: { tipo: "modulo", valor: 11 }, ordem: 7, recompensaTitulo: "Educador avançado com IA" },
+  { chave: "tres-licoes", titulo: "Não foi sorte", descricao: "Concluiu 3 atividades", icone: "progresso", criterio: { tipo: "licoes", valor: 3 }, ordem: 2, recompensaTitulo: "Começo firme" },
+  { chave: "cinco-licoes", titulo: "Pegando o ritmo", descricao: "Concluiu 5 atividades", icone: "progresso", criterio: { tipo: "licoes", valor: 5 }, ordem: 3, recompensaTitulo: "Ritmo de aprendizagem" },
+
+  // ---- Progressão em atividades ---------------------------------------
+  { chave: "dez-licoes", titulo: "Dez atividades", descricao: "Concluiu 10 atividades da formação", icone: "progresso", criterio: { tipo: "licoes", valor: 10 }, ordem: 4, recompensaTitulo: "Primeira dezena" },
+  { chave: "vinte-licoes", titulo: "Vinte atividades", descricao: "Concluiu 20 atividades da formação", icone: "metas", criterio: { tipo: "licoes", valor: 20 }, ordem: 5, recompensaTitulo: "Caminho consolidado" },
+  { chave: "quarenta-licoes", titulo: "Quarenta atividades", descricao: "Concluiu 40 atividades — quase metade da formação", icone: "metas", criterio: { tipo: "licoes", valor: 40 }, ordem: 6, recompensaTitulo: "Meio caminho andado" },
+  { chave: "sessenta-licoes", titulo: "Sessenta atividades", descricao: "Concluiu 60 atividades da formação", icone: "desafios", criterio: { tipo: "licoes", valor: 60 }, ordem: 7, recompensaTitulo: "Reta final à vista" },
+  { chave: "todas-as-licoes", titulo: "Nenhuma atividade pendente", descricao: "Concluiu todas as 82 atividades da formação", icone: "certificados", criterio: { tipo: "licoes", valor: 82 }, ordem: 8, recompensaTitulo: "Formação integral" },
+
+  // ---- Prática com prompts ---------------------------------------------
+  { chave: "cinco-prompts", titulo: "Testando de verdade", descricao: "Executou 5 prompts em ferramentas de IA", icone: "prompt", criterio: { tipo: "prompts", valor: 5 }, ordem: 9, recompensaTitulo: "Curiosidade prática" },
+  { chave: "vinte-prompts", titulo: "Vinte prompts", descricao: "Executou 20 prompts em ferramentas de IA", icone: "prompt", criterio: { tipo: "prompts", valor: 20 }, ordem: 10, recompensaTitulo: "Praticante de prompts" },
+  { chave: "cinquenta-prompts", titulo: "Cinquenta prompts", descricao: "Executou 50 prompts — a prática que vira repertório", icone: "prompt", criterio: { tipo: "prompts", valor: 50 }, ordem: 11, recompensaTitulo: "Repertório construído" },
+  { chave: "cem-prompts", titulo: "Cem prompts", descricao: "Executou 100 prompts em ferramentas de IA", icone: "certificados", criterio: { tipo: "prompts", valor: 100 }, ordem: 12, recompensaTitulo: "Especialista em prompts" },
+
+  // ---- Constância -------------------------------------------------------
+  { chave: "ofensiva-3", titulo: "Três dias seguidos", descricao: "Manteve a ofensiva por 3 dias", icone: "calendario", criterio: { tipo: "ofensiva", valor: 3 }, ordem: 13, recompensaTitulo: "Professor consistente" },
+  { chave: "ofensiva-7", titulo: "Uma semana inteira", descricao: "Manteve a ofensiva por 7 dias seguidos", icone: "calendario", criterio: { tipo: "ofensiva", valor: 7 }, ordem: 14, recompensaTitulo: "Semana sem falhar" },
+  { chave: "ofensiva-14", titulo: "Duas semanas", descricao: "Manteve a ofensiva por 14 dias seguidos", icone: "calendario", criterio: { tipo: "ofensiva", valor: 14 }, ordem: 15, recompensaTitulo: "Disciplina de quinzena" },
+  { chave: "ofensiva-30", titulo: "Um mês de prática", descricao: "Manteve a ofensiva por 30 dias seguidos", icone: "conquistas", criterio: { tipo: "ofensiva", valor: 30 }, ordem: 16, recompensaTitulo: "Hábito formado" },
+  { chave: "ofensiva-60", titulo: "Dois meses seguidos", descricao: "Manteve a ofensiva por 60 dias seguidos", icone: "certificados", criterio: { tipo: "ofensiva", valor: 60 }, ordem: 17, recompensaTitulo: "Constância rara", oculto: true },
+
+  // ---- Módulos completos -------------------------------------------------
+  { chave: "encontro-1", titulo: "Encontro 1 completo", descricao: "Terminou o primeiro encontro", icone: "recompensas", criterio: { tipo: "modulo", valor: 1 }, ordem: 18, recompensaTitulo: "Explorador de possibilidades" },
+  { chave: "encontro-2", titulo: "Dois encontros completos", descricao: "Terminou dois encontros da formação", icone: "recompensas", criterio: { tipo: "modulo", valor: 2 }, ordem: 19, recompensaTitulo: "Rotina em transformação" },
+  { chave: "encontro-3", titulo: "Três encontros completos", descricao: "Terminou três encontros da formação", icone: "recompensas", criterio: { tipo: "modulo", valor: 3 }, ordem: 20, recompensaTitulo: "Prática que rende tempo" },
+  { chave: "encontros-presenciais", titulo: "Quatro encontros completos", descricao: "Terminou os quatro encontros da formação presencial", icone: "certificados", criterio: { tipo: "modulo", valor: 4 }, ordem: 21, recompensaTitulo: "Formação presencial concluída" },
+  { chave: "primeira-fase-avancada", titulo: "Prática avançada", descricao: "Concluiu a primeira fase da formação avançada", icone: "progresso", criterio: { tipo: "modulo", valor: 6 }, ordem: 22, recompensaTitulo: "Projetista pedagógico" },
+  { chave: "oito-modulos", titulo: "Oito módulos completos", descricao: "Concluiu oito módulos da formação", icone: "desafios", criterio: { tipo: "modulo", valor: 8 }, ordem: 23, recompensaTitulo: "Domínio em construção" },
+  { chave: "formacao-avancada", titulo: "Formação avançada concluída", descricao: "Concluiu todas as fases premium", icone: "certificados", criterio: { tipo: "modulo", valor: 11 }, ordem: 24, recompensaTitulo: "Educador avançado com IA" },
+
+  // ---- Progresso da trilha (percentual) -----------------------------------
+  { chave: "trilha-10", titulo: "Saiu do zero", descricao: "Chegou a 10% da formação", icone: "progresso", criterio: { tipo: "curso", valor: 10 }, ordem: 25, recompensaTitulo: "Primeiros dez por cento" },
+  { chave: "trilha-25", titulo: "Um quarto da trilha", descricao: "Chegou a 25% da formação", icone: "metas", criterio: { tipo: "curso", valor: 25 }, ordem: 26, recompensaTitulo: "Primeiro quarto vencido" },
+  { chave: "trilha-40", titulo: "Quase na metade", descricao: "Chegou a 40% da formação", icone: "metas", criterio: { tipo: "curso", valor: 40 }, ordem: 27, recompensaTitulo: "Ritmo firme" },
+  { chave: "trilha-50", titulo: "Metade da trilha", descricao: "Chegou a 50% da formação", icone: "metas", criterio: { tipo: "curso", valor: 50 }, ordem: 28, recompensaTitulo: "Metade conquistada" },
+  { chave: "trilha-60", titulo: "Passou da metade", descricao: "Chegou a 60% da formação", icone: "progresso", criterio: { tipo: "curso", valor: 60 }, ordem: 29, recompensaTitulo: "Mais da metade" },
+  { chave: "trilha-75", titulo: "Três quartos da trilha", descricao: "Chegou a 75% da formação", icone: "desafios", criterio: { tipo: "curso", valor: 75 }, ordem: 30, recompensaTitulo: "Reta final" },
+  { chave: "trilha-90", titulo: "Reta finalíssima", descricao: "Chegou a 90% da formação — falta pouquíssimo", icone: "desafios", criterio: { tipo: "curso", valor: 90 }, ordem: 31, recompensaTitulo: "Quase lá" },
+  { chave: "curso-completo", titulo: "Formação concluída", descricao: "Completou todos os encontros", icone: "certificados", criterio: { tipo: "curso", valor: 100 }, ordem: 32, recompensaTitulo: "Educador com IA" },
+
+  // ---- Degraus intermediários de atividades --------------------------------
+  // Faixas curtas entre os marcos grandes: o vão de 20 para 40 era longo
+  // demais para quem avança devagar, e sumiço de recompensa no meio do
+  // caminho é onde as pessoas desistem.
+  { chave: "quinze-licoes", titulo: "Quinze atividades", descricao: "Concluiu 15 atividades da formação", icone: "progresso", criterio: { tipo: "licoes", valor: 15 }, ordem: 33, recompensaTitulo: "Avanço constante" },
+  { chave: "trinta-licoes", titulo: "Trinta atividades", descricao: "Concluiu 30 atividades da formação", icone: "metas", criterio: { tipo: "licoes", valor: 30 }, ordem: 34, recompensaTitulo: "Trinta vencidas" },
+  { chave: "cinquenta-licoes", titulo: "Cinquenta atividades", descricao: "Concluiu 50 atividades da formação", icone: "desafios", criterio: { tipo: "licoes", valor: 50 }, ordem: 35, recompensaTitulo: "Meia centena" },
+  { chave: "setenta-licoes", titulo: "Setenta atividades", descricao: "Concluiu 70 atividades — faltam poucas", icone: "desafios", criterio: { tipo: "licoes", valor: 70 }, ordem: 36, recompensaTitulo: "Fôlego de reta final" },
+
+  // ---- Mais faixas de prompts ----------------------------------------------
+  { chave: "dez-prompts-conquista", titulo: "Dez prompts", descricao: "Executou 10 prompts em ferramentas de IA", icone: "prompt", criterio: { tipo: "prompts", valor: 10 }, ordem: 37, recompensaTitulo: "Primeira dezena de prompts" },
+  { chave: "trinta-prompts", titulo: "Trinta prompts", descricao: "Executou 30 prompts em ferramentas de IA", icone: "prompt", criterio: { tipo: "prompts", valor: 30 }, ordem: 38, recompensaTitulo: "Prática que virou rotina" },
+  { chave: "setenta-e-cinco-prompts", titulo: "Setenta e cinco prompts", descricao: "Executou 75 prompts em ferramentas de IA", icone: "prompt", criterio: { tipo: "prompts", valor: 75 }, ordem: 39, recompensaTitulo: "Fluência em prompts" },
+  { chave: "duzentos-prompts", titulo: "Duzentos prompts", descricao: "Executou 200 prompts — uso diário de verdade", icone: "certificados", criterio: { tipo: "prompts", valor: 200 }, ordem: 40, recompensaTitulo: "IA incorporada à rotina", oculto: true },
+
+  // ---- Módulos: degraus que faltavam ---------------------------------------
+  { chave: "cinco-modulos", titulo: "Cinco módulos completos", descricao: "Concluiu cinco módulos da formação", icone: "recompensas", criterio: { tipo: "modulo", valor: 5 }, ordem: 41, recompensaTitulo: "Base sólida" },
+  { chave: "sete-modulos", titulo: "Sete módulos completos", descricao: "Concluiu sete módulos da formação", icone: "recompensas", criterio: { tipo: "modulo", valor: 7 }, ordem: 42, recompensaTitulo: "Maioria vencida" },
+  { chave: "nove-modulos", titulo: "Nove módulos completos", descricao: "Concluiu nove módulos da formação", icone: "desafios", criterio: { tipo: "modulo", valor: 9 }, ordem: 43, recompensaTitulo: "Faltam dois" },
+  { chave: "dez-modulos", titulo: "Dez módulos completos", descricao: "Concluiu dez dos onze módulos", icone: "desafios", criterio: { tipo: "modulo", valor: 10 }, ordem: 44, recompensaTitulo: "Um módulo para o fim" },
+
+  // ---- Constância: faixas longas --------------------------------------------
+  { chave: "ofensiva-21", titulo: "Vinte e um dias", descricao: "Manteve a ofensiva por 21 dias — o tempo que um hábito leva para firmar", icone: "calendario", criterio: { tipo: "ofensiva", valor: 21 }, ordem: 45, recompensaTitulo: "Hábito em formação" },
+  { chave: "ofensiva-45", titulo: "Quarenta e cinco dias", descricao: "Manteve a ofensiva por 45 dias seguidos", icone: "conquistas", criterio: { tipo: "ofensiva", valor: 45 }, ordem: 46, recompensaTitulo: "Persistência notável" },
+  { chave: "ofensiva-90", titulo: "Noventa dias seguidos", descricao: "Manteve a ofensiva por 90 dias — um trimestre inteiro", icone: "certificados", criterio: { tipo: "ofensiva", valor: 90 }, ordem: 47, recompensaTitulo: "Um trimestre de disciplina", oculto: true },
+  { chave: "ofensiva-180", titulo: "Meio ano de prática", descricao: "Manteve a ofensiva por 180 dias seguidos", icone: "certificados", criterio: { tipo: "ofensiva", valor: 180 }, ordem: 48, recompensaTitulo: "Meio ano sem parar", oculto: true },
+  { chave: "ofensiva-365", titulo: "Um ano inteiro", descricao: "Manteve a ofensiva por 365 dias seguidos", icone: "certificados", criterio: { tipo: "ofensiva", valor: 365 }, ordem: 49, recompensaTitulo: "Um ano transformando a sala de aula", oculto: true },
 ];
 
+/**
+ * Missões da plataforma.
+ *
+ * O motor (`server/missoes.ts`) reconhece QUATRO critérios, e só eles:
+ *
+ *   licoes           lições concluídas no ciclo (é o padrão)
+ *   prompts          prompts executados numa IA no ciclo
+ *   sequencia        dias seguidos de ofensiva (ignora o ciclo: é acumulado)
+ *   tipos_atividade  quantos TIPOS distintos de lição foram concluídos
+ *
+ * Um `criterio` fora dessa lista não quebra nada — cai no padrão `licoes` —,
+ * mas produz uma missão que mede outra coisa em silêncio. Por isso nenhuma
+ * missão abaixo inventa critério novo.
+ *
+ * Os ciclos vêm do tipo: DIARIA zera à meia-noite, SEMANAL na segunda,
+ * ESPECIAL nunca zera (ciclo "unica") — é a de conquista permanente.
+ *
+ * Os alvos são calibrados para o curso real: 11 módulos, 82 lições e 10
+ * tipos de atividade (AQUECIMENTO, TEORIA, QUIZ, PROMPT, DUELO, CACA_ERRO,
+ * CASO, NO_CELULAR, DESAFIO, CHECKPOINT).
+ *
+ * Ícones: só os 10 nomes de `lib/icones-gamificacao.ts` são válidos. Qualquer
+ * outro vira "conquistas" silenciosamente — era o caso de "explorar", usado
+ * na versão anterior desta lista e que nunca existiu na biblioteca.
+ */
 const MISSOES = [
+  // ---- Diárias: pequenas, alcançáveis no mesmo dia -------------------
   { chave: "passo-do-dia", titulo: "Passo do dia", descricao: "Conclua uma atividade hoje.", tipo: "DIARIA" as const, criterio: "licoes", alvo: 1, icone: "metas", recompensaTitulo: "Ritmo em construção", ativo: true },
+  { chave: "dose-dupla", titulo: "Dose dupla", descricao: "Conclua duas atividades hoje.", tipo: "DIARIA" as const, criterio: "licoes", alvo: 2, icone: "progresso", recompensaTitulo: "Dia produtivo", ativo: true },
+  { chave: "maratona-do-dia", titulo: "Maratona do dia", descricao: "Conclua quatro atividades hoje.", tipo: "DIARIA" as const, criterio: "licoes", alvo: 4, icone: "desafios", recompensaTitulo: "Fôlego de maratonista", ativo: true },
+  { chave: "prompt-do-dia", titulo: "Prompt do dia", descricao: "Teste um prompt numa ferramenta de IA hoje.", tipo: "DIARIA" as const, criterio: "prompts", alvo: 1, icone: "prompt", recompensaTitulo: "Mão na massa diária", ativo: true },
+  { chave: "tres-prompts", titulo: "Oficina de prompts", descricao: "Teste três prompts hoje e compare os resultados.", tipo: "DIARIA" as const, criterio: "prompts", alvo: 3, icone: "prompt", recompensaTitulo: "Refinador de prompts", ativo: true },
+  { chave: "variedade-do-dia", titulo: "Variedade no cardápio", descricao: "Conclua dois tipos diferentes de atividade hoje.", tipo: "DIARIA" as const, criterio: "tipos_atividade", alvo: 2, icone: "aulas", recompensaTitulo: "Aberto a formatos", ativo: true },
+
+  // ---- Semanais: exigem voltar mais de uma vez na semana --------------
   { chave: "ritmo-da-semana", titulo: "Ritmo da semana", descricao: "Conclua duas atividades nesta semana.", tipo: "SEMANAL" as const, criterio: "licoes", alvo: 2, icone: "progresso", recompensaTitulo: "Constância semanal", ativo: true },
-  { chave: "explorador-de-formatos", titulo: "Explorador de formatos", descricao: "Conclua quatro tipos diferentes de atividade.", tipo: "ESPECIAL" as const, criterio: "tipos_atividade", alvo: 4, icone: "explorar", recompensaTitulo: "Explorador pedagógico", ativo: true },
-  { chave: "sequencia-tres", titulo: "Três dias de prática", descricao: "Mantenha uma sequência de três dias.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 3, icone: "conquistas", recompensaTitulo: "Professor consistente", ativo: true },
+  { chave: "semana-cheia", titulo: "Semana cheia", descricao: "Conclua cinco atividades nesta semana.", tipo: "SEMANAL" as const, criterio: "licoes", alvo: 5, icone: "calendario", recompensaTitulo: "Semana bem aproveitada", ativo: true },
+  { chave: "semana-intensa", titulo: "Semana intensa", descricao: "Conclua dez atividades nesta semana.", tipo: "SEMANAL" as const, criterio: "licoes", alvo: 10, icone: "desafios", recompensaTitulo: "Imersão na formação", ativo: true },
+  { chave: "laboratorio-semanal", titulo: "Laboratório da semana", descricao: "Teste cinco prompts nesta semana.", tipo: "SEMANAL" as const, criterio: "prompts", alvo: 5, icone: "prompt", recompensaTitulo: "Laboratório aberto", ativo: true },
+  { chave: "repertorio-semanal", titulo: "Repertório da semana", descricao: "Conclua quatro tipos diferentes de atividade nesta semana.", tipo: "SEMANAL" as const, criterio: "tipos_atividade", alvo: 4, icone: "aulas", recompensaTitulo: "Repertório variado", ativo: true },
+
+  // ---- Especiais: marcos permanentes, ciclo "unica" -------------------
+  { chave: "explorador-de-formatos", titulo: "Explorador de formatos", descricao: "Conclua quatro tipos diferentes de atividade.", tipo: "ESPECIAL" as const, criterio: "tipos_atividade", alvo: 4, icone: "conquistas", recompensaTitulo: "Explorador pedagógico", ativo: true },
+  { chave: "todos-os-formatos", titulo: "Conhece o curso inteiro", descricao: "Experimente os dez tipos de atividade da formação.", tipo: "ESPECIAL" as const, criterio: "tipos_atividade", alvo: 10, icone: "certificados", recompensaTitulo: "Domina todos os formatos", ativo: true },
+  { chave: "sequencia-tres", titulo: "Três dias de prática", descricao: "Mantenha uma sequência de três dias.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 3, icone: "calendario", recompensaTitulo: "Professor consistente", ativo: true },
+  { chave: "sequencia-sete", titulo: "Uma semana sem falhar", descricao: "Mantenha uma sequência de sete dias seguidos.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 7, icone: "calendario", recompensaTitulo: "Sete dias de disciplina", ativo: true },
+  { chave: "sequencia-quinze", titulo: "Quinze dias de constância", descricao: "Mantenha uma sequência de quinze dias seguidos.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 15, icone: "conquistas", recompensaTitulo: "Hábito formado", ativo: true },
+  { chave: "sequencia-trinta", titulo: "Um mês de prática", descricao: "Mantenha uma sequência de trinta dias seguidos.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 30, icone: "certificados", recompensaTitulo: "Um mês transformando a rotina", ativo: true },
+  { chave: "dez-atividades", titulo: "Dez atividades concluídas", descricao: "Conclua dez atividades da formação.", tipo: "ESPECIAL" as const, criterio: "licoes", alvo: 10, icone: "progresso", recompensaTitulo: "Primeira dezena", ativo: true },
+  { chave: "vinte-e-cinco-atividades", titulo: "Vinte e cinco atividades", descricao: "Conclua vinte e cinco atividades da formação.", tipo: "ESPECIAL" as const, criterio: "licoes", alvo: 25, icone: "progresso", recompensaTitulo: "Caminho consolidado", ativo: true },
+  { chave: "metade-do-caminho", titulo: "Metade do caminho", descricao: "Conclua quarenta atividades — quase metade da formação.", tipo: "ESPECIAL" as const, criterio: "licoes", alvo: 40, icone: "metas", recompensaTitulo: "Meio caminho andado", ativo: true },
+  { chave: "todas-as-atividades", titulo: "Formação inteira concluída", descricao: "Conclua as 82 atividades da formação.", tipo: "ESPECIAL" as const, criterio: "licoes", alvo: 82, icone: "certificados", recompensaTitulo: "Formação completa", ativo: true },
+  { chave: "dez-prompts", titulo: "Dez prompts testados", descricao: "Teste dez prompts em ferramentas de IA.", tipo: "ESPECIAL" as const, criterio: "prompts", alvo: 10, icone: "prompt", recompensaTitulo: "Praticante de prompts", ativo: true },
+  { chave: "cinquenta-prompts", titulo: "Cinquenta prompts testados", descricao: "Teste cinquenta prompts — a prática que vira repertório.", tipo: "ESPECIAL" as const, criterio: "prompts", alvo: 50, icone: "prompt", recompensaTitulo: "Repertório de prompts", ativo: true },
+  { chave: "cem-prompts", titulo: "Cem prompts testados", descricao: "Teste cem prompts em ferramentas de IA.", tipo: "ESPECIAL" as const, criterio: "prompts", alvo: 100, icone: "certificados", recompensaTitulo: "Especialista em prompts", ativo: true },
 ];
 
 /**
