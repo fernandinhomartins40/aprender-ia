@@ -22,11 +22,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      # Sem isto o Postgres dimensiona os caches pela RAM da MÁQUINA (15 GB),
-      # não pela que ele deveria usar — numa VPS com ~20 aplicações, é
-      # reservar memória que não lhe cabe. Valores para uma base pequena:
-      # 25% do limite do container em shared_buffers, conforme a
-      # recomendação do próprio projeto.
+      # Sem isto o Postgres dimensiona os caches pela RAM da MÁQUINA (15,9 GB),
+      # não pela que ele deveria usar — numa VPS compartilhada, é reservar
+      # memória que não lhe cabe. Valores para uma base pequena: 25% do
+      # limite do container em shared_buffers, conforme a recomendação do
+      # próprio projeto.
       POSTGRES_INITDB_ARGS: "--data-checksums"
     command:
       - postgres
@@ -42,10 +42,29 @@ services:
       - postgres-data:/var/lib/postgresql/data
     # A VPS é compartilhada. Sem teto, um pico nosso tira recurso dos
     # outros projetos — e o limite é o que dá sentido aos valores acima.
+    #
+    # CPU e PIDs (plano, item 3): memória sozinha não protege o host. Um laço
+    # infinito consome toda a CPU e um fork bomb derruba a máquina, com a
+    # memória intacta. Nesta mesma VPS há hoje um container de OUTRO projeto
+    # em restart loop marcando 110% de CPU — é o que estes tetos previnem.
+    #
+    # 0.5 de 4 vCPU: a base é pequena e `max_connections=30` já limita os
+    # processos. Valor ESTIMADO por perfil de serviço, não medido — a
+    # aplicação ainda não subiu. É teto de proteção, folgado de propósito;
+    # ajustar com `docker stats` depois do primeiro deploy.
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "0.5"
+          pids: 128
+    # O driver json-file não tem limite por padrão: o log cresce até encher o
+    # disco — e disco cheio derruba TODAS as aplicações do host, não só esta.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       # Era 10s — 8.640 verificações por dia num banco estável. Em 30s
@@ -57,9 +76,16 @@ services:
     networks: [interna]
 
   web:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.web
+    # Imagem construída no GitHub Actions e publicada no GHCR — a VPS não
+    # compila mais (ver .github/workflows/deploy.yml).
+    #
+    # IMAGE_TAG é a SHA do commit, um identificador imutável. Reverter para
+    # uma release anterior é trocar esta variável e subir de novo, sem
+    # rebuild: a imagem antiga continua no registry.
+    #
+    # O fallback `:latest` existe só para uso manual na VPS (diagnóstico,
+    # subir sem passar pelo workflow). O deploy sempre define IMAGE_TAG.
+    image: ghcr.io/fernandinhomartins40/aprenderia-web:${IMAGE_TAG:-latest}
     container_name: aprenderia-web
     restart: unless-stopped
     environment:
@@ -82,7 +108,7 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
-      # Protege a rota interna acordada pelo cron diário da VPS.
+      # Protege a rota interna acordada pelo serviço `scheduler`.
       CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - notification-media:/app/apps/web/public/uploads/notificacoes
@@ -90,10 +116,23 @@ services:
     # cobre buffers, pilha nativa e o próprio runtime. Medido em produção,
     # o container usava 143 MB — o teto existe para conter um vazamento,
     # não para apertar o uso normal.
+    #
+    # CPU e PIDs (plano, item 3): 1 vCPU dos 4 da máquina. O Next.js roda em
+    # um processo só, então 1.0 cobre o pico de renderização e ainda deixa 3
+    # vCPU para o host e as demais aplicações. Valores ESTIMADOS por perfil de
+    # serviço — a memória (512M) veio de medição real em produção, estes não.
+    # São teto de proteção, não dimensionamento; refinar com `docker stats`.
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+          pids: 256
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,6 +150,19 @@ services:
     volumes:
       - notification-media:/media
     command: ["/bin/sh", "-c", "mkdir -p /media && chown 1001:1001 /media"]
+    # Roda uma vez e sai, mas o teto vale mesmo assim: um `chown` numa árvore
+    # grande de mídia não pode competir com a aplicação que está servindo.
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
+          pids: 32
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
 
   # Executa o reengajamento dentro da própria rede Docker. A rota continua
   # protegida por CRON_SECRET e aplica preferências, horários e limites na
@@ -121,7 +173,16 @@ services:
     restart: unless-stopped
     environment:
       CRON_SECRET: ${CRON_SECRET:-}
-      ENGAGEMENT_INTERVAL_SECONDS: ${ENGAGEMENT_INTERVAL_SECONDS:-3600}
+      # 24h, não 1h (plano, item 4).
+      #
+      # O motor aplica `dedupeHoras` de 24h, 72h ou 168h. Com intervalo de
+      # 3600s ele rodava 24× por dia e 23 dessas execuções percorriam TODOS os
+      # alunos, montavam a trilha completa de cada um (`carregarTrilha` são 4+
+      # consultas por aluno) e descartavam tudo na deduplicação — trabalho
+      # computado para ser jogado fora, por construção.
+      #
+      # Nenhum aviso deixa de chegar: o dedupe já os limitava a um por dia.
+      ENGAGEMENT_INTERVAL_SECONDS: ${ENGAGEMENT_INTERVAL_SECONDS:-86400}
     depends_on:
       - web
     command:
@@ -138,6 +199,19 @@ services:
             http://web:3000/api/engajamento || true
           sleep "$${ENGAGEMENT_INTERVAL_SECONDS}"
         done
+    # É um `curl` por dia dormindo o resto do tempo. O teto existe para que um
+    # laço acidental aqui não vire consumo permanente de CPU.
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: "0.05"
+          pids: 16
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
     networks: [interna]
 
   nginx:
@@ -152,17 +226,53 @@ services:
     depends_on:
       - web
     networks: [interna]
+    # É a porta de entrada: todo tráfego externo passa por aqui. nginx:alpine
+    # em repouso usa ~5 MB, então 128M é folga larga — o teto serve para que
+    # um pico de conexões não escale sem limite.
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+          pids: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
+# 🔴 DADOS DE PRODUÇÃO — estes volumes guardam o banco e os uploads.
+#
+# O nome é fixo de propósito: é o que os faz sobreviver a cada deploy, já que
+# o diretório do projeto muda a cada release. O efeito colateral é que o nome
+# é o MESMO em teste e em produção — um `down -v` rodado na pasta errada apaga
+# o banco de verdade, sem confirmação e sem desfazer.
+#
+# Os rótulos abaixo não impedem a remoção (o Docker não tem essa trava), mas
+# aparecem em `docker volume inspect` e permitem que qualquer script filtre e
+# preserve o que é dado de produção.
+#
+# Para parar a aplicação SEM destruir dados:
+#   docker compose -f docker-compose.prod.yml --env-file /opt/aprenderia/.env down
+# NUNCA acrescente `-v` a esse comando em produção.
 volumes:
   postgres-data:
     name: aprenderia_postgres_data
+    labels:
+      br.aprenderia.dados: "producao"
+      br.aprenderia.conteudo: "banco-postgres"
+      br.aprenderia.remocao: "proibida-sem-backup"
   notification-media:
     name: aprenderia_notification_media
+    labels:
+      br.aprenderia.dados: "producao"
+      br.aprenderia.conteudo: "uploads-notificacoes"
+      br.aprenderia.remocao: "proibida-sem-backup"
 
 networks:
   interna:

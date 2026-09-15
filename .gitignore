@@ -61,3 +61,8 @@ assets-3dicons/
 # Guarde estas pastas fora do repositório para poder regerar quando preciso.
 fuse3dicons/
 assets landingpage/
+
+# Cópia solta do vídeo de abertura na raiz. O que a aplicação serve vive em
+# apps/web/public/abertura/video_abertura.mp4 — versionar os dois duplicaria
+# 2,3MB no repositório e no contexto de build.
+/video_abertura.mp4

@@ -67,21 +67,22 @@ export async function listarCursosDoAluno(userId: string) {
   }));
 }
 
-/**
- * A trilha completa, com o status de cada lição.
- *
- * O desbloqueio é sequencial: a primeira lição pendente fica DISPONIVEL
- * e as seguintes, BLOQUEADAS. Calculamos na leitura em vez de gravar,
- * assim mudanças no conteúdo não deixam progresso inconsistente.
- */
-export async function carregarTrilha(userId: string, courseId?: string) {
-  const matricula = courseId
-    ? await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } })
-    : await garantirMatricula(userId);
-  if (!matricula) return null;
+/** Curso com módulos e lições — a árvore que a trilha percorre. */
+type CursoComTrilha = NonNullable<
+  Awaited<ReturnType<typeof buscarCursoSemCache>>
+>;
 
-  const curso = await prisma.course.findUnique({
-    where: { id: matricula.courseId },
+/**
+ * Cache de cursos para processamento em lote.
+ *
+ * Criado por quem percorre muitos alunos (o reengajamento) e descartado ao
+ * fim daquela execução. Ver o parâmetro `cacheCursos` de `carregarTrilha`.
+ */
+export type CacheCursos = Map<string, CursoComTrilha>;
+
+function buscarCursoSemCache(courseId: string) {
+  return prisma.course.findUnique({
+    where: { id: courseId },
     include: {
       modulos: {
         orderBy: { ordem: "asc" },
@@ -89,6 +90,57 @@ export async function carregarTrilha(userId: string, courseId?: string) {
       },
     },
   });
+}
+
+/**
+ * Busca o curso, consultando o banco só quando o cache não o tem.
+ *
+ * Sem cache (o caso de toda requisição de usuário), é exatamente a consulta
+ * de antes. Com cache, o mesmo curso serve todos os alunos do lote.
+ */
+async function buscarCursoComTrilha(courseId: string, cache?: CacheCursos) {
+  const guardado = cache?.get(courseId);
+  if (guardado) return guardado;
+
+  const curso = await buscarCursoSemCache(courseId);
+  // Só guarda o que existe: cachear `null` faria um curso criado no meio do
+  // lote continuar invisível até o fim dele.
+  if (curso && cache) cache.set(courseId, curso);
+  return curso;
+}
+
+/**
+ * A trilha completa, com o status de cada lição.
+ *
+ * O desbloqueio é sequencial: a primeira lição pendente fica DISPONIVEL
+ * e as seguintes, BLOQUEADAS. Calculamos na leitura em vez de gravar,
+ * assim mudanças no conteúdo não deixam progresso inconsistente.
+ */
+export async function carregarTrilha(
+  userId: string,
+  courseId?: string,
+  /**
+   * Cache de curso para uso em LOTE, vivo apenas durante a chamada de quem o
+   * criou.
+   *
+   * O curso — com os 11 módulos e as 82 lições — é o MESMO para todos os
+   * alunos, mas era buscado uma vez por aluno. Num processamento em lote
+   * (reengajamento), isso multiplica a mesma consulta pelo número de alunos.
+   *
+   * É parâmetro, e não cache de módulo, de propósito: um cache global
+   * sobreviveria entre requisições de usuários diferentes e continuaria
+   * servindo a trilha antiga depois de o administrador editar uma lição. Sem
+   * este argumento, o comportamento é exatamente o de antes — uma consulta
+   * por chamada, sempre fresca.
+   */
+  cacheCursos?: CacheCursos,
+) {
+  const matricula = courseId
+    ? await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } })
+    : await garantirMatricula(userId);
+  if (!matricula) return null;
+
+  const curso = await buscarCursoComTrilha(matricula.courseId, cacheCursos);
   if (!curso) return null;
 
   // O acesso é reavaliado a cada carregamento: um aluno matriculado pode

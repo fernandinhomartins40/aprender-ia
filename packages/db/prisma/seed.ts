@@ -778,8 +778,66 @@ const MISSOES = [
   { chave: "sequencia-tres", titulo: "Três dias de prática", descricao: "Mantenha uma sequência de três dias.", tipo: "ESPECIAL" as const, criterio: "sequencia", alvo: 3, icone: "conquistas", recompensaTitulo: "Professor consistente", ativo: true },
 ];
 
+/**
+ * Marcador de versão do seed.
+ *
+ * O seed é idempotente — roda quantas vezes for preciso sem duplicar nada —,
+ * mas isso não o torna barato: são 8 blocos de `upsert`, alguns em laço,
+ * cobrindo 82 lições, 50 verbetes, o banco de prompts e os planos. Reescrever
+ * tudo isso a cada deploy gera escrita em disco e churn de WAL para produzir um
+ * estado que, na imensa maioria das vezes, já é idêntico ao que está lá.
+ *
+ * A assinatura é o hash do PRÓPRIO ARQUIVO em execução, e não dos fontes: na
+ * imagem final só existe `seed.mjs` (compilado pelo esbuild no build), sem os
+ * `.ts` de origem. Como o esbuild empacota todo o conteúdo — `banco-prompts`,
+ * `base-conhecimento`, `conteudo-apostila` — qualquer mudança em qualquer um
+ * deles muda o arquivo compilado, e portanto o hash.
+ *
+ * Para forçar a execução mesmo sem mudança: FORCE_SEED=1.
+ */
+const CHAVE_ASSINATURA = "seed.assinatura";
+
+async function assinaturaAtual(): Promise<string | null> {
+  try {
+    const { createHash } = await import("node:crypto");
+    const { readFile } = await import("node:fs/promises");
+    const { fileURLToPath } = await import("node:url");
+    const esteArquivo = fileURLToPath(import.meta.url);
+    const conteudo = await readFile(esteArquivo);
+    return createHash("sha256").update(conteudo).digest("hex").slice(0, 16);
+  } catch {
+    // Sem assinatura calculável, o seed roda — o padrão seguro é executar.
+    // Pular por não conseguir verificar deixaria conteúdo faltando em
+    // produção, e o sintoma não seria um erro de deploy: seriam lições
+    // ausentes na trilha do aluno.
+    return null;
+  }
+}
+
 async function main() {
   console.log("Semeando o Aprender IA...\n");
+
+  const assinatura = await assinaturaAtual();
+  const forcado = process.env.FORCE_SEED === "1";
+
+  if (assinatura && !forcado) {
+    const gravada = await prisma.platformSetting.findUnique({
+      where: { chave: CHAVE_ASSINATURA },
+      select: { valor: true },
+    });
+    if (gravada?.valor === assinatura) {
+      console.log(`  conteúdo inalterado (assinatura ${assinatura}); seed ignorado.`);
+      console.log("  use FORCE_SEED=1 para executar mesmo assim.\n");
+      return;
+    }
+    console.log(
+      gravada
+        ? `  conteúdo mudou (${gravada.valor} → ${assinatura}); semeando.`
+        : `  primeira execução (assinatura ${assinatura}); semeando.`,
+    );
+  } else if (forcado) {
+    console.log("  FORCE_SEED=1; semeando mesmo sem mudança.");
+  }
 
   // ---- Curso ----
   const curso = await prisma.course.upsert({
@@ -1076,6 +1134,28 @@ async function main() {
     console.log(
       `  admin: não criado — defina ADMIN_PASSWORD para criar ${emailAdmin}`,
     );
+  }
+
+  // Grava a assinatura por ÚLTIMO, e só aqui.
+  //
+  // Se qualquer upsert acima falhar, a exceção sobe e esta linha não roda —
+  // então a assinatura antiga permanece e o próximo deploy semeia de novo.
+  // Gravar no início marcaria como concluído um seed que parou no meio, e o
+  // deploy seguinte pularia um conteúdo incompleto sem avisar ninguém.
+  if (assinatura) {
+    await prisma.platformSetting.upsert({
+      where: { chave: CHAVE_ASSINATURA },
+      update: { valor: assinatura },
+      create: {
+        chave: CHAVE_ASSINATURA,
+        valor: assinatura,
+        tipo: "TEXTO",
+        grupo: "sistema",
+        rotulo: "Assinatura do seed",
+        descricao:
+          "Hash do seed aplicado por último. Serve para pular a reexecução quando o conteúdo não mudou. Alterar à mão força o próximo deploy a semear.",
+      },
+    });
   }
 
   console.log(`\nPronto. ${MODULOS.length} módulos e ${totalLicoes} lições.`);

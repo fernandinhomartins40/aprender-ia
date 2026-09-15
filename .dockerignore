@@ -14,3 +14,25 @@ coverage
 .env
 .env.local
 postgres-data
+
+# Fonte de arte, não recurso de runtime (plano, item 9).
+#
+# São 7,1 MB de PNG em alta — 44% do contexto de build de 16 MB. A aplicação
+# usa as versões processadas em apps/web/public/marca; o único consumidor de
+# assets-marca é scripts/gerar-favicon.py, que roda na máquina do
+# desenvolvedor. Continua versionado no git para poder regerar o favicon.
+assets-marca
+
+# Espelha a regra do .gitignore. O arquivo não está no git, então NÃO chega à
+# imagem publicada (o deploy parte do checkout) — mas um `docker build` local
+# gravaria as senhas de produção numa camada.
+CREDENCIAIS-*.txt
+
+# Documentação não vai para dentro do container.
+docs
+*.md
+!README.md
+
+# Vídeos soltos na raiz. O vídeo que a aplicação serve vive em
+# apps/web/public/abertura e não é afetado por esta regra.
+/*.mp4

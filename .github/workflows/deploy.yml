@@ -5,8 +5,20 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Um deploy por vez, ponta a ponta.
+#
+# O grupo cobre o workflow INTEIRO (build + deploy), não cada job: dois
+# workflows concorrentes fariam dois builds simultâneos e, pior, dois
+# `docker compose up` na mesma VPS — um subindo container enquanto o outro
+# aplica migration, com resultado indeterminado.
+#
+# `cancel-in-progress: false` é deliberado. Cancelar um deploy no meio deixa
+# migration aplicada pela metade e containers efêmeros órfãos; é melhor
+# enfileirar e deixar o primeiro terminar. A fila do GitHub segura o
+# segundo, e a trava `flock` do remote-deploy.sh cobre o que o GitHub não
+# enxerga (deploy manual na VPS, disparo de outro repositório).
 concurrency:
-  group: deploy-production
+  group: deploy-production-${{ github.repository }}
   cancel-in-progress: false
 
 env:
@@ -19,25 +31,106 @@ env:
   CANONICAL_URL: https://aprenderia.site
   SSL_EMAIL: admin@aprenderia.site
   SITE_NAME: aprenderia
-  # O build da imagem pode levar vários minutos sem produzir saída. Alguns
-  # firewalls/NATs encerram esse TCP ocioso e o runner recebe exit 255
-  # mesmo depois de o Docker terminar. Keepalives SSH independem da saída
-  # do build e mantêm a sessão viva; 20 tentativas dão 10 min de margem.
+  IMAGE_NAME: ghcr.io/fernandinhomartins40/aprenderia-web
+  # Keepalives SSH: alguns firewalls/NATs encerram um TCP ocioso e o runner
+  # recebe exit 255 mesmo depois de o comando remoto terminar.
   SSH_OPTS: -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -o NumberOfPasswordPrompts=1 -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes
 
 jobs:
+  # ============================================================
+  # 1) BUILD — no runner do GitHub, nunca na VPS.
+  #
+  # Medido no deploy #79: o `next build` levava 157,6s DENTRO da VPS, e o
+  # passo de deploy consumia 333s — 88% do tempo total —, disputando CPU e
+  # disco com as outras aplicações do host. Três deploys (#75, #76, #77)
+  # morreram no limite de 45min quando o cache do pnpm esfriava.
+  #
+  # O runner é gratuito, ocioso e descartável. É onde compilar.
+  # ============================================================
+  build:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      # Dá ao GITHUB_TOKEN automático permissão de publicar no GHCR. É por
+      # isso que nenhum segredo novo precisa ser criado no repositório.
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      release: ${{ steps.meta.outputs.release }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Definir tags
+        id: meta
+        run: |
+          # A SHA do commit é o identificador imutável da imagem: é o que
+          # torna o rollback uma troca de tag em vez de um rebuild.
+          echo "image_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "release=$(git rev-parse --short HEAD)-$(date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      # O sw.js precisa ser carimbado ANTES do build, porque ele vai para
+      # dentro da imagem (apps/web/public). Antes disso era feito na VPS,
+      # onde o build acontecia; movê-lo junto é obrigatório — deixá-lo lá
+      # faria o service worker sair com a versão fixa do código e o
+      # navegador voltaria a misturar HTML novo com JavaScript velho depois
+      # de cada deploy, que é exatamente o defeito que o carimbo corrige.
+      - name: Versionar o service worker
+        run: |
+          SW="apps/web/public/sw.js"
+          if [ -f "$SW" ]; then
+            sed -i "s/^const VERSAO = \".*\";/const VERSAO = \"aprender-ia-${{ steps.meta.outputs.release }}\";/" "$SW"
+            grep -m1 '^const VERSAO' "$SW"
+          else
+            echo "::error::sw.js não encontrado em $SW — o cache do navegador não seria invalidado." >&2
+            exit 1
+          fi
+
+      - name: Configurar Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.web
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }}
+            ${{ env.IMAGE_NAME }}:latest
+          # O cache vive no GitHub, não na VPS. É o que substitui o
+          # `--mount=type=cache` da store do pnpm que antes dependia do
+          # disco da VPS — e é por isso que o disco de lá para de encher.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Rotula a imagem para que a limpeza na VPS possa filtrar por
+          # projeto em vez de usar um prune global, que atingiria as
+          # outras aplicações do host.
+          labels: |
+            org.opencontainers.image.source=https://github.com/fernandinhomartins40/aprender-ia
+            org.opencontainers.image.revision=${{ github.sha }}
+
+  # ============================================================
+  # 2) DEPLOY — a VPS puxa, migra e sobe. Nunca compila.
+  # ============================================================
   deploy:
     name: Deploy to VPS
+    needs: build
     runs-on: ubuntu-latest
-    # 45 min não bastavam quando o `pnpm-lock.yaml` muda: a camada `deps`
-    # é invalidada e a VPS rebaixa os ~217 pacotes, o que já consumiu 27
-    # min só de download. O job era cortado no meio do install e o deploy
-    # se perdia — com a versão antiga seguindo no ar.
-    #
-    # O cache da store do pnpm (ver docker/Dockerfile.web) resolve isso a
-    # partir da segunda execução; esta folga cobre justamente a primeira,
-    # quando o cache ainda está vazio.
-    timeout-minutes: 90
+    # Sem build local, o deploy passa a ser download + migrations + subida.
+    # A folga de 90min existia para cobrir o install de ~217 pacotes na VPS,
+    # que não acontece mais.
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -45,7 +138,7 @@ jobs:
 
       - name: Set release version
         id: release
-        run: echo "version=$(git rev-parse --short HEAD)-$(date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${{ needs.build.outputs.release }}" >> "$GITHUB_OUTPUT"
 
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
@@ -229,12 +322,23 @@ jobs:
             echo "Arquivo .env pronto."
           ENDSSH
 
+      # A imagem é privada (o repositório é privado), então a VPS precisa se
+      # autenticar para baixá-la. O token é o GITHUB_TOKEN desta execução:
+      # vale enquanto o job roda e expira sozinho — nada fica guardado na
+      # máquina, e nenhum segredo novo precisa ser criado.
+      - name: Autenticar a VPS no GHCR
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -e ssh ${{ env.SSH_OPTS }} ${{ env.VPS_USER }}@${{ env.VPS_HOST }} \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
       - name: Deploy on VPS
         env:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
           sshpass -e ssh ${{ env.SSH_OPTS }} ${{ env.VPS_USER }}@${{ env.VPS_HOST }} \
-            "APP_ROOT='${{ env.APP_ROOT }}' RELEASE='${{ steps.release.outputs.version }}' DEPLOY_PORT='${{ env.DEPLOY_PORT }}' bash '${{ env.APP_ROOT }}/releases/${{ steps.release.outputs.version }}/.github/scripts/remote-deploy.sh'"
+            "APP_ROOT='${{ env.APP_ROOT }}' RELEASE='${{ steps.release.outputs.version }}' DEPLOY_PORT='${{ env.DEPLOY_PORT }}' IMAGE_TAG='${{ needs.build.outputs.image_tag }}' bash '${{ env.APP_ROOT }}/releases/${{ steps.release.outputs.version }}/.github/scripts/remote-deploy.sh'"
 
       - name: Configure Nginx (HTTP)
         env:
@@ -486,7 +590,28 @@ jobs:
           [ "$fail" -ne 0 ] && { echo "O site não está acessível publicamente." >&2; exit 1; }
           echo "Site no ar com o certificado correto."
 
+      # Só roda depois do deploy validado: apagar versões antigas antes de
+      # confirmar que a nova funciona tiraria justamente o destino do
+      # rollback.
+      #
+      # Mantém 5, e não 3, de propósito — a imagem para a qual você pode
+      # querer reverter precisa continuar existindo. Apagar de menos custa
+      # alguns MB; apagar de mais custa um rebuild sob pressão.
+      - name: Limpar imagens antigas no GHCR
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: aprenderia-web
+          package-type: container
+          min-versions-to-keep: 5
+          # Expressão regular das versões a poupar. `latest` é tag móvel e
+          # aponta para a imagem mais recente — apagá-la deixaria o
+          # fallback do compose sem destino.
+          ignore-versions: '^latest$'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Notify success
         run: |
           echo "Release ${{ steps.release.outputs.version }} publicada."
+          echo "Imagem: ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}"
           echo "URL: ${{ env.CANONICAL_URL }}"
