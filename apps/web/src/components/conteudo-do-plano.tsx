@@ -68,12 +68,25 @@ export function ConteudoDoPlano({
     return inicial;
   });
   const [salvando, setSalvando] = useState(false);
+  /**
+   * Confirmação do último salvamento.
+   *
+   * A action não devolve nada e a tela não mudava de aparência ao salvar:
+   * o botão saía de "Salvando…" e tudo ficava igual. Sem sinal nenhum, um
+   * salvamento bem-sucedido é indistinguível de um que falhou — foi assim
+   * que um vínculo que ESTAVA gravado passou por "não salva".
+   */
+  const [salvoEm, setSalvoEm] = useState<string | null>(null);
 
   function mudar(courseId: string, mudanca: Partial<Estado>) {
+    // Qualquer alteração invalida a confirmação anterior: mantê-la na tela
+    // afirmaria que o que está marcado agora é o que está no banco.
+    setSalvoEm(null);
     setEstado((a) => ({ ...a, [courseId]: { ...a[courseId]!, ...mudanca } }));
   }
 
   function alternarModulo(courseId: string, moduleId: string) {
+    setSalvoEm(null);
     setEstado((a) => {
       const atual = a[courseId]!;
       const modulos = new Set(atual.modulos);
@@ -84,9 +97,46 @@ export function ConteudoDoPlano({
   }
 
   async function enviar(dados: FormData) {
+    // Dois envios simultâneos do mesmo formulário chegam como duas
+    // transações que apagam e recriam o mesmo conjunto. Em produção
+    // saíram oito num intervalo de oito segundos. Enquanto um salvamento
+    // está em voo, os seguintes são descartados.
+    if (salvando) return;
+
+    // O formulário é reconstruído a partir do estado da tela, e não dos
+    // checkboxes: um campo controlado que o React esteja re-renderizando
+    // no instante do envio pode não entrar no FormData, e a action leria
+    // uma seleção vazia — exatamente o que zerou o plano em produção.
+    dados.delete("cursos");
+    for (const [courseId, e] of Object.entries(estado)) {
+      if (!e.marcado) continue;
+      dados.append("cursos", courseId);
+      dados.set(`abrangencia:${courseId}`, e.abrangencia);
+      dados.delete(`modulos:${courseId}`);
+      if (e.abrangencia === "MODULOS_ESPECIFICOS") {
+        for (const m of e.modulos) dados.append(`modulos:${courseId}`, m);
+      }
+    }
+
+    // Desmarcar tudo é uma decisão possível, mas o servidor recusa um
+    // envio vazio sem esta confirmação — é o que separa "quis zerar" de
+    // "o formulário chegou vazio por acidente".
+    if (totalMarcados === 0) {
+      const ok = window.confirm(
+        `Isto vai remover TODO o conteúdo de "${planNome}". ` +
+          `Quem tiver este plano deixa de alcançar qualquer curso por ele.\n\n` +
+          `Confirma?`,
+      );
+      if (!ok) return;
+      dados.set("confirmarVazio", "sim");
+    }
+
     setSalvando(true);
     try {
       await aoSalvar(dados);
+      setSalvoEm(
+        new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      );
     } finally {
       setSalvando(false);
     }
@@ -225,9 +275,15 @@ export function ConteudoDoPlano({
         <button type="submit" disabled={salvando} className="btn-primario">
           {salvando ? "Salvando…" : `Salvar conteúdo de "${planNome}"`}
         </button>
-        <span className="text-sm text-tinta-clara">
-          Vale imediatamente para todos os alunos com este plano.
-        </span>
+        {salvoEm ? (
+          <span className="text-sm font-bold text-verde-dark">
+            Salvo às {salvoEm} — {totalMarcados} curso(s) liberado(s).
+          </span>
+        ) : (
+          <span className="text-sm text-tinta-clara">
+            Vale imediatamente para todos os alunos com este plano.
+          </span>
+        )}
       </div>
     </form>
   );

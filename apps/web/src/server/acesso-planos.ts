@@ -45,6 +45,22 @@ export async function salvarConteudoDoPlano(dados: FormData): Promise<void> {
   // se é o curso inteiro e `modulos:<id>` lista os módulos escolhidos.
   const cursosMarcados = dados.getAll("cursos").map(String).filter(Boolean);
 
+  // Um envio sem curso nenhum APAGARIA todo o conteúdo do plano, porque
+  // logo abaixo há um `deleteMany` seguido da recriação do conjunto.
+  //
+  // Isso aconteceu em produção: oito envios seguidos com a lista vazia
+  // zeraram o vínculo do plano recém-configurado, em silêncio, enquanto o
+  // administrador via a tela com tudo marcado. O log de auditoria guardou
+  // os oito `{"cursos": []}`.
+  //
+  // Zerar o conteúdo continua sendo possível — é uma operação legítima —
+  // mas passa a exigir intenção declarada. Sem ela, não tocamos no banco:
+  // perder a configuração por um envio acidental é muito pior do que
+  // recusar um envio ambíguo.
+  if (cursosMarcados.length === 0 && String(dados.get("confirmarVazio") ?? "") !== "sim") {
+    return;
+  }
+
   const selecao = cursosMarcados.map((courseId) => {
     const abrangencia = (String(dados.get(`abrangencia:${courseId}`) ?? "CURSO_COMPLETO") ===
     "MODULOS_ESPECIFICOS"
