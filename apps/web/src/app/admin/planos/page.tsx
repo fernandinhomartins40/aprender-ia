@@ -66,13 +66,6 @@ export default async function Planos() {
                             Libera {p._count.cursos} curso(s)
                           </span>
                         )}
-                        {" · "}
-                        <Link
-                          href={`/admin/planos/${p.id}`}
-                          className="font-bold text-indigo hover:underline"
-                        >
-                          Configurar conteúdo →
-                        </Link>
                       </p>
 
                       <p className="mt-2 font-mono text-xs text-cinza">{p.slug}</p>
@@ -91,6 +84,40 @@ export default async function Planos() {
                             : ""}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Vincular curso e módulo é o passo que faz o plano
+                      existir de verdade: sem ele o aluno assina e não recebe
+                      nada. Era um link de texto no meio de uma frase, e quem
+                      acabava de criar um plano não encontrava.
+
+                      Quando nada foi liberado ainda, o bloco fica em âmbar e
+                      o botão sólido — é pendência, não informação. */}
+                  <div
+                    className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${
+                      p._count.cursos === 0
+                        ? "border-amarelo/40 bg-amarelo-soft"
+                        : "border-borda bg-fundo"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-titulo text-sm font-bold text-tinta">
+                        {p._count.cursos === 0
+                          ? "Este plano ainda não libera nenhum conteúdo"
+                          : "Cursos e módulos liberados"}
+                      </p>
+                      <p className="mt-0.5 text-sm text-tinta-clara">
+                        {p._count.cursos === 0
+                          ? "Escolha quais cursos e módulos quem assinar vai receber."
+                          : `Liberando ${p._count.cursos} curso(s). Ajuste a qualquer momento.`}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/admin/planos/${p.id}`}
+                      className={p._count.cursos === 0 ? "btn-primario" : "btn-secundario"}
+                    >
+                      {p._count.cursos === 0 ? "Definir conteúdo" : "Editar conteúdo"}
+                    </Link>
                   </div>
 
                   <dl className="mt-4 grid gap-3 border-t border-borda pt-4 sm:grid-cols-3">
