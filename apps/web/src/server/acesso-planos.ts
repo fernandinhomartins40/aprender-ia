@@ -309,6 +309,10 @@ export async function retratoDeAcesso(userId: string) {
       id: true,
       nome: true,
       email: true,
+      // A tela do aluno edita os dados cadastrais, e o telefone é o login de
+      // quem entrou por lote — sem ele o formulário abriria com o campo vazio
+      // e salvaria apagando o telefone de quem não mexesse nele.
+      telefone: true,
       papel: true,
       situacao: true,
       assinaturas: {

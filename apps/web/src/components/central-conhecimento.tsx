@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { buscar, lerCodigoBncc, pedidoDeHabilidade } from "@/lib/motor-conhecimento";
+import { estiloCategoria } from "@/lib/cores-conhecimento";
+import { lerVistos, type VerbetesVistos } from "@/lib/verbetes-vistos";
 
 /**
  * Central de Conhecimento: pesquisa e consulta em linguagem natural.
@@ -59,13 +61,10 @@ export type AchadoHistorico = {
 
 export function CentralConhecimento({
   itens,
-  slugInicial,
   categorias,
   aoConsultarHistorico,
 }: {
   itens: Item[];
-  /** Verbete aberto de saída, quando se chega por `?termo=`. */
-  slugInicial?: string;
   categorias: string[];
   /**
    * Busca no diário do próprio professor.
@@ -78,8 +77,20 @@ export function CentralConhecimento({
 }) {
   const [consulta, setConsulta] = useState("");
   const [categoria, setCategoria] = useState("todas");
-  const [slugAberto, setSlugAberto] = useState<string | null>(slugInicial ?? null);
-  const painel = useRef<HTMLDivElement>(null);
+
+  /**
+   * Quais assuntos este navegador já abriu.
+   *
+   * Começa vazio e só é preenchido depois da montagem: `localStorage` não
+   * existe no servidor, e ler durante a renderização faria o HTML do servidor
+   * divergir do primeiro desenho do cliente (erro de hidratação). O efeito
+   * colateral é que as marcações aparecem um instante depois da lista — o que
+   * é aceitável para uma pista visual.
+   */
+  const [vistos, setVistos] = useState<VerbetesVistos>({ vistos: {}, ultimo: null });
+  useEffect(() => {
+    setVistos(lerVistos());
+  }, []);
 
   const porSlug = useMemo(
     () => Object.fromEntries(itens.map((i) => [i.slug, i])),
@@ -97,7 +108,6 @@ export function CentralConhecimento({
     [consulta, codigo],
   );
 
-  const aberto = slugAberto ? porSlug[slugAberto] : undefined;
 
   // ---- "Já trabalhei isso antes?" ----
   // Consulta com atraso: a cada tecla seria uma ida ao servidor por
@@ -126,20 +136,11 @@ export function CentralConhecimento({
     };
   }, [consulta, aoConsultarHistorico]);
 
-  // Chegar por `?termo=` ou escolher um relacionado deve levar o olho ao
-  // painel: no celular ele fica abaixo da lista, fora da tela.
-  useEffect(() => {
-    if (slugAberto && window.innerWidth < 1024) {
-      painel.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [slugAberto]);
-
-  const relacionados = (aberto?.relacionadoSlugs ?? [])
-    .map((s) => porSlug[s])
-    .filter((r): r is Item => Boolean(r));
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+    // Coluna única: o verbete deixou de abrir num painel ao lado e passou a
+    // ter página própria (`/app/conhecimento/[slug]`). Sem o painel, a grade
+    // de duas colunas só espremeria a lista contra um espaço vazio.
+    <div className="mx-auto max-w-3xl">
       {/* ---------------------------------------------- busca e resultados */}
       <section className="min-w-0">
         <label htmlFor="consulta" className="mb-1.5 block font-titulo text-sm font-bold">
@@ -294,164 +295,79 @@ export function CentralConhecimento({
               {["bncc", "habilidade-bncc", "avaliacao-formativa", "ptcf", "privacidade"]
                 .map((s) => porSlug[s])
                 .filter((v): v is Item => Boolean(v))
-                .map((v) => (
-                  <button
-                    key={v.slug}
-                    onClick={() => {
-                      setConsulta("");
-                      setCategoria("todas");
-                      setSlugAberto(v.slug);
-                    }}
-                    className="rounded-full border border-borda px-3 py-1.5 text-xs font-semibold text-indigo hover:bg-indigo-soft"
-                  >
-                    {v.termo}
-                  </button>
-                ))}
+                .map((v) => {
+                  const cor = estiloCategoria(v.categoria);
+                  return (
+                    <Link
+                      key={v.slug}
+                      href={`/app/conhecimento/${v.slug}`}
+                      className={`rounded-full border ${cor.borda} ${cor.fundo} px-3 py-1.5 text-xs font-semibold ${cor.texto} transition-transform hover:scale-[1.03]`}
+                    >
+                      {v.termo}
+                    </Link>
+                  );
+                })}
             </div>
           </div>
         )}
 
+        {/* Cada assunto é um LINK, não um botão de expandir.
+            O endereço passa a identificar o verbete, o que torna possível
+            guardar nos favoritos, compartilhar com um colega e usar o botão
+            voltar do navegador para retornar à lista — três coisas que o
+            painel no lugar não permitia.
+
+            A cor vem da categoria e a faixa lateral a repete, para que o
+            assunto seja localizável de relance num acervo de 50 verbetes. */}
         <ul className="mt-3 space-y-2">
           {resultados.map((i) => {
-            const ativo = slugAberto === i.slug;
+            const estilo = estiloCategoria(i.categoria);
+            const visto = Boolean(vistos.vistos[i.slug]);
+            const ehUltimo = vistos.ultimo === i.slug;
             return (
               <li key={i.slug}>
-                <button
-                  onClick={() => setSlugAberto(i.slug)}
-                  aria-current={ativo ? "true" : undefined}
-                  className={`w-full rounded-xl border bg-white p-4 text-left transition-colors ${
-                    ativo
-                      ? "border-indigo bg-indigo-soft/40"
-                      : "border-borda hover:border-indigo"
-                  }`}
+                <Link
+                  href={`/app/conhecimento/${i.slug}`}
+                  aria-current={ehUltimo ? "true" : undefined}
+                  className={`flex gap-0 overflow-hidden rounded-xl border ${estilo.borda} ${
+                    ehUltimo ? "ring-2 ring-indigo ring-offset-1" : ""
+                  } bg-white text-left shadow-sm transition-transform hover:scale-[1.01] hover:shadow-md`}
                 >
-                  <p className="font-titulo font-bold text-tinta">{i.termo}</p>
-                  <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-indigo">
-                    {i.categoria}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-tinta-clara">{i.resumo}</p>
-                </button>
+                  {/* Faixa de cor: a identidade da categoria, visível mesmo
+                      quando o cartão está cortado na rolagem. */}
+                  <span className={`w-1.5 shrink-0 ${estilo.faixa}`} aria-hidden="true" />
+
+                  <span className={`min-w-0 flex-1 p-4 ${visto ? estilo.fundo : ""}`}>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-titulo font-bold text-tinta">{i.termo}</span>
+
+                      {ehUltimo ? (
+                        <span className="rounded-full bg-indigo px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
+                          Último que você viu
+                        </span>
+                      ) : visto ? (
+                        <span className="rounded-full bg-fundo px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-cinza">
+                          Já lido
+                        </span>
+                      ) : null}
+                    </span>
+
+                    <span
+                      className={`mt-0.5 block text-xs font-semibold uppercase tracking-wide ${estilo.texto}`}
+                    >
+                      {i.categoria}
+                    </span>
+                    <span className="mt-1.5 block text-sm leading-relaxed text-tinta-clara">
+                      {i.resumo}
+                    </span>
+                  </span>
+                </Link>
               </li>
             );
           })}
         </ul>
       </section>
 
-      {/* ------------------------------------------------------- painel */}
-      <section ref={painel} className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-        <div className="rounded-xl border border-borda bg-white p-5 sm:p-6">
-          {aberto ? (
-            <>
-              <p className="text-xs font-bold uppercase tracking-wide text-indigo">
-                {aberto.categoria}
-              </p>
-              <h2 className="mt-1 font-titulo text-2xl font-extrabold text-tinta">
-                {aberto.termo}
-              </h2>
-              <p className="mt-2 font-semibold leading-relaxed text-tinta">{aberto.resumo}</p>
-
-              <div className="mt-4 space-y-3 leading-relaxed text-tinta-clara">
-                {aberto.explicacao.split("\n\n").map((p, i) => (
-                  <p key={i} className="whitespace-pre-line">
-                    {p}
-                  </p>
-                ))}
-              </div>
-
-              {/* Onde este conceito aparece na aplicação: transforma o
-                  verbete em navegação, não só em leitura. */}
-              {aberto.importancias && Object.keys(aberto.importancias).length > 0 && (
-                <div className="mt-5 rounded-lg bg-fundo p-4">
-                  <p className="font-titulo text-sm font-bold text-tinta">
-                    Onde isso importa na plataforma
-                  </p>
-                  <ul className="mt-2 space-y-2">
-                    {Object.entries(aberto.importancias).map(([ctx, texto]) => (
-                      <li key={ctx} className="text-sm leading-relaxed text-tinta-clara">
-                        <b className="font-bold text-tinta">{rotuloContexto(ctx)}: </b>
-                        {texto}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <p className="mt-5 border-t border-borda pt-4 text-xs leading-relaxed text-cinza">
-                {aberto.fonteNome ? (
-                  <>
-                    <b className="font-bold text-tinta-clara">Informação oficial · </b>
-                    {aberto.fonteUrl ? (
-                      <a
-                        href={aberto.fonteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-indigo underline"
-                      >
-                        {aberto.fonteNome}
-                      </a>
-                    ) : (
-                      aberto.fonteNome
-                    )}
-                  </>
-                ) : (
-                  "Explicação didática da plataforma — não é texto normativo. Para norma, consulte o documento oficial correspondente."
-                )}
-              </p>
-
-              {aberto.saibaMaisUrl && (
-                <p className="mt-3">
-                  {aberto.saibaMaisUrl.startsWith("/") ? (
-                    <Link href={aberto.saibaMaisUrl} className="font-bold text-indigo underline">
-                      Saiba mais na plataforma →
-                    </Link>
-                  ) : (
-                    <a
-                      href={aberto.saibaMaisUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-indigo underline"
-                    >
-                      Saiba mais →
-                    </a>
-                  )}
-                </p>
-              )}
-
-              {relacionados.length > 0 && (
-                <div className="mt-5 border-t border-borda pt-4">
-                  <p className="font-titulo text-sm font-bold text-tinta">Assuntos relacionados</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {relacionados.map((r) => (
-                      <button
-                        key={r.slug}
-                        onClick={() => setSlugAberto(r.slug)}
-                        className="rounded-full border border-borda px-3 py-1.5 text-sm font-semibold text-indigo hover:bg-indigo-soft"
-                      >
-                        {r.termo}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="py-6 text-center">
-              <p className="font-titulo text-lg font-bold text-tinta">Escolha um assunto</p>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-tinta-clara">
-                Pesquise acima com suas próprias palavras ou escolha um assunto na lista.
-                Cada explicação indica se é informação oficial ou explicação didática da
-                plataforma.
-              </p>
-              <Link
-                href="/app/conhecimento/bncc"
-                className="mt-4 inline-block font-bold text-indigo underline"
-              >
-                Comece pela BNCC explicada do zero →
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
     </div>
   );
 }

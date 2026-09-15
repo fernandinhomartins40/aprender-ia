@@ -890,6 +890,18 @@ model Plan {
   /// Nulo num plano recorrente, onde o ciclo já define o prazo.
   diasAcesso Int?
 
+  /// Dias de acesso gratuito que ESTE plano concede, quando é o gratuito.
+  ///
+  /// Campo separado de `diasAcesso` de propósito: aquele pertence ao ciclo de
+  /// uma compra paga e é lido por `somarPeriodo` para calcular vencimento.
+  /// Reaproveitá-lo aqui faria o mesmo número significar duas coisas conforme
+  /// o plano fosse pago ou gratuito, e quem mexesse em cobrança depois teria
+  /// de adivinhar qual.
+  ///
+  /// Nulo = usa `free.dias_padrao` das configurações, que segue sendo o
+  /// padrão da plataforma. Preenchido, o plano manda. 0 = sem expiração.
+  diasFree Int?
+
   /// Dias de teste antes da primeira cobrança. 0 = sem teste.
   diasTeste Int @default(0)
 

@@ -8,8 +8,11 @@ import {
   removerAssinaturaDoAluno,
   retratoDeAcesso,
 } from "@/server/acesso-planos";
+import { editarAluno, redefinirSenhaAluno } from "@/server/aluno-individual";
 import { assinaturaVale, podeVerModulo } from "@/lib/motor-acesso";
 import { AcessosDoAluno } from "@/components/acessos-do-aluno";
+import { FormAluno } from "@/components/form-aluno";
+import { PainelSenhaAluno } from "@/components/painel-senha-aluno";
 import { TituloPagina } from "@/components/pagina-admin";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +53,27 @@ export default async function AcessosAluno({
         titulo={aluno.nome}
         descricao={`${aluno.email} · ${aluno.papel === "ALUNO" ? "Aluno" : aluno.papel} · conta ${aluno.situacao.toLowerCase()}`}
       />
+
+      {/* Dados cadastrais antes dos acessos: corrigir um telefone digitado
+          errado é a operação mais frequente nesta tela, e antes dela não
+          havia lugar nenhum para fazer isso. */}
+      <section className="mb-6 rounded-xl border border-borda bg-white p-5 sm:p-6">
+        <h2 className="mb-4 font-titulo text-lg font-extrabold text-tinta">
+          Dados cadastrais
+        </h2>
+        <FormAluno
+          acao={editarAluno}
+          aluno={{
+            id: aluno.id,
+            nome: aluno.nome,
+            email: aluno.email,
+            telefone: aluno.telefone,
+            situacao: aluno.situacao,
+          }}
+        />
+      </section>
+
+      <PainelSenhaAluno userId={aluno.id} acao={redefinirSenhaAluno} />
 
       <AcessosDoAluno
         userId={aluno.id}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CATEGORIAS_CONHECIMENTO } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 import { consultarHistorico } from "@/server/acoes";
@@ -11,10 +12,10 @@ export const dynamic = "force-dynamic";
 /**
  * Central de Conhecimento.
  *
- * `?termo=<slug>` abre um verbete já selecionado: é o destino do link
- * "Ver na Central" que existe em cada ícone ⓘ da aplicação, e é o que
- * permite ir do termo no contexto à explicação completa sem perder o
- * assunto.
+ * `?termo=<slug>` é o destino do link "Ver na Central" que existe em cada
+ * ícone ⓘ da aplicação. Esses links estão espalhados pelo conteúdo, então
+ * continuam válidos: agora redirecionam para a página própria do verbete,
+ * em vez de abrir um painel dentro desta tela.
  */
 export default async function Conhecimento({
   searchParams,
@@ -28,7 +29,9 @@ export default async function Conhecimento({
     categoriasComVerbetes(CATEGORIAS_CONHECIMENTO),
   ]);
 
-  const slugInicial = termo && itens.some((i) => i.slug === termo) ? termo : undefined;
+  if (termo && itens.some((i) => i.slug === termo)) {
+    redirect(`/app/conhecimento/${termo}`);
+  }
 
   return (
     <div>
@@ -63,7 +66,6 @@ export default async function Conhecimento({
 
       <CentralConhecimento
         itens={itens}
-        slugInicial={slugInicial}
         categorias={categorias}
         aoConsultarHistorico={consultarHistorico}
       />

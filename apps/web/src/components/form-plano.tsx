@@ -17,6 +17,7 @@ export type PlanoParaForm = {
   precoCentavos: number;
   periodicidade: Periodicidade;
   diasAcesso: number | null;
+  diasFree: number | null;
   diasTeste: number;
   gratuito: boolean;
   ativo: boolean;
@@ -48,6 +49,8 @@ export function FormPlano({
   // O campo "dias de acesso" só existe em pagamento único, e é obrigatório
   // ali — por isso a periodicidade é estado, não só um <select> solto.
   const [periodo, setPeriodo] = useState<Periodicidade>(plano?.periodicidade ?? "MENSAL");
+  // Controlado para que o campo de dias free apareça/suma junto com a marcação.
+  const [gratuito, setGratuito] = useState(plano?.gratuito ?? false);
 
   if (!aberto) {
     return (
@@ -215,12 +218,38 @@ export function FormPlano({
             <input
               type="checkbox"
               name="gratuito"
-              defaultChecked={plano?.gratuito ?? false}
+              checked={gratuito}
+              onChange={(e) => setGratuito(e.target.checked)}
               className="h-4 w-4"
             />
             É o plano gratuito
           </label>
         </div>
+
+        {/* Prazo do acesso gratuito deste plano.
+            Só aparece quando o plano É o gratuito: num plano pago o campo
+            não teria significado, e um número guardado ali viraria
+            configuração morta esperando para confundir alguém. */}
+        {gratuito && (
+          <label className="md:col-span-6">
+            <span className="mb-1 block font-titulo text-sm font-bold text-tinta-clara">
+              Dias de acesso gratuito
+            </span>
+            <input
+              name="diasFree"
+              type="number"
+              min={0}
+              placeholder="Deixe vazio para usar o padrão da plataforma"
+              defaultValue={plano?.diasFree ?? ""}
+              className="campo w-full"
+            />
+            <span className="mt-1 block text-xs text-cinza">
+              Quantos dias de acesso um aluno novo recebe por este plano. Vazio = usa o
+              padrão de Configurações → Acesso gratuito. 0 = sem expiração. O prazo de um
+              aluno específico, definido na tela dele, sempre vence este valor.
+            </span>
+          </label>
+        )}
 
         <label className="md:col-span-6">
           <span className="mb-1 block font-titulo text-sm font-bold text-tinta-clara">

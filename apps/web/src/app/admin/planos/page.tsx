@@ -166,6 +166,7 @@ export default async function Planos() {
                         precoCentavos: p.precoCentavos,
                         periodicidade: p.periodicidade,
                         diasAcesso: p.diasAcesso,
+                        diasFree: p.diasFree,
                         diasTeste: p.diasTeste,
                         gratuito: p.gratuito,
                         ativo: p.ativo,

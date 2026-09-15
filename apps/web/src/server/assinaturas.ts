@@ -84,12 +84,28 @@ export async function salvarPlano(
   // declara a intenção com clareza suficiente.
   const precoCentavos = gratuito ? 0 : Math.round(precoReais * 100);
 
+  // Dias de acesso gratuito deste plano.
+  //
+  // Campo vazio e zero são coisas DIFERENTES, e a distinção é o ponto todo:
+  // vazio (null) significa "não opino, use o padrão da plataforma"; zero
+  // significa "acesso sem expiração". Um `Number("")` devolve 0, então
+  // converter sem checar transformaria "não opino" em "nunca expira" —
+  // liberando acesso vitalício sem ninguém ter pedido.
+  const diasFreeBruto = String(dados.get("diasFree") ?? "").trim();
+  const diasFree =
+    !gratuito || diasFreeBruto === ""
+      ? null
+      : Number.isFinite(Number(diasFreeBruto)) && Number(diasFreeBruto) >= 0
+        ? Math.round(Number(diasFreeBruto))
+        : null;
+
   const base = {
     nome,
     descricao: descricao || null,
     precoCentavos,
     periodicidade,
     diasAcesso: periodicidade === "UNICA" ? Math.round(diasAcesso) : null,
+    diasFree,
     diasTeste: Number.isFinite(diasTeste) && diasTeste > 0 ? Math.round(diasTeste) : 0,
     gratuito,
     ativo,

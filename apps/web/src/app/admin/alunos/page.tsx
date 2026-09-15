@@ -8,6 +8,7 @@ import {
   contarAlunosSemTurma,
 } from "@/server/admin";
 import { importarAlunos } from "@/server/importar-alunos";
+import { criarAluno } from "@/server/aluno-individual";
 import { salvarTurma } from "@/server/turmas";
 import {
   definirPrazoFree,
@@ -19,6 +20,7 @@ import { lerNumero } from "@/server/configuracoes";
 import { registrarAcao } from "@/server/auditoria";
 import { avaliarFree, textoPrazo } from "@/lib/acesso-free";
 import { ImportarAlunos } from "@/components/importar-alunos";
+import { NovoAlunoIndividual } from "@/components/novo-aluno-individual";
 import { NovaTurma } from "@/components/painel-turma";
 import { AcoesAcessoAluno } from "@/components/acoes-acesso-aluno";
 
@@ -143,6 +145,16 @@ export default async function Alunos({
           </p>
         </div>
       )}
+
+      {/* Cadastro de UM aluno, antes do lote.
+          O lote atende a turma inteira e exige turma; este caminho existe
+          para o caso mais comum fora do dia da matrícula: entrou um
+          professor só, às vezes sem turma definida ainda. */}
+      <NovoAlunoIndividual
+        acao={criarAluno}
+        cursos={cursos}
+        turmas={turmas.map((t) => ({ id: t.id, nome: t.nome }))}
+      />
 
       <ImportarAlunos
         acao={importarAlunos}
@@ -288,7 +300,7 @@ export default async function Alunos({
                               href={`/admin/alunos/${u.id}`}
                               className="text-sm font-bold text-indigo hover:underline"
                             >
-                              Planos e acessos →
+                              Editar cadastro, planos e acessos →
                             </Link>
                           </div>
                           {u.papel === "ALUNO" && (

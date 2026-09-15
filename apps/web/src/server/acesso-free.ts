@@ -51,12 +51,33 @@ async function baseUrl(): Promise<string> {
    ============================================================ */
 
 /**
- * Prazo inicial do acesso gratuito, lido das configurações.
+ * Prazo inicial do acesso gratuito.
  *
- * Chamado no cadastro (público e em lote). Devolve nulo quando o
- * administrador configurou 0 dias, que significa "sem expiração".
+ * Chamado no cadastro (público, em lote e individual). A precedência vai do
+ * mais específico para o mais geral:
+ *
+ *   1. `diasFree` do plano gratuito ativo — quando o administrador definiu
+ *      um prazo para aquele plano;
+ *   2. `free.dias_padrao` das configurações — o padrão da plataforma.
+ *
+ * Nos dois, 0 significa "sem expiração" e devolve nulo. Um plano com
+ * `diasFree` nulo NÃO zera o prazo: ele apenas não opina, e a configuração
+ * global decide — que é exatamente o comportamento anterior a este campo,
+ * preservado para que nada mude sem o administrador pedir.
+ *
+ * O prazo por ALUNO não entra aqui. Ele é aplicado depois, por
+ * `definirPrazoFree`/`prorrogarFree`, e sobrepõe o que esta função devolveu.
  */
 export async function prazoFreeInicial(): Promise<Date | null> {
+  const planoGratuito = await prisma.plan.findFirst({
+    where: { gratuito: true, ativo: true },
+    select: { diasFree: true },
+  });
+
+  if (planoGratuito?.diasFree != null) {
+    return prazoEmDias(planoGratuito.diasFree);
+  }
+
   const dias = await lerNumero("free.dias_padrao");
   return prazoEmDias(dias);
 }
