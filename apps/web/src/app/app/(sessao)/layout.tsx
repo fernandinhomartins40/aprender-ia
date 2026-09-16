@@ -11,18 +11,28 @@ import { chavePublicaPush } from "@/server/push";
 import { SinoNotificacoes } from "@/components/sino-notificacoes";
 import { AtivarAvisos } from "@/components/ativar-avisos";
 import { ConviteInstalar } from "@/components/convite-instalar";
-import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
+import { IconeApp } from "@/components/icone-app";
 import { BarraInferior } from "@/components/barra-inferior";
+import { MenuDesktop, type ItemMenuAluno } from "@/components/menu-desktop";
 
 // Ícones 3D autorais, como no painel administrativo.
-const MENU: { href: string; rotulo: string; icone: NomeIconeApp }[] = [
+//
+// Os 11 itens não cabiam numa linha: somavam ~1.466px dentro dos 984px úteis
+// do cabeçalho, então os últimos quebravam para a segunda linha e
+// "Notificações" saía cortado. Ficam na barra os que o aluno usa durante o
+// encontro; o resto vai para o botão "Mais" (ver MenuDesktop).
+const MENU_PRINCIPAL: ItemMenuAluno[] = [
   { href: "/app", rotulo: "Início", icone: "inicio" },
   { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
+  { href: "/app/acompanhar", rotulo: "Acompanhar", icone: "apresentacao" },
   { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
-  { href: "/app/criar-prompt", rotulo: "Criar prompt", icone: "ideias" },
   { href: "/app/ferramentas", rotulo: "Ferramentas", icone: "ferramentas" },
+];
+
+const MENU_SECUNDARIO: ItemMenuAluno[] = [
+  { href: "/app/criar-prompt", rotulo: "Criar prompt", icone: "ideias" },
   { href: "/app/conhecimento", rotulo: "Conhecimento", icone: "ideias" },
-  { href: "/app/diario", rotulo: "Diário", icone: "documentos" },
+  { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
   { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
   { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
   { href: "/app/meus-planos", rotulo: "Meus planos", icone: "planos" },
@@ -112,21 +122,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
         </div>
 
         {/* menu no desktop */}
-        <nav className="mx-auto hidden max-w-5xl px-5 md:block">
-          <ul className="flex gap-1 pb-1">
-            {MENU.map((m) => (
-              <li key={m.href}>
-                <Link
-                  href={m.href}
-                  className="inline-flex items-center gap-2 rounded-t-md px-4 py-2.5 font-titulo text-sm font-bold text-tinta-clara transition-colors hover:bg-indigo-soft hover:text-indigo-dark"
-                >
-                  <IconeApp nome={m.icone} tamanho={22} />
-                  {m.rotulo}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <MenuDesktop principais={MENU_PRINCIPAL} secundarios={MENU_SECUNDARIO} />
       </header>
 
       {situacaoFree?.avisar && conta?.freeAte && (

@@ -25,12 +25,15 @@ const ESQUERDA: Posicao[] = [
   { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
 ];
 
+// "Acompanhar" fica numa posição fixa de propósito: é usado em sala, com o
+// professor falando, e não pode estar atrás do botão "Mais".
 const DIREITA: Posicao[] = [
-  { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
+  { href: "/app/acompanhar", rotulo: "Acompanhar", icone: "apresentacao" },
 ];
 
 /** O que não coube nas posições fixas. */
 const SECUNDARIOS: Posicao[] = [
+  { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
   { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
   { href: "/app/prompts", rotulo: "Banco de prompts", icone: "prompt" },
   { href: "/app/criar-prompt", rotulo: "Criar prompt guiado", icone: "ideias" },

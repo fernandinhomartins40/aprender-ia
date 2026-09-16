@@ -98,6 +98,8 @@ model User {
   missoesUsuario   UserMission[]
   recompensas      UserReward[]
   desempenhos      ActivityPerformance[]
+  /// O que marcou e digitou em cada passo do "Acompanhe a Aula".
+  passosDaAula     StepProgress[]
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
   solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
@@ -1538,4 +1540,104 @@ model PushSubscription {
   @@unique([endpoint])
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+// ===========================================================================
+//  ACOMPANHE A AULA
+//  O aluno acompanha o encontro pelo celular enquanto o professor apresenta:
+//  vê o mesmo passo, com o prompt já preenchível e o botão que abre a IA.
+//  Nasceu de um problema concreto da primeira aula — a turma se perdia só com
+//  a projeção, e a aula parava para ensinar, um a um, a acessar as ferramentas.
+// ===========================================================================
+
+/// O roteiro de um encontro: a versão navegável dos slides.
+model LessonScript {
+  id        String  @id @default(cuid())
+  /// Roteiro de uma turma específica, quando o conteúdo é só dela.
+  cohortId  String?
+  /// Ou preso a um encontro do calendário.
+  meetingId String? @unique
+
+  titulo   String
+  /// Encontro 1, 2, 3... Ordena a lista quando há vários roteiros.
+  ordem    Int     @default(1)
+  ativo    Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  passos  ScriptStep[]
+  sessoes LiveSession[]
+
+  @@index([cohortId, ordem])
+  @@map("lesson_scripts")
+}
+
+/// Um passo do roteiro — equivale a um slide da projeção.
+model ScriptStep {
+  id       String @id @default(cuid())
+  scriptId String
+  ordem    Int
+  titulo   String
+
+  /// Os blocos do passo, em ordem: texto, prompt, ferramenta, checklist,
+  /// imagem. Fica em JSON porque a combinação muda de passo para passo —
+  /// em tabelas separadas, montar uma tela exigiria quatro joins para algo
+  /// que é sempre lido inteiro de uma vez.
+  blocos Json
+
+  script   LessonScript   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  progresso StepProgress[]
+
+  @@unique([scriptId, ordem])
+  @@map("script_steps")
+}
+
+/// Uma apresentação acontecendo agora.
+///
+/// Criada quando o professor abre o modo apresentação e encerrada quando ele
+/// fecha. É o que diz ao aluno em que passo o professor está — sem o professor
+/// precisar publicar nada à mão: avançar o slide já atualiza `passoAtual`.
+model LiveSession {
+  id        String  @id @default(cuid())
+  scriptId  String
+  /// Encontro do calendário, quando a apresentação está ligada a um.
+  meetingId String?
+
+  passoAtual Int @default(1)
+
+  iniciadaEm  DateTime  @default(now())
+  encerradaEm DateTime?
+
+  script LessonScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+
+  /// A busca do aluno é sempre "sessão aberta deste encontro".
+  @@index([meetingId, encerradaEm])
+  @@index([scriptId, encerradaEm])
+  @@map("live_sessions")
+}
+
+/// O que cada aluno marcou e digitou num passo.
+///
+/// Serve ao painel do professor ("7 ainda não criaram conta") e ao próprio
+/// aluno, que reencontra o que escreveu ao voltar a um passo.
+model StepProgress {
+  id     String @id @default(cuid())
+  userId String
+  stepId String
+
+  /// Índices dos itens de checklist que o aluno marcou.
+  marcados Int[] @default([])
+  /// O que ele digitou nos campos do prompt: { "ANO": "6º ano" }. Sem isso,
+  /// trocar de passo apagaria o que ele escreveu.
+  valores  Json?
+
+  visto DateTime @default(now())
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  step ScriptStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stepId])
+  @@index([stepId])
+  @@map("step_progress")
 }
