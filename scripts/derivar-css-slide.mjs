@@ -45,10 +45,10 @@ css = css.replace(/@media print\{(?:[^{}]|\{[^{}]*\})*\}/g, "");
 // dois — é o que garante que sejam o mesmo visual, e não duas cópias que
 // divergem na primeira mudança de cor.
 const ESCOPO = ".palco-slide";
-// O modal do banco de prompts é o terceiro lugar onde o material aparece: ele
-// é montado fora do palco e fora da página (sobrepõe as duas), e sem entrar
-// aqui os botões das IAs sairiam sem estilo nenhum.
-const ESCOPOS = [ESCOPO, ".conteudo-aula", ".modal-prompt"];
+// Onde o material do curso é desenhado. Além do palco e da página, o modal do
+// banco de prompts e a oficina do desafio montam botões de IA fora deles — sem
+// entrar aqui, esses botões sairiam como texto solto.
+const ESCOPOS = [ESCOPO, ".conteudo-aula", ".modal-prompt", ".oficina-prompt"];
 const escopar = (sel) =>
   sel
     .split(",")

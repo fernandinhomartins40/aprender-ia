@@ -5,6 +5,7 @@ import { ConteudoDaAula } from "@/components/conteudo-da-aula";
 import { SegueOProfessor } from "@/components/segue-o-professor";
 import { BancoDePrompts } from "@/components/banco-de-prompts";
 import { BarraDaAula } from "@/components/barra-da-aula";
+import { OficinaDePrompt } from "@/components/oficina-de-prompt";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ export default async function PaginaPasso({
   if (!dados) notFound();
 
   const { encontro: enc, passo: p, anterior, proximo, total } = dados;
+
+  // O cronômetro é a marca do desafio no material do curso.
+  const ehDesafio = (p.html ?? "").includes("sl-crono");
 
   return (
     /* Tela cheia: sem o cabeçalho e a barra do aplicativo, que somavam 9rem de
@@ -63,6 +67,15 @@ export default async function PaginaPasso({
             marcados={p.marcados}
           />
         </article>
+
+        {/* Nos desafios o aluno escreve o próprio prompt contra o relógio.
+            Sem um lugar para isso, o desafio virava "escreva no seu celular,
+            de algum jeito" — e o professor não tinha como saber se a turma
+            conseguiu. Reconhecido pelo cronômetro, que é o que faz de um
+            passo um desafio. */}
+        {ehDesafio && (
+          <OficinaDePrompt stepId={p.id} valoresIniciais={p.valores} />
+        )}
 
         {/* O trecho da apostila que aprofunda esta página. */}
         {p.apostila && (
