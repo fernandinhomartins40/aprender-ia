@@ -6,6 +6,7 @@ import { nivelDoXp, xpAteProximoNivel } from "@/lib/gamificacao";
 import { iconeGamificacao } from "@/lib/icones-gamificacao";
 import { missoesDoAluno } from "@/server/missoes";
 import { Termo } from "@/components/termo";
+import { AvisoAulaAoVivo } from "@/components/aviso-aula-ao-vivo";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,9 @@ export default async function PainelAluno() {
           ? "Bom te ver de volta. Vamos continuar?"
           : "Vamos começar sua formação?"}
       </p>
+
+      {/* Durante o encontro, é o que importa: vem antes de tudo. */}
+      <AvisoAulaAoVivo />
 
       {/* ---- Próxima lição ---- */}
       {proxima && (

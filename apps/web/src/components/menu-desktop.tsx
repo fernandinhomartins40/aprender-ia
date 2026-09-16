@@ -27,7 +27,7 @@ export function MenuDesktop({
 }) {
   const caminho = usePathname();
   const [aberto, setAberto] = useState(false);
-  const caixa = useRef<HTMLDivElement>(null);
+  const caixa = useRef<HTMLLIElement>(null);
 
   // Fecha ao clicar fora ou ao apertar Esc: sem isso o painel ficaria aberto
   // atrás do conteúdo enquanto o professor navega.

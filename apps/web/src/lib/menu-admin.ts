@@ -55,6 +55,9 @@ export const GRUPOS_MENU: GrupoMenu[] = [
   {
     titulo: "Conteúdo",
     itens: [
+      // Primeiro do grupo porque é usado com a turma na frente, no começo do
+      // encontro — não pode exigir procurar.
+      { href: "/admin/aulas", rotulo: "Apresentar aula", icone: "apresentacao" },
       { href: "/admin/cursos", rotulo: "Cursos", icone: "cursos" },
       // Fica em Conteúdo, e não em Sistema: editar um termo muda o que o
       // professor lê nos ícones ⓘ de várias telas ao mesmo tempo — é
