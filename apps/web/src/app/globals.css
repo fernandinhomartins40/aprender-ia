@@ -1,4 +1,6 @@
 @import "@aprender/ui/tokens.css";
+/* O slide do curso, desenhado igual ao deck — no projetor e no celular. */
+@import "./slide-curso.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

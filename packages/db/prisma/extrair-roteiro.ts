@@ -1,9 +1,16 @@
 /**
  * Lê o deck de slides do curso e devolve os roteiros da aula.
  *
- * Vivia duplicado em `importar-roteiro.ts` (script) e no servidor da
- * aplicação. Agora é um módulo só, usado pelo gerador que produz
- * `roteiros-aula.ts` — o conteúdo versionado que o seed grava no banco.
+ * Guarda duas leituras do mesmo slide, porque servem a coisas diferentes:
+ *
+ * - `html`: o slide como está no deck, com as classes do `slides_base.css`.
+ *   É o que projetor e celular desenham — mesmo design do deck aberto pelo
+ *   `Iniciar_Apresentacao.vbs`, inclusive cronômetro, campos do prompt,
+ *   botões de IA e checklist, que a aplicação religa ao montar.
+ * - `blocos`: a leitura estruturada (prompt, checklist, ferramentas). Não é
+ *   mais o que se desenha, mas é o que o painel do professor consegue
+ *   perguntar — "quantos marcaram este item?" — e o que guarda o texto do
+ *   prompt para o registro da turma.
  */
 
 /** Um bloco do passo. A tela do aluno sabe desenhar cada tipo. */
@@ -137,10 +144,39 @@ function blocosDoSlide(slide: string): Bloco[] {
   return blocos;
 }
 
+/**
+ * Prepara o HTML do slide para ser guardado e desenhado pela aplicação.
+ *
+ * Duas coisas mudam em relação ao deck aberto do disco:
+ *
+ * - As figuras. No deck o caminho é relativo à pasta do curso
+ *   ("imagens/03_...png"); na aplicação os mesmos arquivos são servidos de
+ *   `/curso/imagens/`, que vai junto na imagem Docker.
+ * - Qualquer `<script>` ou manipulador inline (`onclick=`) sai. O deck não
+ *   tem nenhum dentro do slide, mas isto é HTML que será injetado com
+ *   `dangerouslySetInnerHTML`: se um dia alguém colar um no deck, ele não
+ *   vira código rodando na sessão de quem apresenta.
+ */
+function normalizarHtml(slide: string): string {
+  return slide
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, "")
+    .replace(/(<img[^>]+src=")(?:\.\/)?imagens\//gi, "$1/curso/imagens/")
+    .trim();
+}
+
+export type PassoExtraido = {
+  titulo: string;
+  /** O slide como está no deck, para ser desenhado com o CSS do deck. */
+  html: string;
+  blocos: Bloco[];
+};
+
 export type RoteiroExtraido = {
   encontro: number;
   titulo: string;
-  passos: { titulo: string; blocos: Bloco[] }[];
+  passos: PassoExtraido[];
 };
 
 /**
@@ -153,7 +189,7 @@ export type RoteiroExtraido = {
  */
 export function roteirosDoDeck(html: string): RoteiroExtraido[] {
   const slides = fatiarSlides(html);
-  const porEncontro = new Map<number, { titulo: string; blocos: Bloco[] }[]>();
+  const porEncontro = new Map<number, PassoExtraido[]>();
   let corrente = 1;
 
   for (const s of slides) {
@@ -169,10 +205,11 @@ export function roteirosDoDeck(html: string): RoteiroExtraido[] {
       textoLimpo(s.match(/<h1 class="st"[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") ||
       "Passo";
     const blocos = blocosDoSlide(s);
-    // Slide sem nada aproveitável (divisória puramente visual) não vira passo.
-    if (!blocos.length) continue;
+    // Um slide puramente visual (uma divisória, uma capa) não tem bloco
+    // nenhum, mas continua sendo um slide para projetar — antes ele sumia
+    // do roteiro, e a aula pulava a abertura do encontro.
     if (!porEncontro.has(enc)) porEncontro.set(enc, []);
-    porEncontro.get(enc)!.push({ titulo, blocos });
+    porEncontro.get(enc)!.push({ titulo, html: normalizarHtml(s), blocos });
   }
 
   return [...porEncontro]

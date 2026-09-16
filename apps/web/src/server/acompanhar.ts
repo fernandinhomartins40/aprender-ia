@@ -2,7 +2,13 @@ import "server-only";
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
 
-/** Um bloco do passo, como o importador gravou. */
+/**
+ * A leitura estruturada de um passo.
+ *
+ * Não é mais o que a tela desenha — quem desenha é o `html` do slide — mas
+ * continua sendo o que o painel do professor consegue perguntar, e a reserva
+ * para um passo antigo que ainda não tenha `html`.
+ */
 export type Bloco =
   | { tipo: "texto"; html: string }
   | { tipo: "prompt"; texto: string; variaveis: string[] }
@@ -14,6 +20,8 @@ export type PassoDaAula = {
   id: string;
   ordem: number;
   titulo: string;
+  /** O slide do curso, desenhado com o CSS do deck. */
+  html: string | null;
   blocos: Bloco[];
   /// O que este aluno já marcou e digitou aqui.
   marcados: number[];
@@ -87,6 +95,7 @@ export async function roteiroDoAluno(scriptId?: string) {
         id: p.id,
         ordem: p.ordem,
         titulo: p.titulo,
+        html: p.html,
         blocos: (p.blocos as unknown as Bloco[]) ?? [],
         marcados: meu?.marcados ?? [],
         valores: (meu?.valores as Record<string, string> | null) ?? {},

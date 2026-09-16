@@ -30,15 +30,17 @@ export default async function PaginaAcompanhar({
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-6">
+    // Mais largo que as outras telas do aluno: aqui o conteúdo é um slide
+    // 16:9, e apertá-lo em 3xl desperdiçaria metade da tela no computador.
+    <main className="mx-auto max-w-6xl px-3 py-4 sm:px-5">
       {/* troca de encontro, quando há mais de um */}
       {dados.roteiros.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
           {dados.roteiros.map((t: { id: string; titulo: string }) => (
             <Link
               key={t.id}
               href={`/app/acompanhar?r=${t.id}`}
-              className={`rounded-full px-4 py-2 font-titulo text-sm font-bold transition-colors ${
+              className={`shrink-0 rounded-full px-4 py-1.5 font-titulo text-sm font-bold transition-colors ${
                 t.id === dados.script.id
                   ? "bg-indigo text-white"
                   : "border border-borda bg-white text-tinta-clara hover:bg-indigo-soft"
@@ -54,7 +56,6 @@ export default async function PaginaAcompanhar({
         scriptId={dados.script.id}
         titulo={dados.script.titulo}
         passos={dados.passos}
-        ferramentas={dados.ferramentas}
         passoInicialDoProfessor={dados.passoDoProfessor}
       />
 
@@ -72,7 +73,7 @@ export default async function PaginaAcompanhar({
             Apostila completa do curso
           </span>
           <span className="block text-xs text-cinza">
-            113 páginas · abre em nova aba
+            abre em nova aba
           </span>
         </span>
         <span className="shrink-0 font-titulo text-sm font-bold text-indigo">

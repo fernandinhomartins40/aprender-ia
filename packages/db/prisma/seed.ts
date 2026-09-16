@@ -1298,11 +1298,16 @@ async function main() {
     for (const [i, passo] of roteiro.passos.entries()) {
       await prisma.scriptStep.upsert({
         where: { scriptId_ordem: { scriptId: script.id, ordem: i + 1 } },
-        update: { titulo: passo.titulo, blocos: passo.blocos as unknown as object },
+        update: {
+          titulo: passo.titulo,
+          html: passo.html,
+          blocos: passo.blocos as unknown as object,
+        },
         create: {
           scriptId: script.id,
           ordem: i + 1,
           titulo: passo.titulo,
+          html: passo.html,
           blocos: passo.blocos as unknown as object,
         },
       });

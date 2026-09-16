@@ -48,7 +48,12 @@ export type BlocoRoteiro =
   | { tipo: "checklist"; itens: string[] }
   | { tipo: "imagem"; src: string; legenda?: string };
 
-export type PassoRoteiro = { titulo: string; blocos: BlocoRoteiro[] };
+export type PassoRoteiro = {
+  titulo: string;
+  /** O slide como está no deck, desenhado com o CSS do deck. */
+  html: string;
+  blocos: BlocoRoteiro[];
+};
 
 export type RoteiroAula = {
   /** Encontro 1, 2, 3... Vira o título e a ordem do roteiro. */

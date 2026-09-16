@@ -1580,10 +1580,17 @@ model ScriptStep {
   ordem    Int
   titulo   String
 
-  /// Os blocos do passo, em ordem: texto, prompt, ferramenta, checklist,
-  /// imagem. Fica em JSON porque a combinação muda de passo para passo —
-  /// em tabelas separadas, montar uma tela exigiria quatro joins para algo
-  /// que é sempre lido inteiro de uma vez.
+  /// O slide como está no deck do curso, desenhado com o CSS do deck —
+  /// mesmo visual no projetor e no celular. Nulo só nos passos gravados
+  /// antes da coluna existir; o seed preenche no deploy seguinte.
+  html String?
+
+  /// A leitura estruturada do mesmo slide: texto, prompt, ferramenta,
+  /// checklist, imagem. Não é mais o que se desenha, e sim o que o painel
+  /// do professor consegue perguntar ("quantos marcaram este item?").
+  /// Fica em JSON porque a combinação muda de passo para passo — em tabelas
+  /// separadas, montar uma tela exigiria quatro joins para algo que é
+  /// sempre lido inteiro de uma vez.
   blocos Json
 
   script   LessonScript   @relation(fields: [scriptId], references: [id], onDelete: Cascade)

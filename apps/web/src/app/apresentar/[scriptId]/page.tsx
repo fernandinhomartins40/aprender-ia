@@ -35,7 +35,7 @@ export default async function PaginaApresentar({
     prisma.scriptStep.findMany({
       where: { scriptId },
       orderBy: { ordem: "asc" },
-      select: { id: true, ordem: true, titulo: true, blocos: true },
+      select: { id: true, ordem: true, titulo: true, html: true, blocos: true },
     }),
     abrirApresentacao(scriptId, encontro),
   ]);
@@ -49,6 +49,7 @@ export default async function PaginaApresentar({
         id: p.id,
         ordem: p.ordem,
         titulo: p.titulo,
+        html: p.html,
         blocos: (p.blocos as unknown as Bloco[]) ?? [],
       }))}
       passoInicial={sessao.passoAtual}

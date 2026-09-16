@@ -7,16 +7,24 @@ import {
   panoramaDaTurma,
 } from "@/server/apresentar";
 import type { Bloco } from "@/server/acompanhar";
+import { PalcoSlide } from "@/components/palco-slide";
 
-type Passo = { id: string; ordem: number; titulo: string; blocos: Bloco[] };
+type Passo = {
+  id: string;
+  ordem: number;
+  titulo: string;
+  html: string | null;
+  blocos: Bloco[];
+};
 type Panorama = Awaited<ReturnType<typeof panoramaDaTurma>>;
 
 /**
  * O professor apresenta por aqui, e a aplicação passa a saber em que passo ele
  * está — sem botão de "publicar" para lembrar de clicar no meio da aula.
  *
- * Feito para o notebook ligado ao projetor: teclas de seta, tela cheia, e uma
- * faixa lateral com o que a turma está fazendo.
+ * É o deck do curso, com o mesmo desenho e as mesmas teclas de sempre (setas,
+ * espaço, F, G), mais o que só a aplicação tem: a turma acompanhando pelo
+ * celular e o painel que mostra quem já fez o quê.
  */
 export function ModoApresentacao({
   sessaoId,
@@ -35,6 +43,7 @@ export function ModoApresentacao({
     Math.max(0, passos.findIndex((p) => p.ordem === passoInicial)),
   );
   const [painel, setPainel] = useState(true);
+  const [grade, setGrade] = useState(false);
   const [turma, setTurma] = useState<Panorama | null>(null);
 
   const passo = passos[indice];
@@ -45,13 +54,17 @@ export function ModoApresentacao({
       const alvo = passos[n];
       if (!alvo) return;
       setIndice(n);
-      // registra em segundo plano: a navegação não pode travar esperando a rede
+      setGrade(false);
+      // Registra em segundo plano: a navegação não pode travar esperando a rede
+      // da escola, que é justamente onde ela costuma falhar.
       void registrarPasso(sessaoId, alvo.ordem).catch(() => {});
     },
     [passos, sessaoId],
   );
 
-  // Teclas de apresentador: as mesmas do deck em HTML, para não reaprender.
+  // Teclas de apresentador: as mesmas do deck, para não reaprender nada.
+  // A barra de espaço e o Z, em slides de cronômetro, pertencem ao relógio —
+  // quem os intercepta é o próprio palco, capturando antes daqui.
   useEffect(() => {
     const t = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement;
@@ -67,7 +80,9 @@ export function ModoApresentacao({
       else if (e.key === "f" || e.key === "F") {
         if (!document.fullscreenElement) void document.documentElement.requestFullscreen();
         else void document.exitFullscreen();
-      } else if (e.key === "p" || e.key === "P") setPainel((v) => !v);
+      } else if (e.key === "g" || e.key === "G") setGrade((v) => !v);
+      else if (e.key === "p" || e.key === "P") setPainel((v) => !v);
+      else if (e.key === "Escape") setGrade(false);
     };
     document.addEventListener("keydown", t);
     return () => document.removeEventListener("keydown", t);
@@ -92,22 +107,31 @@ export function ModoApresentacao({
   if (!passo) return <p className="p-8 text-white">Roteiro sem passos.</p>;
 
   return (
-    <div className="flex min-h-screen bg-[#0F172A] text-white">
+    <div className="flex h-screen overflow-hidden bg-[#0F172A] text-white">
       {/* palco */}
-      <div className="flex flex-1 flex-col">
-        <div className="flex-1 overflow-y-auto p-8 md:p-12">
-          <p className="mb-2 font-titulo text-sm font-bold uppercase tracking-wide text-white/50">
-            {titulo} · passo {passo.ordem} de {passos.length}
-          </p>
-          <h1 className="mb-8 font-titulo text-4xl font-extrabold leading-tight">
-            {passo.titulo}
-          </h1>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* A barra de progresso do deck, na mesma posição. */}
+        <div
+          className="h-1 bg-gradient-to-r from-indigo to-laranja transition-[width] duration-300"
+          style={{ width: `${((indice + 1) / passos.length) * 100}%` }}
+        />
 
-          <div className="max-w-4xl space-y-5">
-            {passo.blocos.map((b, i) => (
-              <BlocoProjetado key={i} bloco={b} />
-            ))}
-          </div>
+        <div className="min-h-0 flex-1">
+          {passo.html ? (
+            <PalcoSlide html={passo.html} />
+          ) : (
+            /* Passo gravado antes de a coluna `html` existir. Não deveria
+               acontecer depois de um deploy — o seed preenche todos —, mas se
+               acontecer é melhor projetar o título do que uma tela em branco. */
+            <div className="flex h-full flex-col items-center justify-center p-12 text-center">
+              <p className="mb-2 font-titulo text-sm font-bold uppercase tracking-wide text-white/50">
+                {titulo} · passo {passo.ordem} de {passos.length}
+              </p>
+              <h1 className="font-titulo text-4xl font-extrabold leading-tight">
+                {passo.titulo}
+              </h1>
+            </div>
+          )}
         </div>
 
         {/* controles */}
@@ -124,6 +148,13 @@ export function ModoApresentacao({
             {passo.ordem} / {passos.length}
           </span>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setGrade((v) => !v)}
+              className="rounded-full border border-white/20 px-4 py-2 font-titulo text-xs font-bold"
+            >
+              Slides (G)
+            </button>
             <button
               type="button"
               onClick={() => setPainel((v) => !v)}
@@ -145,7 +176,7 @@ export function ModoApresentacao({
 
       {/* visão do apresentador */}
       {painel && (
-        <aside className="hidden w-80 shrink-0 border-l border-white/10 bg-black/20 p-5 lg:block">
+        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-white/10 bg-black/20 p-5 lg:block">
           <h2 className="mb-4 font-titulo text-sm font-bold uppercase tracking-wide text-white/50">
             Sua turma agora
           </h2>
@@ -154,9 +185,7 @@ export function ModoApresentacao({
             <p className="font-titulo text-3xl font-extrabold">
               {turma?.acompanhando ?? "—"}
             </p>
-            <p className="text-sm text-white/60">
-              acompanhando pelo celular
-            </p>
+            <p className="text-sm text-white/60">acompanhando pelo celular</p>
           </div>
 
           {turma?.checklist.length ? (
@@ -203,7 +232,7 @@ export function ModoApresentacao({
             onClick={() => {
               if (!confirm("Encerrar a apresentação para a turma?")) return;
               void encerrarApresentacao(sessaoId).then(() => {
-                window.location.href = "/admin/turmas";
+                window.location.href = "/admin/aulas";
               });
             }}
             className="w-full rounded-full border border-vermelho/40 px-4 py-2.5 font-titulo text-sm font-bold text-vermelho"
@@ -212,46 +241,45 @@ export function ModoApresentacao({
           </button>
         </aside>
       )}
-    </div>
-  );
-}
 
-function BlocoProjetado({ bloco }: { bloco: Bloco }) {
-  if (bloco.tipo === "texto") {
-    return (
-      <p className="whitespace-pre-line text-xl leading-relaxed text-white/85">
-        {bloco.html}
-      </p>
-    );
-  }
-  if (bloco.tipo === "prompt") {
-    return (
-      <pre className="whitespace-pre-wrap rounded-xl bg-black/40 p-5 font-mono text-base leading-relaxed text-[#E8EDF7]">
-        {bloco.texto}
-      </pre>
-    );
-  }
-  if (bloco.tipo === "checklist") {
-    return (
-      <ul className="space-y-2">
-        {bloco.itens.map((t, i) => (
-          <li key={i} className="flex items-start gap-3 text-lg text-white/85">
-            <span aria-hidden className="mt-1 text-white/40">☐</span>
-            {t}
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  if (bloco.tipo === "imagem") {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={bloco.src} alt={bloco.legenda ?? ""} className="max-h-[50vh] rounded-xl" />
-    );
-  }
-  return (
-    <p className="font-titulo text-base text-white/50">
-      Ferramentas: {bloco.chaves.join(" · ")}
-    </p>
+      {/* grade de slides — a mesma do deck, na tecla G */}
+      {grade && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-[#0F172A]/[.97] px-6 py-8"
+          onClick={() => setGrade(false)}
+        >
+          <p
+            className="mb-5 cursor-pointer text-center text-sm text-white/50 hover:text-white"
+            onClick={() => setGrade(false)}
+          >
+            fechar (Esc)
+          </p>
+          <div
+            className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fill,minmax(185px,1fr))] gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {passos.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => ir(i)}
+                className={`flex flex-col items-center gap-1.5 rounded-[10px] border-2 bg-[#1E293B] px-3 py-3 text-center transition ${
+                  i === indice
+                    ? "border-indigo"
+                    : "border-white/10 hover:border-indigo"
+                }`}
+              >
+                <span className="font-titulo text-[17px] font-extrabold leading-none text-[#818CF8]">
+                  {i + 1}
+                </span>
+                <span className="text-[11px] font-semibold leading-snug text-white/70">
+                  {p.titulo}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
