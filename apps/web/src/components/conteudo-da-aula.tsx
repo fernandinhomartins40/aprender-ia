@@ -60,6 +60,23 @@ async function copiar(texto: string, botao: HTMLElement) {
 }
 
 /**
+ * Desfaz as quebras de linha que o prompt trazia por causa do slide.
+ *
+ * No deck o prompt é escrito em linhas curtas, para caber na largura da folha
+ * 16:9. Numa página estreita essas quebras se somam às naturais e o texto sai
+ * picado: uma linha cheia, a seguinte com duas palavras. Aqui uma quebra
+ * simples vira espaço — o parágrafo volta a fluir conforme a largura real — e
+ * a linha em branco, que separa parágrafos de verdade, é preservada.
+ */
+function fluido(texto: string): string {
+  return texto
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((par) => par.replace(/\n/g, " ").replace(/ {2,}/g, " ").trim())
+    .join("\n\n");
+}
+
+/**
  * Troca cada `[ALGO]` do prompt por um campo de digitação, e devolve como ler
  * o texto já preenchido. Campos de mesmo nome andam juntos: `[ANO]` aparece
  * três vezes num prompt, e ninguém quer digitar a mesma coisa três vezes.
@@ -72,7 +89,7 @@ function montarPromptEditavel(
   alvo.textContent = "";
   const campos = new Map<string, HTMLInputElement[]>();
 
-  for (const parte of texto.split(/(\[[^\]]*\])/)) {
+  for (const parte of fluido(texto).split(/(\[[^\]]*\])/)) {
     const m = parte.match(/^\[([^\]]*)\]$/);
     if (!m) {
       alvo.appendChild(document.createTextNode(parte));
@@ -280,7 +297,12 @@ export function ConteudoDaAula({
       if (!texto) return;
 
       const anterior = cx.previousElementSibling as HTMLElement | null;
-      let ler = () => texto;
+      let ler = () => fluido(texto);
+      // Sem campos o prompt não é remontado, então a quebra do slide
+      // permaneceria: aqui o próprio elemento recebe o texto já fluido.
+      if (anterior?.classList.contains("prompt") && !/\[[^\]]*\]/.test(texto)) {
+        anterior.textContent = fluido(texto);
+      }
       if (anterior?.classList.contains("prompt") && /\[[^\]]*\]/.test(texto)) {
         const ed = montarPromptEditavel(anterior, texto, () => apontar());
         ler = ed.ler;

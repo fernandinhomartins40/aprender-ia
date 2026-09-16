@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { capitulo, sumarioDaApostila } from "@/server/apostila";
 import { BaixarApostila } from "@/components/baixar-apostila";
 import { TextoApostila } from "@/components/texto-apostila";
+import { VoltarParaAula } from "@/components/voltar-para-aula";
 
 export const dynamic = "force-dynamic";
 
@@ -30,10 +31,12 @@ export async function generateMetadata({
 
 export default async function PaginaCapitulo({
   params,
+  searchParams,
 }: {
   params: Promise<{ capitulo: string }>;
+  searchParams: Promise<{ de?: string }>;
 }) {
-  const { capitulo: chave } = await params;
+  const [{ capitulo: chave }, { de }] = await Promise.all([params, searchParams]);
   const [cap, todos] = await Promise.all([capitulo(chave), sumarioDaApostila()]);
   if (!cap) notFound();
 
@@ -42,7 +45,14 @@ export default async function PaginaCapitulo({
   const proximo = todos[i + 1];
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-6">
+    // Sem padding lateral próprio: o layout do aplicativo já dá o dele, e
+    // somar os dois tirava 64px dos 390 de um celular — o texto ficava com
+    // 267px de largura útil.
+    <main className="mx-auto max-w-3xl py-6">
+      {/* Quem veio de uma aula volta para ela; quem veio pelo menu vê só o
+          caminho dos capítulos. */}
+      <VoltarParaAula de={de} />
+
       <Link
         href="/app/apostila"
         className="mb-4 inline-block font-titulo text-sm font-bold text-indigo"

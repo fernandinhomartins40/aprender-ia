@@ -515,6 +515,20 @@ const paginaAula = `
   height: auto;
 }
 
+/* O campo do prompt é dimensionado em caracteres (o atributo size), medida que
+   não conhece a largura da tela: num celular ele empurrava o resto da frase
+   para a linha seguinte. O teto devolve o controle ao layout. */
+.conteudo-aula .var-campo,
+.modal-prompt .var-campo {
+  max-width: 100%;
+}
+@media (max-width: 40rem) {
+  .conteudo-aula .var-campo {
+    max-width: 8.5rem;
+  }
+}
+
+
 /* Celular: as grades viram uma coluna. Quatro cartões lado a lado numa tela de
    6 polegadas dariam 80px cada. */
 @media (max-width: 40rem) {

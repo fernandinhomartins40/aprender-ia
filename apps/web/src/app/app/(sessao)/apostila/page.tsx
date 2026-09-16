@@ -8,7 +8,10 @@ export default async function PaginaApostila() {
   const capitulos = await sumarioDaApostila();
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-6">
+    // Sem padding lateral próprio: o layout do aplicativo já dá o dele, e
+    // somar os dois tirava 64px dos 390 de um celular — o texto ficava com
+    // 267px de largura útil.
+    <main className="mx-auto max-w-3xl py-6">
       <h1 className="mb-1 font-titulo text-2xl font-extrabold text-tinta">
         Apostila do curso
       </h1>

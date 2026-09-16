@@ -67,7 +67,13 @@ export default async function PaginaPasso({
         {/* O trecho da apostila que aprofunda esta página. */}
         {p.apostila && (
           <Link
-            href={p.apostila.href}
+            // `?de=` diz à apostila de onde o aluno veio, para ela oferecer o
+            // caminho de volta. Sem isso, aprofundar na apostila durante a
+            // aula era um caminho sem retorno: o aluno voltava ao índice dos
+            // capítulos e perdia a página em que estava.
+            href={`${p.apostila.href.split("#")[0]}?de=${enc.ordem}.${p.ordem}${
+              p.apostila.href.includes("#") ? `#${p.apostila.href.split("#")[1]}` : ""
+            }`}
             className="mt-8 flex items-center gap-3 rounded-2xl border border-indigo-line bg-indigo-soft p-4 transition-colors hover:brightness-95"
           >
             <span aria-hidden className="text-2xl">

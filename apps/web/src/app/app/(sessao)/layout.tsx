@@ -147,7 +147,7 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
         </div>
       )}
 
-      <main className="mx-auto max-w-5xl overflow-x-hidden px-5 py-8">
+      <main className="mx-auto max-w-5xl overflow-x-hidden px-3 py-8 sm:px-5">
         {/* Fica dentro do aplicativo, nunca na tela de login: empilhar um
             pedido de permissão sobre o primeiro acesso faz a pessoa negar
             por reflexo — e o navegador nunca mais pergunta. */}
