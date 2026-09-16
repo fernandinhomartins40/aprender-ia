@@ -164,14 +164,27 @@ async function main() {
     process.exit(1);
   }
 
-  // Os slides do deck trazem o encontro em data-enc; quando não trazem,
-  // ficam no encontro 1 (é o caso da capa e das divisórias).
+  // A que encontro cada slide pertence.
+  //
+  // `data-enc` só existe nos blocos de atividade — os slides de conteúdo,
+  // que são a maioria, não têm o atributo. Usá-lo sozinho jogava 52 dos 96
+  // slides no Encontro 1. O que de fato separa os encontros são as divisórias
+  // "Encontro N — Abertura": daí em diante, tudo pertence àquele encontro,
+  // até a próxima divisória.
   const porEncontro = new Map<number, { titulo: string; blocos: Bloco[] }[]>();
+  let encontroCorrente = 1;
+
   for (const s of slides) {
-    const enc = Number(s.match(/data-enc="(\d+)"/)?.[1] ?? 1);
+    const tituloSlide = s.match(/data-title="([^"]*)"/)?.[1] ?? "";
+    const divisoria = tituloSlide.match(/^Encontro (\d+)/i);
+    if (divisoria) encontroCorrente = Number(divisoria[1]);
+
+    // O atributo, quando existe, manda: é o caso das atividades inseridas
+    // fora da sequência natural do deck.
+    const enc = Number(s.match(/data-enc="(\d+)"/)?.[1] ?? encontroCorrente);
     const titulo =
-      s.match(/data-title="([^"]*)"/)?.[1] ??
-      textoLimpo(s.match(/<h1 class="st"[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") ??
+      tituloSlide ||
+      textoLimpo(s.match(/<h1 class="st"[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") ||
       "Passo";
     const blocos = blocosDoSlide(s);
     // Slide sem nada aproveitável (divisória puramente visual) não vira passo.
