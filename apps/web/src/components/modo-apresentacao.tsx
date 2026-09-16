@@ -45,6 +45,9 @@ export function ModoApresentacao({
   );
   const [painel, setPainel] = useState(true);
   const [grade, setGrade] = useState(false);
+  // Acompanha o estado real do navegador: a tecla Esc e o F11 saem da tela
+  // cheia sem passar pelo nosso botão, e o rótulo precisa refletir isso.
+  const [cheia, setCheia] = useState(false);
   const [turma, setTurma] = useState<Panorama | null>(null);
 
   const passo = passos[indice];
@@ -63,6 +66,17 @@ export function ModoApresentacao({
     [passos, sessaoId],
   );
 
+  const alternarTelaCheia = useCallback(() => {
+    if (!document.fullscreenElement) void document.documentElement.requestFullscreen();
+    else void document.exitFullscreen();
+  }, []);
+
+  useEffect(() => {
+    const mudou = () => setCheia(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", mudou);
+    return () => document.removeEventListener("fullscreenchange", mudou);
+  }, []);
+
   // Teclas de apresentador: as mesmas do deck, para não reaprender nada.
   // A barra de espaço e o Z, em slides de cronômetro, pertencem ao relógio —
   // quem os intercepta é o próprio palco, capturando antes daqui.
@@ -78,16 +92,14 @@ export function ModoApresentacao({
         ir(indice - 1);
       } else if (e.key === "Home") ir(0);
       else if (e.key === "End") ir(passos.length - 1);
-      else if (e.key === "f" || e.key === "F") {
-        if (!document.fullscreenElement) void document.documentElement.requestFullscreen();
-        else void document.exitFullscreen();
-      } else if (e.key === "g" || e.key === "G") setGrade((v) => !v);
+      else if (e.key === "f" || e.key === "F") alternarTelaCheia();
+      else if (e.key === "g" || e.key === "G") setGrade((v) => !v);
       else if (e.key === "p" || e.key === "P") setPainel((v) => !v);
       else if (e.key === "Escape") setGrade(false);
     };
     document.addEventListener("keydown", t);
     return () => document.removeEventListener("keydown", t);
-  }, [indice, ir, passos.length]);
+  }, [indice, ir, passos.length, alternarTelaCheia]);
 
   // Panorama da turma, atualizado de tempos em tempos.
   useEffect(() => {
@@ -152,6 +164,21 @@ export function ModoApresentacao({
             {passo.ordem} / {passos.length}
           </span>
           <div className="flex items-center gap-2">
+            {/* A tecla F sempre fez isto, mas quem nunca apresentou o deck
+                não tem como saber. O botão torna a tela cheia descobrível —
+                é o que se quer no projetor, e o primeiro clique da aula. */}
+            <button
+              type="button"
+              onClick={alternarTelaCheia}
+              title={
+                cheia
+                  ? "Sair da tela cheia (F)"
+                  : "Expandir para a tela cheia do projetor (F)"
+              }
+              className="rounded-full border border-white/20 px-4 py-2 font-titulo text-xs font-bold"
+            >
+              {cheia ? "↙ Reduzir (F)" : "⛶ Expandir (F)"}
+            </button>
             <button
               type="button"
               onClick={() => setGrade((v) => !v)}

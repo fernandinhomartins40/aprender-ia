@@ -100,10 +100,35 @@ aparelho funciona. Nada de carrossel — o conteúdo da página é lido por rola
 e a navegação acontece ENTRE páginas, no rodapé, como em qualquer curso.
 
 ```
-/app/aula                 índice dos encontros
-/app/aula/1               índice do Encontro 1 — as 32 páginas
-/app/aula/1/3             uma página de conteúdo
+/app/aula                 índice dos encontros      — com a moldura do app
+/app/aula/1               índice do Encontro 1      — com a moldura do app
+/app/aula/1/3             uma página de conteúdo    — TELA CHEIA
 ```
+
+### Tela cheia na página de conteúdo
+
+Os índices são navegação e ficam no `(sessao)`, com o cabeçalho e a barra do
+aplicativo. A página de conteúdo fica no `(imersivo)`, sem eles: ali o aluno
+está estudando, e os dois somavam 9rem de altura — em 844px de celular, mais
+de um décimo da tela — competindo com o conteúdo por atenção.
+
+No lugar entra a `BarraDaAula`, com o que a página precisa e nada além:
+
+- **No alto**, uma barra fina: progresso do encontro, "página 3 de 32" e o
+  **X que devolve o aplicativo**. Sem essa saída, a tela cheia viraria uma
+  armadilha. Tocar no título abre o índice sem sair da aula.
+- **Embaixo**, Anterior e Próxima com o título de cada página, `fixed` para
+  ficarem sempre ao alcance do polegar. Na última página, "Próxima" vira
+  "Concluir o encontro".
+- As **setas do teclado** também andam, para quem lê no computador.
+
+As guardas do `(sessao)` são repetidas no layout imersivo — `exigirAluno` e a
+troca de senha provisória. Sem elas, bastaria conhecer o endereço de uma página
+para ler a aula sem conta.
+
+O professor tem o equivalente: o botão **⛶ Expandir (F)** na barra da
+apresentação. A tecla F sempre fez isso, mas quem nunca apresentou o deck não
+tinha como saber.
 
 A página não é o slide reduzido. O componente desmonta o HTML do curso: faixa,
 badge e título saem do corpo e viram o cabeçalho da página; o que sobra é
