@@ -86,31 +86,53 @@ O palco escreve o HTML ele mesmo (`innerHTML`), em vez de
 não conhece, e com o conteúdo sob controle dele a primeira re-renderização os
 apagava.
 
-### Dois modos: palco e página
+### Dois formatos, um só conteúdo
 
-O mesmo componente (`PalcoSlide`) serve aos dois lados da sala, e o modo diz
-qual formato usar.
+O mesmo material serve aos dois lados da sala, em formatos diferentes.
 
-**`modo="palco"` — o professor.** O slide 1280x720 escalado para caber na tela,
-como no deck. É o que vai para o projetor.
+**O professor projeta um slide.** `/apresentar/:id` mostra o palco 1280x720
+escalado, como no deck, com as teclas de sempre (setas, espaço, F, G) e o
+painel da turma.
 
-**`modo="pagina"` — o aluno.** O MESMO conteúdo, com o MESMO visual e as MESMAS
-funções, mas solto numa página que rola. Não é o slide encolhido: um 1280x720
-reduzido num celular corta as bordas e põe o corpo do texto em 4px.
+**O aluno abre uma página web.** `/app/aula/1/3` é uma página de verdade: tem
+endereço próprio, recarrega, o link pode ser compartilhado e o botão voltar do
+aparelho funciona. Nada de carrossel — o conteúdo da página é lido por rolagem,
+e a navegação acontece ENTRE páginas, no rodapé, como em qualquer curso.
 
-O modo página não é um segundo desenho. É o mesmo HTML e o mesmo CSS — o bloco
-`.palco-pagina` apenas solta as doze regras que prendiam o conteúdo à folha de
-1280x720 (posição absoluta, altura fixa, largura em pixels) e ajusta o que só
-faz sentido no telão:
+```
+/app/aula                 índice dos encontros
+/app/aula/1               índice do Encontro 1 — as 32 páginas
+/app/aula/1/3             uma página de conteúdo
+```
+
+A página não é o slide reduzido. O componente desmonta o HTML do curso: faixa,
+badge e título saem do corpo e viram o cabeçalho da página; o que sobra é
+conteúdo, em seções empilhadas com respiro entre elas.
 
 | No palco | Na página |
 |---|---|
-| Badge, título e corpo posicionados | Fluxo normal, com margem |
+| Tudo posicionado numa folha 16:9 | Cabeçalho + seções verticais |
 | Grades de 2, 3 e 4 colunas | Uma coluna no celular, duas em tela média |
-| Título de capa em 56px fixos | `clamp()`, acompanhando a largura |
-| Figura flutuando no canto | No fluxo, centralizada |
+| Navegação por slide | Navegação entre páginas, no rodapé |
+| Figura flutuando no canto | Ilustração da seção |
 | Tabela larga | Rola dentro da própria caixa |
-| Botões do cronômetro para o fundo da sala | Tamanho de polegar |
 
-Cores, cards, boxes, prompts e botões continuam vindo das regras do deck: mudar
-uma cor lá muda nos dois lados.
+O CSS é um só: `derivar-css-slide.mjs` escopa cada regra do deck para
+`.palco-slide`, `.conteudo-aula` e `.modal-prompt` ao mesmo tempo. Mudar uma
+cor no deck muda nos três.
+
+### Durante a aula
+
+Quando o professor avança no projetor, a página do aluno acompanha — mas só
+enquanto ele não decide olhar outra coisa. No instante em que o aluno navega
+por conta própria, o "seguir" se desliga e vira um convite discreto
+("o professor está na página 12 · Acompanhar"), porque arrastar alguém para
+fora do que está lendo é pior do que deixá-lo perdido por um momento.
+
+### O banco de prompts
+
+O slide "Banco de 15 prompts prontos" tem 15 cards que abrem o prompt completo
+num modal, já copiado, com os campos `[ ]` preenchíveis e os botões das IAs.
+Os cards guardam só o índice (`data-prompt="7"`); os textos vêm de
+`PROMPTS_DO_BANCO`, extraído do deck junto com o roteiro. O modal serve aos
+dois lados: o professor demonstra no projetor, o aluno usa na página.

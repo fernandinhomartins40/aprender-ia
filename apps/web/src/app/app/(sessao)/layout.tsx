@@ -24,7 +24,7 @@ import { MenuDesktop, type ItemMenuAluno } from "@/components/menu-desktop";
 const MENU_PRINCIPAL: ItemMenuAluno[] = [
   { href: "/app", rotulo: "Início", icone: "inicio" },
   { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
-  { href: "/app/acompanhar", rotulo: "Acompanhar", icone: "apresentacao" },
+  { href: "/app/aula", rotulo: "Aulas", icone: "apresentacao" },
   { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
   { href: "/app/ferramentas", rotulo: "Ferramentas", icone: "ferramentas" },
 ];

@@ -175,6 +175,23 @@ export type PassoExtraido = {
   blocos: Bloco[];
 };
 
+/**
+ * O banco de prompts que os cards do slide abrem.
+ *
+ * No deck os textos viviam num array dentro do `<script>`, e os cards só
+ * guardavam o índice (`data-prompt="7"`). Sem trazê-los junto, o card fica
+ * clicável e não abre nada — que é o que acontecia.
+ */
+export function bancoDePrompts(html: string): { titulo: string; texto: string }[] {
+  const m = html.match(/const PROMPTS = (\[[\s\S]*?\]);/);
+  if (!m) return [];
+  try {
+    return JSON.parse(m[1] ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
 export type RoteiroExtraido = {
   encontro: number;
   titulo: string;

@@ -8,6 +8,7 @@ import {
 } from "@/server/apresentar";
 import type { Bloco } from "@/server/acompanhar";
 import { PalcoSlide } from "@/components/palco-slide";
+import { BancoDePrompts } from "@/components/banco-de-prompts";
 
 type Passo = {
   id: string;
@@ -108,6 +109,9 @@ export function ModoApresentacao({
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0F172A] text-white">
+      {/* Os cards do slide "Banco de 15 prompts" abrem aqui, para o professor
+          demonstrar o prompt ao vivo. */}
+      <BancoDePrompts />
       {/* palco */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* A barra de progresso do deck, na mesma posição. */}

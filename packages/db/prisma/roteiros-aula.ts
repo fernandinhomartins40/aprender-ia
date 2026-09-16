@@ -1404,3 +1404,72 @@ export const ROTEIROS_AULA: RoteiroAula[] = [
     ]
   }
 ];
+
+/**
+ * O banco de prompts que os cards do slide "Banco de 15 prompts" abrem.
+ *
+ * Os cards guardam só o índice (data-prompt="7"); o texto vem daqui. Sem
+ * isto o card fica clicável e não abre nada.
+ */
+export const PROMPTS_DO_BANCO: { titulo: string; texto: string }[] = [
+  {
+    "titulo": "1 · Plano de Aula",
+    "texto": "Aja como professor(a) de [DISCIPLINA] do [ANO]. Crie um plano de\naula de 50 minutos sobre [TEMA]. Inclua: objetivo de\naprendizagem, habilidade BNCC relacionada, materiais necessários\n(de baixo custo), passo a passo cronometrado, e uma atividade de\nfechamento."
+  },
+  {
+    "titulo": "2 · Prova Inédita",
+    "texto": "Crie uma prova de [DISCIPLINA] para o [ANO] sobre [TEMA]. Inclua:\n5 questões de múltipla escolha (com 4 alternativas cada) e 2\nquestões dissertativas. As questões devem exigir interpretação,\nnão memorização. Forneça o gabarito comentado ao final."
+  },
+  {
+    "titulo": "3 · Parecer Descritivo",
+    "texto": "Aja como um professor acolhedor. Transforme estas anotações em\ntópicos sobre um aluno fictício em um parecer descritivo\nbimestral de 1 parágrafo. Foque nos avanços, cite uma meta para o\npróximo bimestre. Anotações: [COLE SUAS NOTAS AQUI]."
+  },
+  {
+    "titulo": "4 · E-mail para Pais",
+    "texto": "Escreva um e-mail breve e empático para os responsáveis de um\naluno de [IDADE] anos. O assunto é: [DESCREVA A SITUAÇÃO]. O tom\ndeve ser de parceria, nunca punitivo. Termine convidando para uma\nconversa."
+  },
+  {
+    "titulo": "5 · Adaptação Inclusiva",
+    "texto": "Pegue o texto abaixo e reescreva para um aluno de [IDADE] anos\ncom [TDAH / Dislexia / TEA]. Use frases de no máximo 12 palavras,\ndestaque termos-chave em negrito, use listas numeradas e evite\nmetáforas. Texto: [COLE O TEXTO AQUI]."
+  },
+  {
+    "titulo": "6 · Rotação por Estações",
+    "texto": "Crie uma aula usando a metodologia de Rotação por Estações para\n[DISCIPLINA], [ANO], tema [TEMA]. Planeje 4 estações de 12\nminutos cada, com atividades diferentes (leitura, jogo, escrita e\ndiscussão). Liste os materiais de cada estação."
+  },
+  {
+    "titulo": "7 · Jogo Educativo",
+    "texto": "Crie um jogo de tabuleiro educativo sobre [TEMA] para alunos do\n[ANO]. Inclua: regras do jogo, perguntas (com respostas),\nquantidade de jogadores, materiais necessários (apenas papel,\ntesoura, dados e lápis de cor)."
+  },
+  {
+    "titulo": "8 · Sequência Didática",
+    "texto": "Elabore uma sequência didática de [NÚMERO] aulas sobre [TEMA]\npara o [ANO]. Para cada aula, detalhe: objetivo, duração,\nmetodologia, atividade prática, forma de avaliação. Vincule cada\naula a uma habilidade da BNCC."
+  },
+  {
+    "titulo": "9 · Projeto Interdisciplinar",
+    "texto": "Crie um projeto interdisciplinar que conecte [DISCIPLINA 1] e\n[DISCIPLINA 2] sobre o tema [TEMA] para o [ANO]. Duração: [X\nsemanas]. Inclua: justificativa, objetivos, cronograma semanal,\nproduto final dos alunos e critérios de avaliação."
+  },
+  {
+    "titulo": "10 · Resumo Didático",
+    "texto": "Transforme o texto acadêmico abaixo em um resumo didático para\nalunos do [ANO]. Use linguagem acessível, analogias do cotidiano,\ne divida em tópicos com subtítulos. Ao final, crie 3 perguntas de\ncompreensão. Texto: [COLE O TEXTO AQUI]."
+  },
+  {
+    "titulo": "11 · Aula com Metáfora do Cotidiano",
+    "texto": "Aja como um divulgador científico que conversa com adolescentes.\nExplique [TEMA] para alunos do [ANO] usando como metáfora algo\nque eles conhecem bem (videogame, futebol, redes sociais ou\nmúsica). Mantenha o rigor do conteúdo, mas troque todos os\nexemplos abstratos por situações concretas. Ao final, inclua 3\nperguntas de interpretação e uma proposta de desenho ou esquema."
+  },
+  {
+    "titulo": "12 · Recuperação e Reforço",
+    "texto": "Tenho [NÚMERO] alunos do [ANO] que ainda não dominam [CONTEÚDO].\nCrie um material de reforço com: (1) uma explicação bem simples\ndo conceito, com um exemplo do cotidiano; (2) 5 exercícios do\nmais fácil ao mais difícil; (3) uma atividade prática manual.\nUse linguagem simples e frases curtas. Não use termos técnicos\nsem antes explicá-los."
+  },
+  {
+    "titulo": "13 · Diferenciação em 3 Níveis",
+    "texto": "Crie a mesma atividade sobre [TEMA] em 3 versões para o [ANO]:\n\nVersão A (Básica): para alunos com defasagem. Texto curto,\nperguntas com resposta localizada diretamente no texto.\nVersão B (Intermediária): para alunos no nível esperado.\nPerguntas de interpretação.\nVersão C (Avançada): para alunos acima do nível. Perguntas de\ninferência, opinião e relação com outros temas.\n\nAs 3 versões devem ter o MESMO tema, para que a turma trabalhe\njunta sem que ninguém se sinta exposto."
+  },
+  {
+    "titulo": "14 · Comunicado para as Famílias",
+    "texto": "Escreva um comunicado formal, mas acolhedor, para os\nresponsáveis dos alunos do [ANO] sobre [EVENTO/ASSUNTO].\nInformações: [DATA, HORÁRIO, LOCAL, O QUE DEVEM LEVAR].\nUse linguagem clara e acessível, evitando termos burocráticos.\nMáximo 2 parágrafos. Termine com o telefone da escola para\ndúvidas."
+  },
+  {
+    "titulo": "15 · Plano B para Imprevistos",
+    "texto": "Eu ia dar uma aula sobre [TEMA] para o [ANO] usando [RECURSO QUE\nFALHOU: projetor / internet / laboratório]. Isso não vai ser\npossível hoje. Crie uma aula alternativa de 50 minutos sobre o\nmesmo tema, usando apenas lousa, giz e o caderno dos alunos.\nDê o passo a passo cronometrado."
+  }
+];

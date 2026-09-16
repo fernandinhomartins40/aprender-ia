@@ -11,7 +11,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { roteirosDoDeck } from "./extrair-roteiro";
+import { bancoDePrompts, roteirosDoDeck } from "./extrair-roteiro";
 
 const caminho = process.argv[2];
 if (!caminho) {
@@ -21,6 +21,7 @@ if (!caminho) {
 
 const html = readFileSync(caminho, "utf8");
 const roteiros = roteirosDoDeck(html);
+const banco = bancoDePrompts(html);
 if (!roteiros.length) {
   console.error("nenhum slide encontrado — o arquivo é o deck montado?");
   process.exit(1);
@@ -66,7 +67,26 @@ export type RoteiroAula = {
 
 export const ROTEIROS_AULA: RoteiroAula[] = `;
 
-writeFileSync(destino, cabecalho + JSON.stringify(roteiros, null, 2) + ";\n", "utf8");
+const rodape = `
+
+/**
+ * O banco de prompts que os cards do slide "Banco de 15 prompts" abrem.
+ *
+ * Os cards guardam só o índice (data-prompt="7"); o texto vem daqui. Sem
+ * isto o card fica clicável e não abre nada.
+ */
+export const PROMPTS_DO_BANCO: { titulo: string; texto: string }[] = `;
+
+writeFileSync(
+  destino,
+  cabecalho +
+    JSON.stringify(roteiros, null, 2) +
+    ";" +
+    rodape +
+    JSON.stringify(banco, null, 2) +
+    ";",
+  "utf8",
+);
 
 for (const r of roteiros) {
   const comPrompt = r.passos.filter((p) => p.blocos.some((b) => b.tipo === "prompt")).length;

@@ -40,19 +40,29 @@ for (const re of [
 // Aqui o slide não é impresso: o PDF continua saindo do deck.
 css = css.replace(/@media print\{(?:[^{}]|\{[^{}]*\})*\}/g, "");
 
+// Os dois lugares onde o material do curso é desenhado: o palco 16:9 que o
+// professor projeta e a página que o aluno lê. Cada regra do deck vale nos
+// dois — é o que garante que sejam o mesmo visual, e não duas cópias que
+// divergem na primeira mudança de cor.
 const ESCOPO = ".palco-slide";
+// O modal do banco de prompts é o terceiro lugar onde o material aparece: ele
+// é montado fora do palco e fora da página (sobrepõe as duas), e sem entrar
+// aqui os botões das IAs sairiam sem estilo nenhum.
+const ESCOPOS = [ESCOPO, ".conteudo-aula", ".modal-prompt"];
 const escopar = (sel) =>
   sel
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((s) =>
-      s === ":root"
-        ? ESCOPO
-        : s.startsWith("#prompt-modal")
-          ? s.replace("#prompt-modal", `${ESCOPO}-modal`)
-          : `${ESCOPO} ${s}`,
-    )
+    .flatMap((s) => {
+      if (s === ":root") return ESCOPOS;
+      if (s.startsWith("#prompt-modal"))
+        return [s.replace("#prompt-modal", `${ESCOPO}-modal`)];
+      // `.slide`, `.palco-caixa` e afins só existem no palco: aplicá-los à
+      // página traria de volta o posicionamento que ela justamente não tem.
+      if (/^\.(slide|palco-|topo|badge|corpo)/.test(s)) return [`${ESCOPO} ${s}`];
+      return ESCOPOS.map((e) => `${e} ${s}`);
+    })
     .join(",");
 
 const saida = [];
@@ -299,6 +309,235 @@ const modoPagina = `
 }
 `;
 
+const paginaAula = `
+/* =========================================================
+   O CONTEÚDO DO CURSO, COMO PÁGINA WEB
+
+   O professor projeta o slide 16:9; o aluno abre uma PÁGINA — com cabeçalho,
+   seções empilhadas e leitura por rolagem. Não é o slide reduzido: é o mesmo
+   material num continente diferente.
+
+   As cores, os cards, os quadros e os prompts continuam vindo das regras do
+   deck, acima. O que este bloco faz é dar a esse conteúdo a respiração de uma
+   página: hierarquia clara, largura de leitura e espaço entre as seções.
+   ========================================================= */
+
+/* ---- cabeçalho da página ---- */
+.conteudo-aula-cabecalho {
+  margin-bottom: 1.75rem;
+}
+.etiqueta-aula {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-family: var(--fonte-titulo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #4F46E5;
+}
+.etiqueta-aula--laranja { background: #F97316; }
+.etiqueta-aula--verde { background: #10B981; }
+.etiqueta-aula--vermelho { background: #EF4444; }
+.etiqueta-aula--amarelo { background: #EAB308; color: #3F2D00; }
+
+.titulo-aula {
+  margin-top: 0.75rem;
+  font-family: var(--fonte-titulo);
+  font-size: clamp(1.6rem, 5.5vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--tinta);
+  overflow-wrap: break-word;
+}
+.titulo-aula .lar { color: #F97316; }
+
+/* ---- o corpo ---- */
+.conteudo-aula {
+  /* Os tokens do curso, para as regras do deck valerem aqui dentro: são elas
+     que desenham cards, quadros e prompts. */
+  --indigo: #4F46E5; --indigo-dark: #4338CA; --indigo-soft: #EEF0FE; --indigo-line: #DDE1FB;
+  --laranja: #F97316; --laranja-soft: #FFF3E8;
+  --verde: #10B981; --verde-dark: #047857; --verde-soft: #ECFDF5;
+  --vermelho: #EF4444; --vermelho-dk: #B91C1C; --vermelho-sf: #FEF2F2;
+  --amarelo: #EAB308; --amarelo-dk: #A16207; --amarelo-sf: #FEFCE8;
+  --tinta: #1E293B; --tinta-clara: #475569; --cinza: #64748B; --borda: #E2E8F0;
+  --prompt-bg: #151F38; --prompt-bg2: #1B2745; --prompt-txt: #E8EDF7;
+  --titulo: var(--fonte-titulo); --corpo: var(--fonte-corpo); --mono: var(--fonte-mono);
+
+  font-family: var(--fonte-corpo);
+  color: var(--tinta);
+  line-height: 1.7;
+  font-size: 1.0625rem;
+}
+
+/* O espaço entre as seções é o que separa uma página de um slide: no palco o
+   conteúdo era comprimido para caber numa folha; aqui ele respira. */
+.conteudo-aula > * + * {
+  margin-top: 1.75rem;
+}
+.conteudo-aula .grid2,
+.conteudo-aula .grid3,
+.conteudo-aula .grid4 {
+  gap: 1rem;
+}
+.conteudo-aula .card {
+  padding: 1.25rem;
+  border-radius: 14px;
+}
+.conteudo-aula .card h4 {
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+.conteudo-aula .card p,
+.conteudo-aula li,
+.conteudo-aula p {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.conteudo-aula .lead {
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: var(--tinta-clara);
+}
+
+/* Os quadros do material — Traduzindo, Atenção, Dica, lilás — são as seções
+   destacadas da página, e ganham o peso de um bloco próprio. */
+.conteudo-aula .traduzindo,
+.conteudo-aula .atencao,
+.conteudo-aula .dica,
+.conteudo-aula .lilas,
+.conteudo-aula .oficina {
+  padding: 1.25rem 1.4rem;
+  border-radius: 14px;
+}
+.conteudo-aula .traduzindo .t,
+.conteudo-aula .atencao .t,
+.conteudo-aula .dica .t,
+.conteudo-aula .lilas .t,
+.conteudo-aula .oficina .t {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* O prompt é o que o aluno mais usa: precisa caber inteiro e ser tocável. */
+.conteudo-aula .prompt {
+  font-size: 0.9rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.conteudo-aula .prompt-acoes {
+  margin-top: 0.75rem;
+  gap: 0.5rem;
+}
+.conteudo-aula .ia-btn.mini,
+.conteudo-aula .copiar-mini {
+  font-size: 0.85rem;
+  padding: 0.55rem 1rem;
+}
+
+/* Tabela é a única coisa do material que não cabe num celular: rola dentro da
+   própria caixa, em vez de empurrar a página para o lado. */
+.conteudo-aula .tabela-rolavel {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  min-width: 0;
+}
+.conteudo-aula .tabela-rolavel table {
+  min-width: 32rem;
+}
+
+/* A figura era um cartão flutuante no canto do slide; na página ela é uma
+   ilustração da seção. */
+.conteudo-aula .fig-slide {
+  position: static;
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+}
+.conteudo-aula img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Checklist: alvo confortável para o dedo. */
+.conteudo-aula .it.marcavel {
+  padding: 0.7rem 0;
+  font-size: 1.05rem;
+}
+
+/* ---- slides sem corpo: capas, divisórias e atividades ----
+   Estes têm desenho próprio e chegam inteiros. Soltam as medidas do palco e
+   viram uma seção de destaque da página, com cantos arredondados. */
+.conteudo-aula--inteiro > .capa,
+.conteudo-aula--inteiro > .divisor,
+.conteudo-aula--inteiro > .sl-aquec,
+.conteudo-aula--inteiro > .sl-caso,
+.conteudo-aula--inteiro > .sl-crono,
+.conteudo-aula--inteiro > .sl-duelo,
+.conteudo-aula--inteiro > .sl-caca,
+.conteudo-aula--inteiro > .sl-saida {
+  position: static;
+  inset: auto;
+  min-height: 0;
+  padding: 2.25rem 1.5rem;
+  border-radius: 18px;
+}
+.conteudo-aula--inteiro .divisor h2,
+.conteudo-aula--inteiro .sl-aquec h2,
+.conteudo-aula--inteiro .sl-caso h2,
+.conteudo-aula--inteiro .sl-crono h2,
+.conteudo-aula--inteiro .sl-saida h2 {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  line-height: 1.25;
+}
+.conteudo-aula--inteiro .capa h1 {
+  font-size: clamp(1.75rem, 7vw, 2.75rem) !important;
+  line-height: 1.15;
+}
+.conteudo-aula--inteiro .capa p,
+.conteudo-aula--inteiro .capa span {
+  font-size: clamp(0.85rem, 3.2vw, 1.05rem) !important;
+}
+.conteudo-aula--inteiro .sl-crono .num {
+  font-size: clamp(3.5rem, 18vw, 7rem);
+}
+.conteudo-aula--inteiro .crono-btns button {
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+}
+.conteudo-aula--inteiro .sl-duelo .lado {
+  height: auto;
+}
+
+/* Celular: as grades viram uma coluna. Quatro cartões lado a lado numa tela de
+   6 polegadas dariam 80px cada. */
+@media (max-width: 40rem) {
+  .conteudo-aula .grid2,
+  .conteudo-aula .grid3,
+  .conteudo-aula .grid4,
+  .conteudo-aula .sl-duelo .lado,
+  .conteudo-aula .duas-colunas {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .conteudo-aula .col {
+    height: auto;
+  }
+}
+/* Telas médias: quatro colunas ainda são demais, duas cabem bem. */
+@media (min-width: 40.0625rem) and (max-width: 60rem) {
+  .conteudo-aula .grid4 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+`;
+
 const cabecalho = `/* =========================================================
    O SLIDE DO CURSO, DENTRO DA APLICAÇÃO
 
@@ -393,5 +632,5 @@ const palco = `
 `;
 
 const destino = resolve(raiz, "apps/web/src/app/slide-curso.css");
-writeFileSync(destino, cabecalho + saida.join("") + palco + modoPagina, "utf8");
+writeFileSync(destino, cabecalho + saida.join("") + palco + modoPagina + paginaAula, "utf8");
 console.log(`gravado em ${destino}`);

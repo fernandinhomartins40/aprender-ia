@@ -33,3 +33,22 @@ export async function passoDoProfessor(scriptId: string): Promise<number | null>
   });
   return sessao?.passoAtual ?? null;
 }
+
+/**
+ * O mesmo, mas pelo número do encontro.
+ *
+ * As páginas da aula vivem em `/app/aula/1/12` — o endereço conhece a ordem do
+ * encontro, não o id do roteiro. Consultar por ordem evita carregar o id só
+ * para poder perguntar.
+ */
+export async function passoDoProfessorPorOrdem(
+  ordem: number,
+): Promise<number | null> {
+  await exigirAluno();
+  const sessao = await prisma.liveSession.findFirst({
+    where: { encerradaEm: null, script: { ordem, ativo: true } },
+    orderBy: { iniciadaEm: "desc" },
+    select: { passoAtual: true },
+  });
+  return sessao?.passoAtual ?? null;
+}

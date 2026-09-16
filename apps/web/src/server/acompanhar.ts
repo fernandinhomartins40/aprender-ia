@@ -1,14 +1,13 @@
 import "server-only";
 import { prisma } from "@aprender/db";
 import { exigirAluno } from "@/server/trilha";
-import { ondeFica } from "@/server/apostila";
 
 /**
  * A leitura estruturada de um passo.
  *
- * Não é mais o que a tela desenha — quem desenha é o `html` do slide — mas
- * continua sendo o que o painel do professor consegue perguntar, e a reserva
- * para um passo antigo que ainda não tenha `html`.
+ * Não é o que a tela desenha — quem desenha é o `html` do conteúdo — mas
+ * continua sendo o que o painel do professor consegue perguntar ("quantos
+ * marcaram este item?").
  */
 export type Bloco =
   | { tipo: "texto"; html: string }
@@ -17,114 +16,7 @@ export type Bloco =
   | { tipo: "checklist"; itens: string[] }
   | { tipo: "imagem"; src: string; legenda?: string };
 
-export type PassoDaAula = {
-  id: string;
-  ordem: number;
-  titulo: string;
-  /** O slide do curso, desenhado com o CSS do deck. */
-  html: string | null;
-  /**
-   * Para onde levar o aluno que quer ler o trecho deste passo na apostila.
-   * Resolvido aqui, e não na tela, porque depende do banco: a seção do slide
-   * pode não existir mais se o curso mudou e o deck ainda não.
-   */
-  apostila: { href: string; rotulo: string } | null;
-  blocos: Bloco[];
-  /// O que este aluno já marcou e digitou aqui.
-  marcados: number[];
-  valores: Record<string, string>;
-};
 
-export type FerramentaDoAluno = {
-  chave: string;
-  nome: string;
-  url: string;
-  metodoAbertura: string;
-  urlComPrompt: string | null;
-};
-
-/**
- * Tudo o que a tela do aluno precisa, numa leitura só.
- *
- * A tela é aberta em sala, com 30 celulares na mesma rede da escola — então
- * os passos vêm de uma vez e a navegação seguinte não bate no servidor.
- */
-export async function roteiroDoAluno(scriptId?: string) {
-  const user = await exigirAluno();
-
-  const script = scriptId
-    ? await prisma.lessonScript.findUnique({ where: { id: scriptId } })
-    : await prisma.lessonScript.findFirst({
-        where: { ativo: true },
-        orderBy: { ordem: "asc" },
-      });
-
-  if (!script) return null;
-
-  const [passos, progresso, ferramentas, roteiros, sessao] = await Promise.all([
-    prisma.scriptStep.findMany({
-      where: { scriptId: script.id },
-      orderBy: { ordem: "asc" },
-    }),
-    prisma.stepProgress.findMany({
-      where: { userId: user.id, step: { scriptId: script.id } },
-    }),
-    prisma.aiTool.findMany({
-      where: { ativo: true },
-      orderBy: [{ ordem: "asc" }, { nome: "asc" }],
-      select: {
-        chave: true,
-        nome: true,
-        url: true,
-        metodoAbertura: true,
-        urlComPrompt: true,
-      },
-    }),
-    prisma.lessonScript.findMany({
-      where: { ativo: true },
-      orderBy: { ordem: "asc" },
-      select: { id: true, titulo: true, ordem: true },
-    }),
-    sessaoAberta(script.id),
-  ]);
-
-  const porPasso = new Map(progresso.map((p) => [p.stepId, p]));
-
-  // Onde fica, na apostila, o trecho de cada passo. Resolvido de uma vez: são
-  // poucas seções distintas para 96 passos, e perguntar por passo faria 96
-  // consultas para responder 37 perguntas.
-  const referencias = [
-    ...new Set(passos.map((p) => p.secaoApostila).filter(Boolean)),
-  ] as string[];
-  const enderecos = new Map(
-    (
-      await Promise.all(
-        referencias.map(async (r) => [r, await ondeFica(r)] as const),
-      )
-    ).filter((par): par is [string, { href: string; rotulo: string }] => !!par[1]),
-  );
-
-  return {
-    script: { id: script.id, titulo: script.titulo },
-    roteiros,
-    ferramentas: ferramentas as FerramentaDoAluno[],
-    /// Passo em que o professor está agora, se houver apresentação rolando.
-    passoDoProfessor: sessao?.passoAtual ?? null,
-    passos: passos.map((p): PassoDaAula => {
-      const meu = porPasso.get(p.id);
-      return {
-        id: p.id,
-        ordem: p.ordem,
-        titulo: p.titulo,
-        html: p.html,
-        apostila: enderecos.get(p.secaoApostila ?? "") ?? null,
-        blocos: (p.blocos as unknown as Bloco[]) ?? [],
-        marcados: meu?.marcados ?? [],
-        valores: (meu?.valores as Record<string, string> | null) ?? {},
-      };
-    }),
-  };
-}
 
 /** A apresentação em andamento deste roteiro, se existir. */
 export async function sessaoAberta(scriptId: string) {
