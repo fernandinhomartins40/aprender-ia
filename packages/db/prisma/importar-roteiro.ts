@@ -123,12 +123,19 @@ function blocosDoSlide(slide: string): Bloco[] {
   if (chaves.length) blocos.push({ tipo: "ferramentas", chaves });
 
   // 4. Imagem, quando houver.
+  //    No deck o caminho é relativo à pasta do curso ("imagens/03_...png").
+  //    Na aplicação os mesmos arquivos vivem em public/curso/imagens/, que o
+  //    Next serve estaticamente e que vai junto na imagem Docker — sem isso a
+  //    figura apareceria quebrada na VPS.
   const img = slide.match(/<img[^>]+src="([^"]+)"[^>]*>/);
   if (img) {
-    const leg = slide.match(/<div class="legenda">([\s\S]*?)<\/div>/);
+    const leg =
+      slide.match(/<div class="fig-leg">([\s\S]*?)<\/div>/) ??
+      slide.match(/<div class="legenda">([\s\S]*?)<\/div>/);
+    const arquivo = (img[1] ?? "").split("/").pop() ?? "";
     blocos.push({
       tipo: "imagem",
-      src: img[1],
+      src: `/curso/imagens/${arquivo}`,
       legenda: leg ? textoLimpo(leg[1]) : undefined,
     });
   }
@@ -143,6 +150,8 @@ function blocosDoSlide(slide: string): Bloco[] {
     .replace(/<div class="it marcavel"[^>]*>[\s\S]*?<\/div>/g, "")
     .replace(/<span class="chk"[^>]*>[\s\S]*?<\/span>\s*<\/span>/g, "")
     .replace(/<h1 class="st"[^>]*>[\s\S]*?<\/h1>/g, "")
+    // a figura já virou bloco próprio, com legenda
+    .replace(/<div class="fig-slide"[\s\S]*?<\/div>\s*<\/div>/g, "")
     .replace(/<img[^>]*>/g, "");
   const texto = textoLimpo(corpo);
   if (texto.length > 15) blocos.unshift({ tipo: "texto", html: texto });

@@ -57,6 +57,28 @@ export default async function PaginaAcompanhar({
         ferramentas={dados.ferramentas}
         passoInicialDoProfessor={dados.passoDoProfessor}
       />
+
+      {/* A apostila completa, para quem quiser acompanhar pelo material ou
+          reler depois do encontro. */}
+      <a
+        href="/curso/Apostila_IA_Educadores_2026.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-6 flex items-center gap-3 rounded-xl border border-borda bg-white p-4 transition-colors hover:bg-indigo-soft"
+      >
+        <span aria-hidden className="text-2xl">📕</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-titulo text-sm font-bold text-tinta">
+            Apostila completa do curso
+          </span>
+          <span className="block text-xs text-cinza">
+            113 páginas · abre em nova aba
+          </span>
+        </span>
+        <span className="shrink-0 font-titulo text-sm font-bold text-indigo">
+          Abrir
+        </span>
+      </a>
     </main>
   );
 }
