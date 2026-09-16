@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@aprender/db";
 import { exigirAdmin } from "@/server/admin";
+import { ImportarDeckForm } from "@/components/importar-deck-form";
 
 export const metadata = { title: "Apresentar aula" };
 export const dynamic = "force-dynamic";
@@ -37,17 +38,16 @@ export default async function PaginaAulas() {
       </p>
 
       {roteiros.length === 0 ? (
-        <div className="rounded-xl border border-borda bg-white p-6">
-          <p className="mb-2 font-titulo font-bold text-tinta">
-            Nenhum roteiro importado ainda.
-          </p>
-          <p className="text-sm text-tinta-clara">
-            Rode o importador para transformar o deck de slides em passos:
-          </p>
-          <pre className="mt-3 overflow-x-auto rounded-lg bg-[#151F38] p-3 font-mono text-xs text-[#E8EDF7]">
-            pnpm --filter @aprender/db tsx prisma/importar-roteiro.ts
-            {"  "}&quot;caminho/Slides_IA_Educadores_2026.html&quot;
-          </pre>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-borda bg-white p-5">
+            <p className="font-titulo font-bold text-tinta">
+              Nenhum roteiro importado ainda.
+            </p>
+            <p className="mt-1 text-sm text-tinta-clara">
+              Envie o arquivo de slides abaixo para criar os passos da aula.
+            </p>
+          </div>
+          <ImportarDeckForm />
         </div>
       ) : (
         <ul className="space-y-3">
@@ -81,6 +81,19 @@ export default async function PaginaAulas() {
             );
           })}
         </ul>
+      )}
+
+      {/* Sempre visível: os slides mudam ao longo do curso, e reimportar
+          precisa ser tão simples quanto apresentar. */}
+      {roteiros.length > 0 && (
+        <details className="mt-6">
+          <summary className="cursor-pointer font-titulo text-sm font-bold text-tinta-clara">
+            Atualizar os slides
+          </summary>
+          <div className="mt-3">
+            <ImportarDeckForm />
+          </div>
+        </details>
       )}
     </main>
   );
