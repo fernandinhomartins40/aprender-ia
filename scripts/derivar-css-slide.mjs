@@ -488,6 +488,59 @@ const paginaAula = `
   padding: 2.25rem 1.5rem;
   border-radius: 18px;
 }
+
+/* Os slides de atividade foram desenhados com folgas de folha: 70px de cada
+   lado no caça ao erro, 90px no caso, 100px no duelo. Numa tela de 390px isso
+   sobrava 210px para o texto — uma coluna de três palavras por linha. A regra
+   acima já os reescreve, mas algumas folgas vêm em seletores mais específicos
+   e precisam ser alcançadas uma a uma. */
+.conteudo-aula.conteudo-aula--inteiro > .sl-caca,
+.conteudo-aula.conteudo-aula--inteiro > .sl-duelo,
+.conteudo-aula.conteudo-aula--inteiro > .sl-caso,
+.conteudo-aula.conteudo-aula--inteiro > .sl-saida,
+.conteudo-aula.conteudo-aula--inteiro > .sl-aquec,
+.conteudo-aula.conteudo-aula--inteiro > .sl-crono,
+.conteudo-aula.conteudo-aula--inteiro > .capa,
+.conteudo-aula.conteudo-aula--inteiro > .divisor {
+  /* !important porque as regras do deck entram numa camada do Tailwind que
+     vence a cascata normal: mesmo mais específica e declarada depois, a regra
+     daqui perdia para o padding de 70px da folha. */
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+}
+/* As caixas internas dessas atividades: o retângulo branco do caça ao erro, a
+   cena do caso, os dois lados do duelo. Todas com folga de folha por dentro. */
+.conteudo-aula .sl-caca .resp,
+.conteudo-aula .sl-caso .cena-sl,
+.conteudo-aula .sl-duelo .box {
+  padding: 1.1rem 1.2rem;
+}
+.conteudo-aula .sl-caca .resp,
+.conteudo-aula .sl-caso .cena-sl {
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+/* O duelo compara dois prompts lado a lado. Numa tela estreita eles passam um
+   sob o outro — é a mesma comparação, lida em sequência em vez de em
+   paralelo. */
+.conteudo-aula .sl-duelo .lado {
+  gap: 1rem;
+}
+.conteudo-aula .sl-duelo .pr {
+  font-size: 0.85rem;
+  padding: 0.9rem 1rem;
+  overflow-wrap: anywhere;
+}
+.conteudo-aula .sl-duelo .res {
+  font-size: 0.95rem;
+}
+.conteudo-aula .sl-caca .desafio-txt,
+.conteudo-aula .sl-caso .perg {
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
 .conteudo-aula--inteiro .divisor h2,
 .conteudo-aula--inteiro .sl-aquec h2,
 .conteudo-aula--inteiro .sl-caso h2,

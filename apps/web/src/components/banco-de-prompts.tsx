@@ -148,7 +148,7 @@ function ModalPrompt({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-tinta/70 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+      className="fixed inset-0 z-[100] flex items-stretch justify-center bg-tinta/70 p-0 backdrop-blur-sm sm:items-center sm:p-6"
       onClick={aoFechar}
       role="presentation"
     >
@@ -161,10 +161,14 @@ function ModalPrompt({
         onClick={(e) => e.stopPropagation()}
         // `modal-prompt` traz as regras do curso para dentro do modal: são
         // elas que desenham os botões das IAs, aqui e no slide.
-        className="modal-prompt flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl outline-none sm:rounded-2xl"
+        // No celular o modal ocupa a tela inteira: o prompt é longo, e cada
+        // faixa cedida à página atrás era uma linha a menos de texto visível.
+        className="modal-prompt flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl outline-none sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl"
       >
-        <header className="flex items-center justify-between gap-4 bg-indigo px-5 py-4 text-white">
-          <h2 className="font-titulo text-lg font-extrabold">{titulo}</h2>
+        <header className="flex shrink-0 items-center justify-between gap-3 bg-indigo px-4 py-3 text-white">
+          <h2 className="min-w-0 flex-1 font-titulo text-base font-extrabold leading-tight sm:text-lg">
+            {titulo}
+          </h2>
           <button
             type="button"
             onClick={aoFechar}
@@ -175,7 +179,7 @@ function ModalPrompt({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
           {variaveis.length > 0 && (
             <>
               <p className="mb-3 rounded-r-lg border-l-4 border-amarelo bg-amarelo-soft px-3.5 py-2.5 text-sm text-amarelo-dark">
@@ -208,12 +212,15 @@ function ModalPrompt({
           </pre>
         </div>
 
-        <footer className="border-t border-borda bg-[#FBFBFE] px-5 py-4">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* O rodapé tinha 163px num celular — quase um quinto da tela — porque
+            os cinco botões quebravam em três linhas. Agora eles correm numa
+            faixa que rola na horizontal, e o espaço volta para o prompt. */}
+        <footer className="shrink-0 border-t border-borda bg-[#FBFBFE] px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             <button
               type="button"
               onClick={copiar}
-              className={`rounded-full px-5 py-2.5 font-titulo text-sm font-bold text-white transition-colors ${
+              className={`shrink-0 rounded-full px-5 py-2.5 font-titulo text-sm font-bold text-white transition-colors ${
                 copiado ? "bg-verde-dark" : "bg-indigo"
               }`}
             >
@@ -235,7 +242,7 @@ function ModalPrompt({
                     ? `Abre o ${ia.nome} com este prompt já escrito`
                     : `Abre o ${ia.nome} — o prompt já está copiado, cole com Ctrl+V`
                 }
-                className={`ia-btn mini ${ia.id}`}
+                className={`ia-btn mini shrink-0 whitespace-nowrap ${ia.id}`}
               >
                 <span className="pt" />
                 {ia.nome}

@@ -182,15 +182,26 @@ function desmontar(html: string) {
   h1?.remove();
   topo?.remove();
 
-  // O que sobra é o conteúdo: o `.corpo` quando existe, ou o slide inteiro
-  // (capas, divisórias e slides de atividade não usam `.corpo`).
+  // O que sobra do slide é o conteúdo.
+  //
+  // Com `.corpo`, seu conteúdo é desembrulhado ali mesmo — a caixa existia
+  // para posicionar na folha 16:9 e não tem função numa página. Desembrulhar,
+  // em vez de devolver só o `innerHTML` dela, é o que preserva o que vive
+  // FORA do corpo: a figura (`.fig-slide`) e a barra de atalhos das IAs
+  // (`.ia-barra`) são irmãs dele, e eram descartadas — as ilustrações
+  // simplesmente não apareciam.
   const corpo = slide.querySelector(".corpo");
+  if (corpo) {
+    corpo.replaceWith(...Array.from(corpo.childNodes));
+  }
+
   return {
     etiqueta,
     titulo,
     cor,
-    corpo: corpo ? corpo.innerHTML : slide.innerHTML,
-    /** Capas e divisórias têm desenho próprio e são mantidas inteiras. */
+    corpo: slide.innerHTML,
+    /** Capas, divisórias e slides de atividade têm desenho próprio e são
+        mantidos inteiros; os demais viram seções da página. */
     inteiro: !corpo,
   };
 }
