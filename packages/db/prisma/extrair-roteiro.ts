@@ -1,23 +1,13 @@
 /**
- * Importa o deck de slides do curso como roteiro do "Acompanhe a Aula".
+ * Lê o deck de slides do curso e devolve os roteiros da aula.
  *
- * O deck em `cursos/Curso_IA_Educadores_v2/Slides_IA_Educadores_2026.html` já
- * tem tudo marcado em HTML — prompts, campos `[ ]`, botões de IA, checklists.
- * Este script lê essa marcação e gera os passos, em vez de alguém redigitar
- * 97 slides à mão.
- *
- * Uso:
- *   pnpm tsx prisma/importar-roteiro.ts <caminho-do-deck.html>
- *
- * Roda de novo sem duplicar: apaga os passos do roteiro e regrava.
+ * Vivia duplicado em `importar-roteiro.ts` (script) e no servidor da
+ * aplicação. Agora é um módulo só, usado pelo gerador que produz
+ * `roteiros-aula.ts` — o conteúdo versionado que o seed grava no banco.
  */
-import { readFileSync } from "node:fs";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 /** Um bloco do passo. A tela do aluno sabe desenhar cada tipo. */
-type Bloco =
+export type Bloco =
   | { tipo: "texto"; html: string }
   | { tipo: "prompt"; texto: string; variaveis: string[] }
   | { tipo: "ferramentas"; chaves: string[] }
@@ -41,7 +31,7 @@ function textoLimpo(html: string): string {
 /** As variáveis `[ANO]`, `[DISCIPLINA]`… que o aluno preenche. */
 function variaveisDe(texto: string): string[] {
   const achadas = [...texto.matchAll(/\[([^\]]+)\]/g)].map((m) =>
-    m[1].replace(/\s+/g, " ").trim(),
+    (m[1] ?? "").replace(/\s+/g, " ").trim(),
   );
   return [...new Set(achadas)];
 }
@@ -78,14 +68,6 @@ const POR_DOMINIO: Record<string, string> = {
   "notebooklm.google.com": "notebooklm",
 };
 
-function ferramentasDe(slide: string): string[] {
-  const achadas = new Set<string>();
-  for (const [dominio, chave] of Object.entries(POR_DOMINIO)) {
-    if (slide.includes(dominio)) achadas.add(chave);
-  }
-  return [...achadas];
-}
-
 /** Converte um slide nos blocos que a tela do aluno vai desenhar. */
 function blocosDoSlide(slide: string): Bloco[] {
   const blocos: Bloco[] = [];
@@ -97,10 +79,8 @@ function blocosDoSlide(slide: string): Bloco[] {
     /(?:<div class="etiqueta([^"]*)"[^>]*>([\s\S]*?)<\/div>\s*)?<div class="prompt[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
   let p: RegExpExecArray | null;
   while ((p = rePrompt.exec(slide))) {
-    const classeEtiqueta = p[1] || "";
-    const textoEtiqueta = p[2] || "";
-    const ruim = /vermelha/.test(classeEtiqueta) || /❌/.test(textoEtiqueta);
-    const texto = textoLimpo(p[3]);
+    const ruim = /vermelha/.test(p[1] ?? "") || /❌/.test(p[2] ?? "");
+    const texto = textoLimpo(p[3] ?? "");
     if (ruim || texto.length < 40) continue;
     blocos.push({ tipo: "prompt", texto, variaveis: variaveisDe(texto) });
   }
@@ -114,19 +94,20 @@ function blocosDoSlide(slide: string): Bloco[] {
     ...[...slide.matchAll(/<span class="chk"[^>]*>[\s\S]*?<span class="tx">([\s\S]*?)<\/span>/g)],
     ...[...slide.matchAll(/☐\s*([^<\n]+)/g)],
   ]
-    .map((m) => textoLimpo(m[1]))
+    .map((m) => textoLimpo(m[1] ?? ""))
     .filter((t) => t.length > 2);
   if (itens.length) blocos.push({ tipo: "checklist", itens: [...new Set(itens)] });
 
   // 3. Ferramentas citadas no slide.
-  const chaves = ferramentasDe(slide);
-  if (chaves.length) blocos.push({ tipo: "ferramentas", chaves });
+  const chaves = Object.entries(POR_DOMINIO)
+    .filter(([dominio]) => slide.includes(dominio))
+    .map(([, chave]) => chave);
+  if (chaves.length) blocos.push({ tipo: "ferramentas", chaves: [...new Set(chaves)] });
 
   // 4. Imagem, quando houver.
   //    No deck o caminho é relativo à pasta do curso ("imagens/03_...png").
   //    Na aplicação os mesmos arquivos vivem em public/curso/imagens/, que o
-  //    Next serve estaticamente e que vai junto na imagem Docker — sem isso a
-  //    figura apareceria quebrada na VPS.
+  //    Next serve estaticamente e que vai junto na imagem Docker.
   const img = slide.match(/<img[^>]+src="([^"]+)"[^>]*>/);
   if (img) {
     const leg =
@@ -136,7 +117,7 @@ function blocosDoSlide(slide: string): Bloco[] {
     blocos.push({
       tipo: "imagem",
       src: `/curso/imagens/${arquivo}`,
-      legenda: leg ? textoLimpo(leg[1]) : undefined,
+      legenda: leg ? textoLimpo(leg[1] ?? "") : undefined,
     });
   }
 
@@ -145,12 +126,9 @@ function blocosDoSlide(slide: string): Bloco[] {
     .replace(/<div class="prompt[^"]*"[^>]*>[\s\S]*?<\/div>/g, "")
     .replace(/<div class="prompt-acoes"[^>]*>[\s\S]*?<\/div>/g, "")
     .replace(/<div class="ia-barra"[^>]*>[\s\S]*?<\/div>/g, "")
-    // o checklist já virou bloco próprio; sem tirar daqui, apareceria
-    // duas vezes na tela do aluno
     .replace(/<div class="it marcavel"[^>]*>[\s\S]*?<\/div>/g, "")
     .replace(/<span class="chk"[^>]*>[\s\S]*?<\/span>\s*<\/span>/g, "")
     .replace(/<h1 class="st"[^>]*>[\s\S]*?<\/h1>/g, "")
-    // a figura já virou bloco próprio, com legenda
     .replace(/<div class="fig-slide"[\s\S]*?<\/div>\s*<\/div>/g, "")
     .replace(/<img[^>]*>/g, "");
   const texto = textoLimpo(corpo);
@@ -159,38 +137,33 @@ function blocosDoSlide(slide: string): Bloco[] {
   return blocos;
 }
 
-async function main() {
-  const caminho = process.argv[2];
-  if (!caminho) {
-    console.error("uso: pnpm tsx prisma/importar-roteiro.ts <deck.html>");
-    process.exit(1);
-  }
+export type RoteiroExtraido = {
+  encontro: number;
+  titulo: string;
+  passos: { titulo: string; blocos: Bloco[] }[];
+};
 
-  const html = readFileSync(caminho, "utf8");
+/**
+ * Agrupa os slides do deck em um roteiro por encontro.
+ *
+ * `data-enc` só existe nos blocos de atividade — os slides de conteúdo, que
+ * são a maioria, não têm o atributo. O que de fato separa os encontros são as
+ * divisórias "Encontro N — Abertura": daí em diante, tudo pertence àquele
+ * encontro, até a próxima divisória.
+ */
+export function roteirosDoDeck(html: string): RoteiroExtraido[] {
   const slides = fatiarSlides(html);
-  if (!slides.length) {
-    console.error("nenhum slide encontrado — o arquivo é o deck montado?");
-    process.exit(1);
-  }
-
-  // A que encontro cada slide pertence.
-  //
-  // `data-enc` só existe nos blocos de atividade — os slides de conteúdo,
-  // que são a maioria, não têm o atributo. Usá-lo sozinho jogava 52 dos 96
-  // slides no Encontro 1. O que de fato separa os encontros são as divisórias
-  // "Encontro N — Abertura": daí em diante, tudo pertence àquele encontro,
-  // até a próxima divisória.
   const porEncontro = new Map<number, { titulo: string; blocos: Bloco[] }[]>();
-  let encontroCorrente = 1;
+  let corrente = 1;
 
   for (const s of slides) {
     const tituloSlide = s.match(/data-title="([^"]*)"/)?.[1] ?? "";
     const divisoria = tituloSlide.match(/^Encontro (\d+)/i);
-    if (divisoria) encontroCorrente = Number(divisoria[1]);
+    if (divisoria) corrente = Number(divisoria[1]);
 
     // O atributo, quando existe, manda: é o caso das atividades inseridas
     // fora da sequência natural do deck.
-    const enc = Number(s.match(/data-enc="(\d+)"/)?.[1] ?? encontroCorrente);
+    const enc = Number(s.match(/data-enc="(\d+)"/)?.[1] ?? corrente);
     const titulo =
       tituloSlide ||
       textoLimpo(s.match(/<h1 class="st"[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") ||
@@ -202,47 +175,11 @@ async function main() {
     porEncontro.get(enc)!.push({ titulo, blocos });
   }
 
-  for (const [enc, passos] of [...porEncontro].sort((a, b) => a[0] - b[0])) {
-    const titulo = `Encontro ${enc}`;
-    const existente = await prisma.lessonScript.findFirst({
-      where: { titulo, cohortId: null },
-    });
-
-    const script = existente
-      ? await prisma.lessonScript.update({
-          where: { id: existente.id },
-          data: { ordem: enc, ativo: true },
-        })
-      : await prisma.lessonScript.create({
-          data: { titulo, ordem: enc },
-        });
-
-    // Regrava do zero: rodar o importador de novo não duplica passos.
-    await prisma.scriptStep.deleteMany({ where: { scriptId: script.id } });
-    await prisma.scriptStep.createMany({
-      data: passos.map((p, i) => ({
-        scriptId: script.id,
-        ordem: i + 1,
-        titulo: p.titulo,
-        blocos: p.blocos as unknown as object,
-      })),
-    });
-
-    const comPrompt = passos.filter((p) =>
-      p.blocos.some((b) => b.tipo === "prompt"),
-    ).length;
-    const comLista = passos.filter((p) =>
-      p.blocos.some((b) => b.tipo === "checklist"),
-    ).length;
-    console.log(
-      `${titulo}: ${passos.length} passos · ${comPrompt} com prompt · ${comLista} com checklist`,
-    );
-  }
+  return [...porEncontro]
+    .sort((a, b) => a[0] - b[0])
+    .map(([encontro, passos]) => ({
+      encontro,
+      titulo: `Encontro ${encontro}`,
+      passos,
+    }));
 }
-
-main()
-  .catch((e) => {
-    console.error("ERRO:", e.message);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());

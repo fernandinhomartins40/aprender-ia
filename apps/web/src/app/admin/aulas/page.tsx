@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@aprender/db";
 import { exigirAdmin } from "@/server/admin";
-import { ImportarDeckForm } from "@/components/importar-deck-form";
 
 export const metadata = { title: "Apresentar aula" };
 export const dynamic = "force-dynamic";
@@ -38,16 +37,17 @@ export default async function PaginaAulas() {
       </p>
 
       {roteiros.length === 0 ? (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-borda bg-white p-5">
-            <p className="font-titulo font-bold text-tinta">
-              Nenhum roteiro importado ainda.
-            </p>
-            <p className="mt-1 text-sm text-tinta-clara">
-              Envie o arquivo de slides abaixo para criar os passos da aula.
-            </p>
-          </div>
-          <ImportarDeckForm />
+        /* Os roteiros vêm no conteúdo do curso, gravados no deploy. Se a lista
+           está vazia, o seed não rodou — é problema de implantação, e não algo
+           que o professor resolva enviando um arquivo. */
+        <div className="rounded-xl border border-borda bg-white p-5">
+          <p className="font-titulo font-bold text-tinta">
+            Os roteiros ainda não foram carregados.
+          </p>
+          <p className="mt-1 text-sm text-tinta-clara">
+            Eles fazem parte do conteúdo do curso e chegam com a atualização do
+            sistema. Se esta tela continuar vazia, avise o suporte técnico.
+          </p>
         </div>
       ) : (
         <ul className="space-y-3">
@@ -81,19 +81,6 @@ export default async function PaginaAulas() {
             );
           })}
         </ul>
-      )}
-
-      {/* Sempre visível: os slides mudam ao longo do curso, e reimportar
-          precisa ser tão simples quanto apresentar. */}
-      {roteiros.length > 0 && (
-        <details className="mt-6">
-          <summary className="cursor-pointer font-titulo text-sm font-bold text-tinta-clara">
-            Atualizar os slides
-          </summary>
-          <div className="mt-3">
-            <ImportarDeckForm />
-          </div>
-        </details>
       )}
     </main>
   );

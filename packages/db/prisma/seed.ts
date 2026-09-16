@@ -17,6 +17,7 @@ import {
   DUELOS,
   TESTES_CELULAR,
 } from "./conteudo-apostila";
+import { ROTEIROS_AULA } from "./roteiros-aula";
 
 const prisma = new PrismaClient();
 
@@ -1268,6 +1269,55 @@ async function main() {
       `  admin: não criado — defina ADMIN_PASSWORD para criar ${emailAdmin}`,
     );
   }
+
+  // ---- Roteiros da aula ----
+  //
+  // O roteiro é conteúdo do curso, como as lições e o banco de prompts: chega
+  // pronto no deploy. O painel do professor é só a ferramenta de apresentar —
+  // não há deck para importar antes da aula.
+  //
+  // Os passos são atualizados por `(scriptId, ordem)`, e não apagados e
+  // recriados: `StepProgress` cascateia do passo, então regravar do zero
+  // apagaria o que os alunos marcaram e digitaram nas aulas já dadas.
+  let totalPassos = 0;
+  for (const roteiro of ROTEIROS_AULA) {
+    const existente = await prisma.lessonScript.findFirst({
+      where: { titulo: roteiro.titulo, cohortId: null },
+      select: { id: true },
+    });
+
+    const script = existente
+      ? await prisma.lessonScript.update({
+          where: { id: existente.id },
+          data: { ordem: roteiro.encontro, ativo: true },
+        })
+      : await prisma.lessonScript.create({
+          data: { titulo: roteiro.titulo, ordem: roteiro.encontro },
+        });
+
+    for (const [i, passo] of roteiro.passos.entries()) {
+      await prisma.scriptStep.upsert({
+        where: { scriptId_ordem: { scriptId: script.id, ordem: i + 1 } },
+        update: { titulo: passo.titulo, blocos: passo.blocos as unknown as object },
+        create: {
+          scriptId: script.id,
+          ordem: i + 1,
+          titulo: passo.titulo,
+          blocos: passo.blocos as unknown as object,
+        },
+      });
+    }
+
+    // Se o deck encurtou, as sobras do roteiro antigo saem — só elas.
+    await prisma.scriptStep.deleteMany({
+      where: { scriptId: script.id, ordem: { gt: roteiro.passos.length } },
+    });
+
+    totalPassos += roteiro.passos.length;
+  }
+  console.log(
+    `  roteiros da aula: ${ROTEIROS_AULA.length} encontros · ${totalPassos} passos`,
+  );
 
   // Grava a assinatura por ÚLTIMO, e só aqui.
   //
