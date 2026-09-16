@@ -9,14 +9,15 @@ import { PalcoSlide } from "@/components/palco-slide";
 /**
  * A tela que o aluno abre durante o encontro, no celular ou no computador.
  *
- * É o mesmo slide que está sendo projetado — mesmo desenho, mesmos botões,
- * mesmos campos de prompt. Nasceu de um problema de sala: os alunos se
- * perdiam só com a projeção, e a aula parava para ensinar, um a um, a acessar
- * as IAs. Com o slide na mão, o prompt é preenchido e a ferramenta abre ali.
+ * O professor projeta o slide 16:9 no telão; aqui o aluno acompanha o MESMO
+ * conteúdo, com o MESMO visual e as MESMAS funções — só que como página, que
+ * ele rola. Nasceu de um problema de sala: os alunos se perdiam só com a
+ * projeção, e a aula parava para ensinar, um a um, a acessar as IAs. Com o
+ * conteúdo na mão, o prompt é preenchido e a ferramenta abre ali.
  *
- * O palco é 1280x720 escalado, então o slide cabe inteiro em qualquer tela:
- * largo no computador, menor no celular em pé, quase cheio deitado. É o que
- * permite uma página só servir aos dois sem um segundo desenho para manter.
+ * Não é o slide encolhido: um 1280x720 reduzido num celular corta as bordas e
+ * põe o texto em 4px. É o mesmo HTML e o mesmo CSS, com as regras de
+ * posicionamento soltas — ver `.palco-pagina` em `slide-curso.css`.
  */
 export function AcompanharAula({
   scriptId,
@@ -126,12 +127,11 @@ export function AcompanharAula({
   const professorEmOutro = doProfessor !== null && doProfessor !== passo.ordem;
 
   return (
-    // `max-h`, e não `h`: o slide é 16:9, então num celular em pé ele ocupa bem
-    // menos altura do que a tela oferece. Fixar a altura deixava uma faixa
-    // escura embaixo dele. O teto continua sendo o que sobra da janela depois
-    // do cabeçalho e da barra de navegação — que é `fixed` e, sem isso,
-    // passaria por cima dos botões de navegar entre passos.
-    <div className="flex max-h-[calc(100dvh-13rem)] flex-col overflow-hidden rounded-xl bg-[#0F172A] sm:max-h-[calc(100dvh-11rem)] md:h-[calc(100dvh-9rem)]">
+    // Sem altura fixa: o conteúdo do passo tem o tamanho que tem, e a pessoa
+    // rola a página para ver o resto. Prender numa caixa obrigaria a duas
+    // rolagens aninhadas — a da caixa e a da página — que no celular é o tipo
+    // de coisa que faz o dedo arrastar a errada.
+    <div className="overflow-hidden rounded-xl border border-borda bg-white">
       {/* onde o professor está */}
       {doProfessor !== null && (
         <div
@@ -164,22 +164,25 @@ export function AcompanharAula({
         </div>
       )}
 
-      {/* o slide, igual ao que está sendo projetado */}
-      <div className="flex min-h-0 flex-initial items-start justify-center">
+      {/* o conteúdo do passo, como página */}
+      <div>
         {passo.html ? (
           <PalcoSlide
             html={passo.html}
+            modo="pagina"
             aoMarcar={aoMarcar}
             marcados={passo.marcados}
           />
         ) : (
           /* Passo gravado antes de a coluna `html` existir. O seed preenche no
              deploy seguinte; até lá, ao menos o título aparece. */
-          <div className="flex h-full flex-col items-center justify-center p-8 text-center text-white">
-            <p className="mb-2 font-titulo text-xs font-bold uppercase tracking-wide text-white/50">
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <p className="mb-2 font-titulo text-xs font-bold uppercase tracking-wide text-cinza">
               {titulo} · passo {passo.ordem} de {passos.length}
             </p>
-            <h1 className="font-titulo text-2xl font-extrabold">{passo.titulo}</h1>
+            <h1 className="font-titulo text-2xl font-extrabold text-tinta">
+              {passo.titulo}
+            </h1>
           </div>
         )}
       </div>
@@ -191,36 +194,36 @@ export function AcompanharAula({
       {passo.apostila && (
         <Link
           href={passo.apostila.href}
-          className="flex items-center gap-2 border-t border-white/10 px-4 py-2.5 text-white/80 transition-colors hover:bg-white/5"
+          className="flex items-center gap-2 border-t border-borda bg-indigo-soft px-4 py-3 text-indigo-dark transition-colors hover:bg-indigo-line"
         >
           <span aria-hidden>📖</span>
           <span className="min-w-0 flex-1 truncate font-titulo text-xs font-bold sm:text-sm">
             Ler na apostila: {passo.apostila.rotulo}
           </span>
-          <span aria-hidden className="shrink-0 text-white/40">
+          <span aria-hidden className="shrink-0 opacity-50">
             ›
           </span>
         </Link>
       )}
 
-      {/* navegação: o polegar alcança sem rolar */}
-      <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
+      {/* navegação entre passos */}
+      <div className="flex items-center justify-between gap-3 border-t border-borda bg-white px-4 py-3">
         <button
           type="button"
           onClick={() => ir(indice - 1)}
           disabled={indice === 0}
-          className="rounded-full border border-white/20 px-5 py-2.5 font-titulo text-sm font-bold text-white disabled:opacity-30"
+          className="rounded-full border border-borda px-5 py-2.5 font-titulo text-sm font-bold text-tinta-clara disabled:opacity-40"
         >
           ‹ Anterior
         </button>
-        <span className="font-titulo text-sm font-bold text-white/60">
+        <span className="font-titulo text-sm font-bold text-cinza">
           {passo.ordem} / {passos.length}
         </span>
         <button
           type="button"
           onClick={() => ir(indice + 1)}
           disabled={indice === passos.length - 1}
-          className="rounded-full bg-indigo px-5 py-2.5 font-titulo text-sm font-bold text-white disabled:opacity-30"
+          className="rounded-full bg-indigo px-5 py-2.5 font-titulo text-sm font-bold text-white disabled:opacity-40"
         >
           Próximo ›
         </button>

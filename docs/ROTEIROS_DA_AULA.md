@@ -86,12 +86,31 @@ O palco escreve o HTML ele mesmo (`innerHTML`), em vez de
 não conhece, e com o conteúdo sob controle dele a primeira re-renderização os
 apagava.
 
-### O mesmo slide em duas telas
+### Dois modos: palco e página
 
-O palco tem 1280x720 fixos e é **escalado** para caber no espaço.
+O mesmo componente (`PalcoSlide`) serve aos dois lados da sala, e o modo diz
+qual formato usar.
 
-- **Tela larga** (projetor, computador): o slide inteiro cabe, como no deck.
-- **Celular em pé**: encaixá-lo inteiro poria o corpo do texto em 4px. Abaixo de
-  uma escala mínima de leitura o slide cresce até alcançá-la e a caixa passa a
-  rolar. Girar 90° foi tentado e é pior: obriga a virar o aparelho e deixa o
-  texto de lado.
+**`modo="palco"` — o professor.** O slide 1280x720 escalado para caber na tela,
+como no deck. É o que vai para o projetor.
+
+**`modo="pagina"` — o aluno.** O MESMO conteúdo, com o MESMO visual e as MESMAS
+funções, mas solto numa página que rola. Não é o slide encolhido: um 1280x720
+reduzido num celular corta as bordas e põe o corpo do texto em 4px.
+
+O modo página não é um segundo desenho. É o mesmo HTML e o mesmo CSS — o bloco
+`.palco-pagina` apenas solta as doze regras que prendiam o conteúdo à folha de
+1280x720 (posição absoluta, altura fixa, largura em pixels) e ajusta o que só
+faz sentido no telão:
+
+| No palco | Na página |
+|---|---|
+| Badge, título e corpo posicionados | Fluxo normal, com margem |
+| Grades de 2, 3 e 4 colunas | Uma coluna no celular, duas em tela média |
+| Título de capa em 56px fixos | `clamp()`, acompanhando a largura |
+| Figura flutuando no canto | No fluxo, centralizada |
+| Tabela larga | Rola dentro da própria caixa |
+| Botões do cronômetro para o fundo da sala | Tamanho de polegar |
+
+Cores, cards, boxes, prompts e botões continuam vindo das regras do deck: mudar
+uma cor lá muda nos dois lados.

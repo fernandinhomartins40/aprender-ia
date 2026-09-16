@@ -144,8 +144,16 @@ export function PalcoSlide({
   aoMarcar,
   marcados,
   className = "",
+  modo = "palco",
 }: {
   html: string;
+  /**
+   * `palco`: o slide 16:9 escalado, como no projetor.
+   * `pagina`: o MESMO conteúdo e o MESMO visual, soltos numa página que rola.
+   *   É o que o aluno usa: um 1280x720 reduzido num celular corta as bordas e
+   *   põe o texto em 4px.
+   */
+  modo?: "palco" | "pagina";
   /** Chamado quando alguém marca ou desmarca um item do checklist. */
   aoMarcar?: (indice: number, feito: boolean) => void;
   /** Itens já marcados, para reabrir o passo como a pessoa o deixou. */
@@ -181,6 +189,8 @@ export function PalcoSlide({
   // sentidos, que é o gesto que a pessoa já faz no celular. Girar 90° foi
   // tentado e é pior: obriga a virar o aparelho e deixa o texto de lado.
   useEffect(() => {
+    // Em página não há o que escalar: o conteúdo se ajusta à largura sozinho.
+    if (modo === "pagina") return;
     const el = caixa.current;
     if (!el) return;
     const medir = () => {
@@ -198,7 +208,7 @@ export function PalcoSlide({
     const ro = new ResizeObserver(medir);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [modo]);
 
   // Monta o slide e religa as interações do deck.
   //
@@ -209,7 +219,14 @@ export function PalcoSlide({
   useEffect(() => {
     const raiz = palco;
     if (!raiz) return;
-    raiz.innerHTML = html;
+    // As tabelas do material são largas para papel e telão. Numa página
+    // estreita, sem uma caixa própria, empurrariam tudo para o lado.
+    raiz.innerHTML =
+      modo === "pagina"
+        ? html
+            .replace(/<table/g, '<div class="tabela-rolavel"><table')
+            .replace(/<\/table>/g, "</table></div>")
+        : html;
     const limpezas: (() => void)[] = [];
 
     // ---- cronômetro da atividade ----
@@ -358,7 +375,19 @@ export function PalcoSlide({
     });
 
     return () => limpezas.forEach((f) => f());
-  }, [palco, html]);
+  }, [palco, html, modo]);
+
+  if (modo === "pagina") {
+    return (
+      <div
+        // A `key` força um nó novo a cada slide, como no palco: o efeito acima
+        // escreve o HTML e religa as interações sobre um elemento limpo.
+        key={html}
+        ref={setPalco}
+        className={"palco-slide palco-pagina " + className}
+      />
+    );
+  }
 
   return (
     <div
@@ -381,15 +410,9 @@ export function PalcoSlide({
         />
       )}
       <div
-        // A `key` força um nó novo a cada slide. Sem ela o React reaproveita o
-        // mesmo elemento e só troca o `innerHTML` — o que acontece DEPOIS do
-        // efeito abaixo rodar, então ele procurava o cronômetro e os prompts
-        // no slide anterior e não ligava nada.
         key={html}
         ref={setPalco}
         className="palco-slide"
-        // Enquanto a caixa não foi medida o palco fica invisível: sem isso ele
-        // pisca em 1280px de largura antes da primeira medição.
         style={{
           transform: "scale(" + escala + ")",
           visibility: escala ? "visible" : "hidden",
