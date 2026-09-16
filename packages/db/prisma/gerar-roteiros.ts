@@ -52,6 +52,8 @@ export type PassoRoteiro = {
   titulo: string;
   /** O slide como está no deck, desenhado com o CSS do deck. */
   html: string;
+  /** A seção da apostila que este slide trata — "1.1", "2.2". */
+  secaoApostila: string | null;
   blocos: BlocoRoteiro[];
 };
 

@@ -18,6 +18,7 @@ import {
   TESTES_CELULAR,
 } from "./conteudo-apostila";
 import { ROTEIROS_AULA } from "./roteiros-aula";
+import { APOSTILA } from "./apostila";
 
 const prisma = new PrismaClient();
 
@@ -1301,6 +1302,7 @@ async function main() {
         update: {
           titulo: passo.titulo,
           html: passo.html,
+          secaoApostila: passo.secaoApostila,
           blocos: passo.blocos as unknown as object,
         },
         create: {
@@ -1308,6 +1310,7 @@ async function main() {
           ordem: i + 1,
           titulo: passo.titulo,
           html: passo.html,
+          secaoApostila: passo.secaoApostila,
           blocos: passo.blocos as unknown as object,
         },
       });
@@ -1322,6 +1325,61 @@ async function main() {
   }
   console.log(
     `  roteiros da aula: ${ROTEIROS_AULA.length} encontros · ${totalPassos} passos`,
+  );
+
+  // ---- Apostila ----
+  //
+  // O aluno lê a apostila como página, e não como PDF de 9 MB aberto no
+  // celular: o slide leva direto ao trecho que ele trata. O PDF continua
+  // disponível para baixar, para quem prefere imprimir ou ler off-line.
+  //
+  // Capítulos e seções são atualizados pela chave e pela ordem, não apagados
+  // e recriados, para que o endereço de uma seção continue valendo depois de
+  // um deploy — é link que o aluno pode ter guardado.
+  let totalSecoes = 0;
+  for (const [i, cap] of APOSTILA.entries()) {
+    const capitulo = await prisma.handbookChapter.upsert({
+      where: { chave: cap.id },
+      update: {
+        numero: cap.numero,
+        titulo: cap.titulo,
+        icone: cap.icone,
+        aberturaHtml: cap.aberturaHtml,
+        ordem: i + 1,
+      },
+      create: {
+        chave: cap.id,
+        numero: cap.numero,
+        titulo: cap.titulo,
+        icone: cap.icone,
+        aberturaHtml: cap.aberturaHtml,
+        ordem: i + 1,
+      },
+    });
+
+    for (const [j, sec] of cap.secoes.entries()) {
+      await prisma.handbookSection.upsert({
+        where: { chapterId_ordem: { chapterId: capitulo.id, ordem: j + 1 } },
+        update: { numero: sec.numero, titulo: sec.titulo, html: sec.html },
+        create: {
+          chapterId: capitulo.id,
+          ordem: j + 1,
+          numero: sec.numero,
+          titulo: sec.titulo,
+          html: sec.html,
+        },
+      });
+    }
+
+    // Se um capítulo encurtou, as sobras saem — só elas.
+    await prisma.handbookSection.deleteMany({
+      where: { chapterId: capitulo.id, ordem: { gt: cap.secoes.length } },
+    });
+
+    totalSecoes += cap.secoes.length;
+  }
+  console.log(
+    `  apostila: ${APOSTILA.length} capítulos · ${totalSecoes} seções`,
   );
 
   // Grava a assinatura por ÚLTIMO, e só aqui.

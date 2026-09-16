@@ -170,6 +170,8 @@ export type PassoExtraido = {
   titulo: string;
   /** O slide como está no deck, para ser desenhado com o CSS do deck. */
   html: string;
+  /** A seção da apostila que este slide trata — "1.1", "2.2". */
+  secaoApostila: string | null;
   blocos: Bloco[];
 };
 
@@ -191,6 +193,11 @@ export function roteirosDoDeck(html: string): RoteiroExtraido[] {
   const slides = fatiarSlides(html);
   const porEncontro = new Map<number, PassoExtraido[]>();
   let corrente = 1;
+  // A seção da apostila que o slide trata. Vem do badge — "Capítulo 2.2 · O
+  // coração do curso" — e, quando o slide não tem badge, herda a do anterior:
+  // é o que a aula faz de fato, seguir tratando o mesmo trecho por vários
+  // slides. Sem herdar, só 34 dos 96 passos teriam para onde apontar.
+  let secaoCorrente: string | null = null;
 
   for (const s of slides) {
     const tituloSlide = s.match(/data-title="([^"]*)"/)?.[1] ?? "";
@@ -204,12 +211,21 @@ export function roteirosDoDeck(html: string): RoteiroExtraido[] {
       tituloSlide ||
       textoLimpo(s.match(/<h1 class="st"[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") ||
       "Passo";
+    const badge = s.match(/<div class="badge[^"]*">([\s\S]*?)<\/div>/)?.[1] ?? "";
+    const secao = textoLimpo(badge).match(/Cap[ií]tulo\s+(\d+(?:\.\d+)?)/i)?.[1];
+    if (secao) secaoCorrente = secao;
+
     const blocos = blocosDoSlide(s);
     // Um slide puramente visual (uma divisória, uma capa) não tem bloco
     // nenhum, mas continua sendo um slide para projetar — antes ele sumia
     // do roteiro, e a aula pulava a abertura do encontro.
     if (!porEncontro.has(enc)) porEncontro.set(enc, []);
-    porEncontro.get(enc)!.push({ titulo, html: normalizarHtml(s), blocos });
+    porEncontro.get(enc)!.push({
+      titulo,
+      html: normalizarHtml(s),
+      secaoApostila: secaoCorrente,
+      blocos,
+    });
   }
 
   return [...porEncontro]

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { marcarItens, passoDoProfessor } from "@/server/acoes-aula";
 import type { PassoDaAula } from "@/server/acompanhar";
+import Link from "next/link";
 import { PalcoSlide } from "@/components/palco-slide";
 
 /**
@@ -182,6 +183,25 @@ export function AcompanharAula({
           </div>
         )}
       </div>
+
+      {/* O trecho da apostila que este passo trata. Fica junto do slide porque
+          é durante a aula que a dúvida aparece — e o aluno não deveria ter que
+          abrir um PDF de 113 páginas para achar a explicação do que está na
+          tela. */}
+      {passo.apostila && (
+        <Link
+          href={passo.apostila.href}
+          className="flex items-center gap-2 border-t border-white/10 px-4 py-2.5 text-white/80 transition-colors hover:bg-white/5"
+        >
+          <span aria-hidden>📖</span>
+          <span className="min-w-0 flex-1 truncate font-titulo text-xs font-bold sm:text-sm">
+            Ler na apostila: {passo.apostila.rotulo}
+          </span>
+          <span aria-hidden className="shrink-0 text-white/40">
+            ›
+          </span>
+        </Link>
+      )}
 
       {/* navegação: o polegar alcança sem rolar */}
       <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">

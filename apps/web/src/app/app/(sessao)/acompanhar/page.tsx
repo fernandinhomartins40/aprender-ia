@@ -59,13 +59,12 @@ export default async function PaginaAcompanhar({
         passoInicialDoProfessor={dados.passoDoProfessor}
       />
 
-      {/* A apostila completa, para quem quiser acompanhar pelo material ou
-          reler depois do encontro. */}
-      <a
-        href="/curso/Apostila_IA_Educadores_2026.pdf"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-6 flex items-center gap-3 rounded-xl border border-borda bg-white p-4 transition-colors hover:bg-indigo-soft"
+      {/* A apostila, para reler depois do encontro ou consultar durante. É
+          uma página, e não o PDF: ler 113 páginas de A4 no celular para achar
+          o trecho da aula era o problema. O PDF continua lá, para baixar. */}
+      <Link
+        href="/app/apostila"
+        className="mt-5 flex items-center gap-3 rounded-xl border border-borda bg-white p-4 transition-colors hover:bg-indigo-soft"
       >
         <span aria-hidden className="text-2xl">📕</span>
         <span className="min-w-0 flex-1">
@@ -73,13 +72,13 @@ export default async function PaginaAcompanhar({
             Apostila completa do curso
           </span>
           <span className="block text-xs text-cinza">
-            abre em nova aba
+            Ler aqui mesmo, ou baixar em PDF
           </span>
         </span>
         <span className="shrink-0 font-titulo text-sm font-bold text-indigo">
           Abrir
         </span>
-      </a>
+      </Link>
     </main>
   );
 }

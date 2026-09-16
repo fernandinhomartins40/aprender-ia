@@ -1,0 +1,879 @@
+/* =========================================================
+   A APOSTILA DO CURSO, NA TELA
+
+   ARQUIVO DERIVADO de `cursos/Curso_IA_Educadores_v2/estilo.css` e
+   companheiros — o visual da apostila que vira PDF.
+
+   Não edite à mão. Regere com:
+     node scripts/derivar-css-apostila.mjs <estilo.css> <componentes...>
+
+   O que o script muda, e só isto:
+
+   1. Tudo passa a viver sob `.apostila-curso`, para não colidir com a
+      plataforma (a apostila usava `table`, `.card`, `.prompt` no
+      escopo global).
+   2. As medidas em `pt` viram `rem`, com o corpo da apostila (10.6pt)
+      valendo 1rem: o texto passa a acompanhar o tamanho de fonte do
+      aparelho, que é o que importa para quem lê no celular.
+   3. O que existia por causa do papel sai: `@page`, os blocos
+      `@media print` e as regras de `html`/`body`.
+   4. Entra o que a tela pede e a folha não pedia: tabela que rola sozinha,
+      prompt que quebra linha, imagem que não estoura a largura e duas
+      colunas que viram uma no celular.
+   ========================================================= */
+
+.apostila-curso{
+  --indigo:      #4F46E5;   
+  --indigo-dark: #4338CA;
+  --indigo-soft: #EEF0FE;   
+  --indigo-line: #DDE1FB;   
+  --laranja:     #F97316;   
+  --laranja-soft:#FFF3E8;
+
+  --verde:       #10B981;   
+  --verde-dark:  #047857;
+  --verde-soft:  #ECFDF5;
+
+  --vermelho:    #EF4444;   
+  --vermelho-dk: #B91C1C;
+  --vermelho-sf: #FEF2F2;
+
+  --amarelo:     #EAB308;   
+  --amarelo-dk:  #A16207;
+  --amarelo-sf:  #FEFCE8;
+
+  --azul:        #2563EB;
+  --azul-soft:   #EFF6FF;
+
+  --tinta:       #1E293B;   
+  --tinta-clara: #475569;
+  --cinza:       #64748B;
+  --borda:       #E2E8F0;
+
+  --prompt-bg:   #151F38;   
+  --prompt-bg2:  #1B2745;
+  --prompt-txt:  #E8EDF7;
+
+  --titulo: 'Montserrat', system-ui, sans-serif;
+  --corpo:  'Nunito Sans', system-ui, sans-serif;
+  --mono:   'JetBrains Mono', 'Consolas', monospace;
+}
+.apostila-curso *{ box-sizing: border-box; }
+.apostila-curso{
+  font-family: var(--corpo);
+  color: var(--tinta);
+  font-size: 1rem;
+  line-height: 1.62;
+  margin: 0;
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.apostila-curso p{ margin: 0 0 11px; text-align: justify; }
+.apostila-curso strong{ color: var(--tinta); font-weight: 700; }
+.apostila-curso em{ color: var(--tinta-clara); }
+.apostila-curso a{ color: var(--indigo); text-decoration: none; font-weight: 600; }
+.apostila-curso .capa{
+  height: 252mm;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  background: linear-gradient(150deg,#EEF0FE 0%,#F6F4FF 45%,#FFF8F0 100%);
+  border-radius: 22px;
+  padding: 30px 42px;
+  page-break-after: always;
+}
+.apostila-curso .capa-selo{
+  display:inline-block;
+  background: var(--indigo);
+  color:#fff;
+  font-family: var(--titulo);
+  font-size: 0.943rem; font-weight: 700;
+  letter-spacing:.7px;
+  padding: 9px 22px;
+  border-radius: 999px;
+  margin-bottom: 26px;
+}
+.apostila-curso .capa-icone{ font-size: 4.906rem; margin-bottom: 6px; line-height:1; }
+.apostila-curso .capa h1{
+  font-family: var(--titulo);
+  font-size: 3.113rem; font-weight: 800;
+  color: var(--tinta); margin: 0; line-height: 1.14;
+}
+.apostila-curso .capa h1 .destaque{ color: var(--laranja); display:block; }
+.apostila-curso .capa .sub{
+  font-size: 1.226rem; color: var(--tinta-clara);
+  margin-top: 20px; max-width: 430px; line-height:1.5;
+}
+.apostila-curso .capa .frase{
+  font-size: 0.991rem; color: var(--cinza);
+  margin-top: 16px; max-width: 430px; font-style: italic;
+}
+.apostila-curso .capa-tags{
+  display:flex; gap:9px; flex-wrap:wrap; justify-content:center;
+  margin-top: 34px; max-width: 470px;
+}
+.apostila-curso .capa-tag{
+  background:#fff; border:1.5px solid var(--indigo-line);
+  color: var(--indigo-dark);
+  font-family: var(--titulo); font-size: 0.811rem; font-weight:700;
+  padding: 7px 14px; border-radius: 999px;
+}
+.apostila-curso .capa-rodape{
+  margin-top: 40px; font-size: 0.887rem; color: var(--cinza);
+  border-top: 1.5px solid var(--indigo-line);
+  padding-top: 14px; max-width: 430px;
+}
+.apostila-curso h1.cap{
+  font-family: var(--titulo);
+  font-size: 1.887rem; font-weight: 800;
+  color: var(--indigo);
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 2.5px solid var(--indigo-line);
+  line-height: 1.22;
+  page-break-after: avoid;
+}
+.apostila-curso h1.cap .ic{ color: var(--laranja); margin-right: 9px; }
+.apostila-curso h1.cap.tema-alerta{ border-bottom-color: #FBD5D5; }
+.apostila-curso h1.cap.tema-alerta .ic{ color: var(--vermelho); }
+.apostila-curso h2{
+  font-family: var(--titulo);
+  font-size: 1.264rem; font-weight: 700;
+  color: var(--tinta);
+  margin: 26px 0 10px;
+  page-break-after: avoid;
+}
+.apostila-curso h3{
+  font-family: var(--titulo);
+  font-size: 1.075rem; font-weight: 700;
+  color: var(--tinta);
+  margin: 20px 0 8px;
+  page-break-after: avoid;
+}
+.apostila-curso .abertura{
+  font-size: 1.047rem; color: var(--tinta-clara);
+  margin-bottom: 18px;
+}
+.apostila-curso .sumario-item{
+  padding: 7px 0;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 0.991rem;
+}
+.apostila-curso .sumario-item b{ color: var(--indigo); font-family: var(--titulo); }
+.apostila-curso .sumario-enc{
+  font-family: var(--titulo); font-weight: 800;
+  color: var(--laranja);
+  font-size: 0.981rem;
+  letter-spacing:.4px;
+  margin: 20px 0 8px;
+  text-transform: uppercase;
+}
+.apostila-curso .traduzindo{
+  background: var(--verde-soft);
+  border-left: 4.5px solid var(--verde);
+  border-radius: 9px;
+  padding: 14px 17px;
+  margin: 16px 0;
+  font-size: 0.953rem;
+  page-break-inside: avoid;
+}
+.apostila-curso .traduzindo .t{
+  font-family: var(--titulo); font-weight: 700;
+  color: var(--verde-dark);
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+.apostila-curso .traduzindo p{ margin: 0; text-align: left; }
+.apostila-curso .atencao{
+  background: var(--vermelho-sf);
+  border-left: 4.5px solid var(--vermelho);
+  border-radius: 9px;
+  padding: 14px 17px;
+  margin: 16px 0;
+  font-size: 0.953rem;
+  page-break-inside: avoid;
+}
+.apostila-curso .atencao .t{
+  font-family: var(--titulo); font-weight: 700;
+  color: var(--vermelho-dk);
+  font-size: 1rem; margin-bottom: 6px;
+}
+.apostila-curso .atencao p,.apostila-curso .atencao ul{ margin: 0 0 6px; text-align: left; }
+.apostila-curso .dica{
+  background: var(--amarelo-sf);
+  border-left: 4.5px solid var(--amarelo);
+  border-radius: 9px;
+  padding: 14px 17px;
+  margin: 16px 0;
+  font-size: 0.953rem;
+  page-break-inside: avoid;
+}
+.apostila-curso .dica .t{
+  font-family: var(--titulo); font-weight: 700;
+  color: var(--amarelo-dk);
+  font-size: 1rem; margin-bottom: 6px;
+}
+.apostila-curso .dica p{ margin:0 0 6px; text-align:left; }
+.apostila-curso .destaque-lilas{
+  background: var(--indigo-soft);
+  border-radius: 11px;
+  padding: 17px 20px;
+  margin: 16px 0;
+  page-break-inside: avoid;
+}
+.apostila-curso .destaque-lilas .t{
+  font-family: var(--titulo); font-weight: 700;
+  color: var(--indigo-dark);
+  font-size: 1.075rem; margin-bottom: 8px;
+}
+.apostila-curso .etiqueta{
+  display: inline-block;
+  background: var(--indigo);
+  color: #fff;
+  font-family: var(--titulo);
+  font-size: 0.774rem; font-weight: 700;
+  padding: 5px 13px;
+  border-radius: 999px;
+  margin-bottom: -4px;
+  position: relative; z-index: 2;
+  letter-spacing:.2px;
+}
+.apostila-curso .etiqueta.verde{ background: var(--verde); }
+.apostila-curso .etiqueta.vermelha{ background: var(--vermelho); }
+.apostila-curso .etiqueta.laranja{ background: var(--laranja); }
+.apostila-curso .prompt{
+  background: linear-gradient(160deg,var(--prompt-bg) 0%,var(--prompt-bg2) 100%);
+  color: var(--prompt-txt);
+  border-radius: 13px;
+  padding: 17px 19px;
+  margin: 8px 0 15px;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  line-height: 1.66;
+  white-space: pre-wrap;
+  page-break-inside: avoid;
+}
+.apostila-curso .duas-colunas{
+  display: flex; gap: 15px; align-items: flex-start;
+  margin: 14px 0;
+  page-break-inside: avoid;
+}
+.apostila-curso .duas-colunas > .col-a{ flex: 1 1 58%; min-width:0; }
+.apostila-curso .duas-colunas > .col-b{ flex: 1 1 42%; min-width:0; }
+.apostila-curso .figura{
+  background: #F8FAFC;
+  border: 1px solid var(--borda);
+  border-radius: 13px;
+  padding: 9px;
+  page-break-inside: avoid;
+}
+.apostila-curso .figura img{ width: 100%; border-radius: 8px; display:block; }
+.apostila-curso .figura .legenda{
+  font-size: 0.821rem; color: var(--cinza);
+  text-align: center; margin-top: 8px; line-height:1.45;
+}
+.apostila-curso table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  font-size: 0.896rem;
+  page-break-inside: avoid;
+}
+.apostila-curso thead th{
+  background: var(--indigo-soft);
+  color: var(--indigo-dark);
+  font-family: var(--titulo); font-weight: 700;
+  text-align: left;
+  padding: 10px 11px;
+  font-size: 0.887rem;
+}
+.apostila-curso tbody td{
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--borda);
+  vertical-align: top;
+}
+.apostila-curso tbody tr:nth-child(even){ background: #FCFCFE; }
+.apostila-curso .ferramenta{ font-family: var(--titulo); font-weight: 700; }
+.apostila-curso .selo{
+  font-family: var(--titulo); font-weight:700;
+  font-size: 0.792rem; padding: 3px 9px;
+  border-radius: 999px; white-space: nowrap;
+  display:inline-block;
+}
+.apostila-curso .selo.verde{ background:#D1FAE5; color:#065F46; }
+.apostila-curso .selo.amarelo{ background:#FEF3C7; color:#92400E; }
+.apostila-curso .selo.vermelho{ background:#FEE2E2; color:#991B1B; }
+.apostila-curso ul,.apostila-curso ol{ margin: 9px 0 12px; padding-left: 21px; }
+.apostila-curso li{ margin-bottom: 6px; }
+.apostila-curso .oficina{
+  background: linear-gradient(135deg,#FFF7ED 0%,#FFF1E2 100%);
+  border: 2px solid #FDBA74;
+  border-radius: 13px;
+  padding: 17px 20px;
+  margin: 18px 0;
+  page-break-inside: avoid;
+}
+.apostila-curso .oficina .t{
+  font-family: var(--titulo); font-weight: 800;
+  color: #C2410C; font-size: 1.094rem;
+  margin-bottom: 9px;
+}
+.apostila-curso .oficina ol{ margin-bottom: 0; }
+.apostila-curso .checklist{
+  background: var(--indigo-soft);
+  border-radius: 11px;
+  padding: 16px 20px;
+  margin: 15px 0;
+  page-break-inside: avoid;
+}
+.apostila-curso .checklist div{ padding: 5px 0; font-size: 0.962rem; }
+.apostila-curso .encerramento{
+  background: linear-gradient(150deg,#EEF0FE 0%,#F5F3FF 100%);
+  border-radius: 15px;
+  padding: 34px 32px;
+  text-align: center;
+  margin: 26px 0;
+  page-break-inside: avoid;
+}
+.apostila-curso .encerramento .ic{ font-size: 2.83rem; }
+.apostila-curso .encerramento .t{
+  font-family: var(--titulo); font-weight: 800;
+  color: var(--indigo-dark);
+  font-size: 1.415rem; margin: 10px 0 12px;
+}
+.apostila-curso .encerramento p{ text-align: center; color: var(--tinta-clara); }
+.apostila-curso .encerramento .final{
+  color: var(--indigo-dark); font-weight: 700;
+  margin-top: 14px;
+}
+.apostila-curso .quebra{ page-break-before: always; }
+.apostila-curso .nao-quebrar{ page-break-inside: avoid; }
+.apostila-curso .link-ferramenta{
+  font-family: var(--mono); font-size: 0.83rem;
+  color: var(--indigo); font-weight: 500;
+}
+.apostila-curso .faixa-encontro{
+  background: var(--indigo);
+  color: #fff;
+  font-family: var(--titulo); font-weight: 700;
+  font-size: 0.849rem; letter-spacing: .6px;
+  padding: 6px 15px; border-radius: 999px;
+  display: inline-block; margin-bottom: 13px;
+  text-transform: uppercase;
+}
+.apostila-curso .caso{
+  background: linear-gradient(135deg,#F5F3FF 0%,#EEF0FE 100%);
+  border: 2.5px solid #C7D2FE;
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  page-break-inside: avoid;
+}
+.apostila-curso .caso .cabeca{
+  display:flex; align-items:center; gap:11px; margin-bottom:11px;
+}
+.apostila-curso .caso .selo-caso{
+  background: var(--indigo); color:#fff;
+  font-family: var(--titulo); font-size:0.811rem; font-weight:800;
+  padding:5px 13px; border-radius:999px; letter-spacing:.4px;
+  white-space:nowrap;
+}
+.apostila-curso .caso .titulo-caso{
+  font-family: var(--titulo); font-weight:800; color: var(--indigo-dark);
+  font-size:1.17rem; line-height:1.25;
+}
+.apostila-curso .caso .cena{
+  background:#fff; border-radius:10px; padding:13px 16px;
+  font-size:0.972rem; color:var(--tinta); line-height:1.6;
+  border-left:4px solid var(--laranja); margin-bottom:11px;
+}
+.apostila-curso .caso .pergunta{
+  font-family:var(--titulo); font-weight:700; color:var(--indigo-dark);
+  font-size:1rem; margin-bottom:8px;
+}
+.apostila-curso .caso .linhas{
+  background:#fff; border-radius:9px; padding:11px 14px; margin-top:9px;
+}
+.apostila-curso .caso .linhas .lin{
+  border-bottom:1.2px dashed #CBD5E1; height:19px;
+}
+.apostila-curso .caso .tempo{
+  font-family:var(--titulo); font-size:0.83rem; font-weight:700;
+  color:var(--laranja); margin-left:auto; white-space:nowrap;
+}
+.apostila-curso .solucao{
+  background: var(--verde-soft);
+  border-left:4.5px solid var(--verde);
+  border-radius:9px; padding:14px 17px; margin:12px 0 0;
+  page-break-inside:avoid;
+}
+.apostila-curso .solucao .t{
+  font-family:var(--titulo); font-weight:700; color:var(--verde-dark);
+  font-size:0.991rem; margin-bottom:7px;
+}
+.apostila-curso .solucao p,.apostila-curso .solucao li{ font-size:0.943rem; color:#065F46; line-height:1.58; }
+.apostila-curso .duelo{
+  border:2.5px solid var(--indigo-line); border-radius:14px;
+  padding:16px 20px; margin:18px 0; background:#FCFCFE;
+  page-break-inside:avoid;
+}
+.apostila-curso .duelo .cabeca{
+  display:flex; align-items:center; gap:11px; margin-bottom:12px;
+}
+.apostila-curso .duelo .selo-duelo{
+  background: var(--laranja); color:#fff;
+  font-family:var(--titulo); font-size:0.811rem; font-weight:800;
+  padding:5px 13px; border-radius:999px; letter-spacing:.4px; white-space:nowrap;
+}
+.apostila-curso .duelo .titulo-duelo{
+  font-family:var(--titulo); font-weight:800; color:var(--tinta);
+  font-size:1.151rem;
+}
+.apostila-curso .duelo .rodada{ margin-bottom:11px; }
+.apostila-curso .duelo .rot{
+  font-family:var(--titulo); font-size:0.887rem; font-weight:700;
+  margin-bottom:5px;
+}
+.apostila-curso .duelo .rot.ruim{ color:var(--vermelho-dk); }
+.apostila-curso .duelo .rot.bom{ color:var(--verde-dark); }
+.apostila-curso .duelo .resultado{
+  background:#F1F5F9; border-radius:9px; padding:11px 14px;
+  font-size:0.915rem; color:var(--tinta-clara); line-height:1.55;
+  border-left:3.5px solid var(--cinza); margin-top:7px;
+}
+.apostila-curso .duelo .resultado b{ color:var(--tinta); }
+.apostila-curso .duelo .sua-vez{
+  background:var(--laranja-soft); border:1.8px dashed var(--laranja);
+  border-radius:10px; padding:12px 15px; margin-top:11px;
+}
+.apostila-curso .duelo .sua-vez .t{
+  font-family:var(--titulo); font-weight:700; color:#C2410C;
+  font-size:0.962rem; margin-bottom:7px;
+}
+.apostila-curso .duelo .sua-vez .lin{ border-bottom:1.2px dashed #FDBA74; height:19px; }
+.apostila-curso .caca{
+  background:#FFFBEB; border:2.5px solid #FCD34D;
+  border-radius:14px; padding:16px 20px; margin:18px 0;
+  page-break-inside:avoid;
+}
+.apostila-curso .caca .cabeca{ display:flex; align-items:center; gap:11px; margin-bottom:11px; }
+.apostila-curso .caca .selo-caca{
+  background:#D97706; color:#fff; font-family:var(--titulo);
+  font-size:0.811rem; font-weight:800; padding:5px 13px;
+  border-radius:999px; letter-spacing:.4px; white-space:nowrap;
+}
+.apostila-curso .caca .titulo-caca{
+  font-family:var(--titulo); font-weight:800; color:#92400E; font-size:1.151rem;
+}
+.apostila-curso .caca .resposta-ia{
+  background:#fff; border:1.5px solid #FDE68A; border-radius:10px;
+  padding:13px 16px; font-size:0.953rem; color:var(--tinta);
+  line-height:1.6; margin-bottom:10px;
+}
+.apostila-curso .caca .instrucao{
+  font-family:var(--titulo); font-weight:700; color:#92400E;
+  font-size:0.972rem;
+}
+.apostila-curso .gabarito-formador{
+  background:#FEF2F2; border-left:4.5px solid var(--vermelho);
+  border-radius:9px; padding:13px 16px; margin-top:11px;
+}
+.apostila-curso .gabarito-formador .t{
+  font-family:var(--titulo); font-weight:700; color:var(--vermelho-dk);
+  font-size:0.972rem; margin-bottom:6px;
+}
+.apostila-curso .gabarito-formador p{ font-size:0.934rem; color:#991B1B; line-height:1.56; margin:0 0 5px; }
+.apostila-curso .celular{
+  background: linear-gradient(135deg,#ECFDF5 0%,#D1FAE5 100%);
+  border:2.5px solid #6EE7B7; border-radius:14px;
+  padding:17px 21px; margin:18px 0; page-break-inside:avoid;
+}
+.apostila-curso .celular .cabeca{ display:flex; align-items:center; gap:11px; margin-bottom:11px; }
+.apostila-curso .celular .selo-cel{
+  background:var(--verde); color:#fff; font-family:var(--titulo);
+  font-size:0.811rem; font-weight:800; padding:5px 13px;
+  border-radius:999px; letter-spacing:.4px; white-space:nowrap;
+}
+.apostila-curso .celular .titulo-cel{
+  font-family:var(--titulo); font-weight:800; color:var(--verde-dark); font-size:1.151rem;
+}
+.apostila-curso .celular ol{ margin:0; padding-left:21px; }
+.apostila-curso .celular li{ font-size:0.962rem; color:#065F46; line-height:1.62; margin-bottom:6px; }
+.apostila-curso .desafio{
+  background: linear-gradient(135deg,#FFF7ED 0%,#FFEDD5 100%);
+  border:2.5px solid #FB923C; border-radius:14px;
+  padding:17px 21px; margin:18px 0; page-break-inside:avoid;
+}
+.apostila-curso .desafio .cabeca{ display:flex; align-items:center; gap:12px; margin-bottom:11px; }
+.apostila-curso .desafio .cronometro{
+  background:var(--laranja); color:#fff; border-radius:11px;
+  font-family:var(--titulo); font-weight:800; font-size:1.415rem;
+  padding:8px 15px; white-space:nowrap; line-height:1;
+}
+.apostila-curso .desafio .titulo-des{
+  font-family:var(--titulo); font-weight:800; color:#C2410C; font-size:1.17rem;
+}
+.apostila-curso .desafio p,.apostila-curso .desafio li{ font-size:0.962rem; color:#7C2D12; line-height:1.6; }
+.apostila-curso .desafio ol{ margin:7px 0 0; padding-left:21px; }
+.apostila-curso .aquecimento{
+  background: linear-gradient(135deg,#FEF2F2 0%,#FFE4E6 100%);
+  border-left:5px solid var(--vermelho); border-radius:11px;
+  padding:15px 19px; margin:16px 0; page-break-inside:avoid;
+}
+.apostila-curso .aquecimento .t{
+  font-family:var(--titulo); font-weight:800; color:var(--vermelho-dk);
+  font-size:1.038rem; margin-bottom:6px;
+}
+.apostila-curso .aquecimento p{ font-size:0.981rem; color:#9F1239; line-height:1.58; margin:0; }
+.apostila-curso .saida{
+  background: linear-gradient(150deg,#EEF0FE 0%,#F5F3FF 100%);
+  border:2.5px solid var(--indigo-line); border-radius:14px;
+  padding:18px 22px; margin:18px 0; page-break-inside:avoid;
+}
+.apostila-curso .saida .t{
+  font-family:var(--titulo); font-weight:800; color:var(--indigo-dark);
+  font-size:1.151rem; margin-bottom:10px;
+}
+.apostila-curso .saida .item{
+  padding:6px 0; font-size:0.972rem; color:#3730A3;
+  border-bottom:1px solid #DDE1FB;
+}
+.apostila-curso .saida .item:last-child{ border-bottom:none; }
+.apostila-curso .diario{
+  background:#fff; border:2px solid var(--borda); border-radius:12px;
+  padding:16px 20px; margin:16px 0; page-break-inside:avoid;
+}
+.apostila-curso .diario .t{
+  font-family:var(--titulo); font-weight:800; color:var(--tinta);
+  font-size:1.075rem; margin-bottom:9px;
+}
+.apostila-curso .diario table{ margin:0; }
+.apostila-curso .diario td{ font-size:0.925rem; }
+.apostila-curso .diario .lin{ border-bottom:1.2px dashed #CBD5E1; height:20px; }
+.apostila-curso .figura-img{
+  background:#F8FAFC; border:1px solid var(--borda); border-radius:13px;
+  padding:9px; margin:14px 0; page-break-inside:avoid; text-align:center;
+}
+.apostila-curso .figura-img img{ width:100%; border-radius:8px; display:block; }
+.apostila-curso .figura-img .legenda{
+  font-size:0.821rem; color:var(--cinza); text-align:center;
+  margin-top:8px; line-height:1.45;
+}
+.apostila-curso .figura-img.metade{ max-width:52%; margin-left:auto; margin-right:auto; }
+.apostila-curso .img-texto{
+  display:flex; gap:16px; align-items:center; margin:16px 0;
+  page-break-inside:avoid;
+}
+.apostila-curso .img-texto > .lado-img{ flex:0 0 38%; }
+.apostila-curso .img-texto > .lado-txt{ flex:1 1 62%; }
+.apostila-curso .img-texto .figura-img{ margin:0; }
+.apostila-curso .destacavel{
+  border: 2.5px dashed var(--indigo);
+  border-radius: 15px;
+  margin: 20px 0 26px;
+  page-break-inside: avoid;
+  overflow: hidden;
+}
+.apostila-curso .destacavel.vermelho{ border-color: var(--vermelho); }
+.apostila-curso .destacavel.laranja{ border-color: var(--laranja); }
+.apostila-curso .dest-marca{
+  background: var(--indigo); color:#fff;
+  font-family: var(--titulo); font-size:0.792rem; font-weight:700;
+  letter-spacing:.5px; padding:6px 16px;
+}
+.apostila-curso .dest-marca.vermelho{ background: var(--vermelho); }
+.apostila-curso .dest-marca.laranja{ background: var(--laranja); }
+.apostila-curso .dest-corpo{ padding: 18px 22px; background:#fff; }
+.apostila-curso .dest-titulo{
+  font-family: var(--titulo); font-weight:800; color: var(--indigo-dark);
+  font-size:1.415rem; margin-bottom:3px;
+}
+.apostila-curso .dest-titulo.vermelho{ color: var(--vermelho-dk); }
+.apostila-curso .dest-titulo.laranja{ color:#C2410C; }
+.apostila-curso .dest-sub{ font-size:0.906rem; color: var(--cinza); margin-bottom:13px; }
+.apostila-curso .dest-rodape{
+  background: var(--indigo-soft); border-radius:9px;
+  padding:11px 14px; margin-top:13px;
+  font-size:0.906rem; color:#3730A3; line-height:1.55;
+}
+.apostila-curso .dest-rodape.vermelho{ background: var(--vermelho-sf); color:#991B1B; }
+.apostila-curso .ptcf-linha{
+  display:flex; gap:12px; align-items:flex-start;
+  padding:9px 0; border-bottom:1px solid #F1F5F9;
+  font-size:0.934rem; line-height:1.5;
+}
+.apostila-curso .ptcf-linha:last-of-type{ border-bottom:none; }
+.apostila-curso .ptcf-linha.destaque{ background: var(--laranja-soft); border-radius:8px; padding:9px 11px; }
+.apostila-curso .ptcf-letra{
+  width:27px;height:27px;border-radius:50%;background:var(--indigo);color:#fff;
+  font-family:var(--titulo);font-weight:800;font-size:1.132rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.apostila-curso .ptcf-letra.lar{ background: var(--laranja); }
+.apostila-curso .ptcf-linha em{ color: var(--indigo); font-size:0.868rem; }
+.apostila-curso .mini{ font-size:0.792rem; color:var(--laranja); font-weight:700; }
+.apostila-curso .lgpd-grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; margin-bottom:13px; }
+.apostila-curso .lgpd-item{ font-size:0.915rem; color:#991B1B; padding:4px 0; }
+.apostila-curso .lgpd-troca{ display:flex; gap:12px; margin-bottom:4px; }
+.apostila-curso .troca-col{ flex:1; border-radius:9px; padding:11px 13px; font-size:0.887rem; line-height:1.5; }
+.apostila-curso .troca-col.errado{ background: var(--vermelho-sf); color:#991B1B; }
+.apostila-curso .troca-col.certo{ background: var(--verde-soft); color:#065F46; }
+.apostila-curso .troca-tit{ font-family:var(--titulo); font-weight:700; font-size:0.887rem; margin-bottom:4px; }
+.apostila-curso .emerg{ margin-bottom:11px; }
+.apostila-curso .emerg-tit{
+  font-family:var(--titulo); font-weight:700; color:#C2410C;
+  font-size:0.962rem; margin-bottom:4px;
+}
+.apostila-curso .emerg-txt{
+  background:#FFF7ED; border-left:3.5px solid var(--laranja);
+  border-radius:7px; padding:9px 12px;
+  font-family:var(--mono); font-size:0.792rem; color:#7C2D12; line-height:1.55;
+}
+.apostila-curso .ficha-campo{ display:flex; gap:11px; align-items:flex-end; margin-bottom:11px; }
+.apostila-curso .ficha-rot{
+  font-family:var(--titulo); font-weight:700; font-size:0.906rem;
+  color:var(--tinta); white-space:nowrap;
+}
+.apostila-curso .ficha-campo .lin{ flex:1; border-bottom:1.3px dashed #CBD5E1; height:17px; }
+.apostila-curso .ficha-bloco{ margin-bottom:11px; }
+.apostila-curso .ficha-tit{
+  font-family:var(--titulo); font-weight:700; font-size:0.934rem;
+  color:var(--indigo-dark); margin-bottom:6px;
+}
+.apostila-curso .ficha-bloco .lin{ border-bottom:1.3px dashed #CBD5E1; height:18px; }
+.apostila-curso .ficha-check{
+  background: var(--indigo-soft); border-radius:10px;
+  padding:12px 15px; margin-top:13px;
+}
+.apostila-curso .cki{ font-size:0.906rem; color:#3730A3; padding:3px 0; }
+.apostila-curso .ficha-ia{
+  border: 1.5px solid var(--borda);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 16px 0 20px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.apostila-curso .ficha-ia-topo{
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 18px;
+  color: #fff;
+}
+.apostila-curso .ficha-ia-nome{
+  font-family: var(--titulo);
+  font-size: 1.415rem;
+  font-weight: 800;
+}
+.apostila-curso .ficha-ia-tipo{
+  font-family: var(--titulo);
+  font-size: 0.896rem;
+  font-weight: 700;
+  opacity: .9;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.apostila-curso .ficha-ia-corpo{ padding: 16px 18px; background: #fff; }
+.apostila-curso .ficha-ia-frase{
+  font-size: 1.038rem;
+  color: var(--tinta-clara);
+  font-style: italic;
+  margin: 0 0 14px;
+}
+.apostila-curso .ficha-ia-grade{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  margin-bottom: 14px;
+}
+.apostila-curso .ficha-ia-rot{
+  font-family: var(--titulo);
+  font-size: 0.802rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--cinza);
+  margin-bottom: 3px;
+}
+.apostila-curso .ficha-ia-grade p{ margin: 0; font-size: 0.943rem; }
+.apostila-curso .ficha-ia-faz .t,.apostila-curso .ficha-ia-teste .t{
+  font-family: var(--titulo);
+  font-size: 1.038rem;
+  font-weight: 800;
+  color: var(--tinta);
+  margin-bottom: 7px;
+}
+.apostila-curso .ficha-ia-faz ul{ margin: 0 0 14px; padding-left: 20px; }
+.apostila-curso .ficha-ia-faz li{ font-size: 0.962rem; margin-bottom: 4px; }
+.apostila-curso .ficha-ia-teste{
+  background: var(--indigo-soft);
+  border-radius: 9px;
+  padding: 13px 16px;
+}
+.apostila-curso .ficha-ia-teste .prompt{ margin: 0; }
+.apostila-curso .passo-conta{
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  border: 1.5px solid var(--borda);
+  border-radius: 11px;
+  padding: 15px 18px;
+  margin: 12px 0;
+  background: #fff;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.apostila-curso .passo-num{
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: var(--titulo);
+  font-weight: 800;
+  font-size: 1.321rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.apostila-curso .passo-corpo{ flex: 1; min-width: 0; }
+.apostila-curso .passo-tit{
+  font-family: var(--titulo);
+  font-size: 1.132rem;
+  font-weight: 800;
+  color: var(--tinta);
+  margin-bottom: 6px;
+}
+.apostila-curso .passo-tempo{
+  font-size: 0.896rem;
+  font-weight: 700;
+  color: var(--cinza);
+}
+.apostila-curso .passo-corpo ol{ margin: 0 0 7px; padding-left: 20px; }
+.apostila-curso .passo-corpo li{ font-size: 0.962rem; margin-bottom: 3px; }
+.apostila-curso .passo-obs{
+  font-size: 0.896rem;
+  color: var(--tinta-clara);
+  background: var(--indigo-soft);
+  border-radius: 7px;
+  padding: 8px 11px;
+  margin: 0;
+}
+.apostila-curso .glossario-cat{
+  font-family: var(--titulo);
+  font-size: 1.132rem;
+  font-weight: 800;
+  color: var(--indigo);
+  border-bottom: 2px solid var(--indigo-line);
+  padding-bottom: 5px;
+  margin: 20px 0 11px;
+}
+.apostila-curso .verbete{
+  margin-bottom: 11px;
+  padding-bottom: 10px;
+  border-bottom: 1px dotted var(--borda);
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.apostila-curso .verbete:last-child{ border-bottom: none; }
+.apostila-curso .verbete-termo{
+  font-family: var(--titulo);
+  font-size: 1.038rem;
+  font-weight: 800;
+  color: var(--tinta);
+}
+.apostila-curso .verbete-resumo{
+  font-size: 0.962rem;
+  color: var(--tinta-clara);
+  margin: 2px 0 0;
+}
+.apostila-curso .fase{
+  border-left: 5px solid var(--indigo);
+  background: var(--indigo-soft);
+  border-radius: 0 11px 11px 0;
+  padding: 14px 18px;
+  margin: 13px 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.apostila-curso .fase-tit{
+  font-family: var(--titulo);
+  font-size: 1.179rem;
+  font-weight: 800;
+  color: var(--indigo-dark);
+  margin-bottom: 3px;
+}
+.apostila-curso .fase-sub{
+  font-size: 0.943rem;
+  color: var(--tinta-clara);
+  font-style: italic;
+  margin: 0 0 9px;
+}
+.apostila-curso .fase ul{ margin: 0; padding-left: 20px; }
+.apostila-curso .fase li{ font-size: 0.962rem; margin-bottom: 3px; }
+.apostila-curso .fase-produto{
+  background: #fff;
+  border-radius: 7px;
+  padding: 9px 12px;
+  margin-top: 10px;
+  font-size: 0.925rem;
+}
+.apostila-curso .fase-produto strong{ color: var(--indigo-dark); }
+
+/* ---- a apostila na tela ----
+   O que muda em relação ao papel, e por quê. */
+.apostila-curso {
+  max-width: 44rem;
+  margin: 0 auto;
+  font-family: var(--corpo);
+  color: var(--tinta);
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+/* Tabelas e prompts são as duas coisas que estouram a largura num celular.
+   A tabela rola sozinha dentro da própria caixa, em vez de empurrar a página
+   inteira para o lado; o prompt quebra a linha em vez de rolar. */
+.apostila-curso .tabela-rolavel {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+}
+.apostila-curso table {
+  min-width: 34rem;
+}
+.apostila-curso .prompt {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.apostila-curso img {
+  max-width: 100%;
+  height: auto;
+}
+/* As quebras de página não significam nada aqui; viram um respiro. */
+.apostila-curso .quebra {
+  height: 0;
+  margin: 1.5rem 0;
+}
+/* A faixa que no PDF anunciava o encontro da página vira um rótulo discreto. */
+.apostila-curso .faixa-encontro {
+  margin: 1.5rem 0 0.75rem;
+}
+@media (max-width: 40rem) {
+  .apostila-curso {
+    font-size: 1.05rem;
+  }
+  /* No celular, layouts de duas colunas viram uma só: 42% de 21cm ainda cabia
+     na folha, mas não numa tela de 6 polegadas. */
+  .apostila-curso .duas-colunas,
+  .apostila-curso .grid2,
+  .apostila-curso .grid3 {
+    display: block;
+  }
+  .apostila-curso .duas-colunas > * + * {
+    margin-top: 1rem;
+  }
+}

@@ -1585,6 +1585,12 @@ model ScriptStep {
   /// antes da coluna existir; o seed preenche no deploy seguinte.
   html String?
 
+  /// A seção da apostila que este slide trata — "1.1", "2.2". Vem do badge
+  /// do próprio slide ("Capítulo 2.2 · O coração do curso"); quando o slide
+  /// não traz badge, herda o do anterior, que é o que a aula faz de fato.
+  /// Serve ao botão que leva o aluno do slide direto ao trecho do material.
+  secaoApostila String?
+
   /// A leitura estruturada do mesmo slide: texto, prompt, ferramenta,
   /// checklist, imagem. Não é mais o que se desenha, e sim o que o painel
   /// do professor consegue perguntar ("quantos marcaram este item?").
@@ -1598,6 +1604,59 @@ model ScriptStep {
 
   @@unique([scriptId, ordem])
   @@map("script_steps")
+}
+
+/// Um capítulo da apostila do curso.
+///
+/// A apostila é conteúdo do curso, como o roteiro da aula: chega pronta no
+/// deploy, gravada pelo seed a partir de `apostila.ts`. Fica no banco, e não
+/// como arquivo servido, porque a aplicação precisa consultá-la por seção
+/// ("mostre 2.2") para levar o aluno do slide ao trecho certo.
+model HandbookChapter {
+  id String @id @default(cuid())
+
+  /// "cap-1", "anexo-a" — é o que aparece no endereço.
+  chave String @unique
+  /// 1, 2, 3… Nulo nos anexos, que não são numerados.
+  numero Int?
+  titulo String
+  icone  String @default("")
+
+  /// O que vem antes da primeira seção: aquecimento, abertura do capítulo.
+  /// Em capítulos sem subdivisão (o Guia de Bolso, o Glossário) é o conteúdo
+  /// inteiro, e não uma introdução.
+  aberturaHtml String @default("")
+
+  /// Ordena os capítulos como estão na apostila impressa.
+  ordem Int
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  secoes HandbookSection[]
+
+  @@index([ordem])
+  @@map("handbook_chapters")
+}
+
+/// Uma seção de capítulo — "1.1 O que é Inteligência Artificial?".
+model HandbookSection {
+  id        String @id @default(cuid())
+  chapterId String
+
+  /// "1.1", "2.2". É por aqui que o slide encontra o trecho dele.
+  numero String
+  titulo String
+  /// O trecho da apostila como está no material, com os boxes e as tabelas.
+  html   String
+
+  ordem Int
+
+  chapter HandbookChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, ordem])
+  @@index([numero])
+  @@map("handbook_sections")
 }
 
 /// Uma apresentação acontecendo agora.

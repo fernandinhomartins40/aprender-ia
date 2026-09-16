@@ -16,6 +16,7 @@
     "reset": "prisma migrate reset --force",
     "seed": "tsx prisma/seed.ts",
     "roteiros": "tsx prisma/gerar-roteiros.ts",
+    "apostila": "tsx prisma/gerar-apostila.ts",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {

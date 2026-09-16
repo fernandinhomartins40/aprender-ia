@@ -30,6 +30,7 @@ const MENU_PRINCIPAL: ItemMenuAluno[] = [
 ];
 
 const MENU_SECUNDARIO: ItemMenuAluno[] = [
+  { href: "/app/apostila", rotulo: "Apostila", icone: "documentos" },
   { href: "/app/criar-prompt", rotulo: "Criar prompt", icone: "ideias" },
   { href: "/app/conhecimento", rotulo: "Conhecimento", icone: "ideias" },
   { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
