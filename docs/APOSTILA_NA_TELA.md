@@ -70,7 +70,23 @@ mais — melhor abrir o capítulo certo do que não abrir nada.
 | No papel | Na tela |
 |---|---|
 | Medidas em `pt`, folha de 21cm | `rem`, acompanhando a fonte do aparelho |
-| Tabela larga na folha | Tabela que rola dentro da própria caixa |
+| Tabela larga na folha | Cartões no celular, tabela no computador |
+| Figura a 52% da largura | A largura do texto, com teto de 34rem |
 | Duas colunas | Uma só, no celular |
+| Selo com `nowrap` | Quebra linha quando não cabe |
 | Quebra de página | Um respiro |
 | Sumário impresso | Montado a partir dos capítulos, nunca diverge |
+
+### Tabelas no celular
+
+Uma tabela de três ou quatro colunas não entra em 390px sem virar coluna de
+uma palavra, e empurrar a barra de rolagem para o leitor é transferir a ele um
+problema de layout. Abaixo de 48rem cada linha vira um cartão: a primeira
+célula é o título, e cada uma das outras ganha acima o rótulo da sua coluna.
+
+O rótulo é gravado em `data-coluna` pelo `TextoApostila`, no servidor — sai
+pronto no HTML, sem depender de JavaScript para a tabela ficar legível. O
+`<thead>` continua no documento, fora da tela, porque é dele que saem os
+rótulos e é ele que um leitor de tela anuncia.
+
+Da largura de um tablet para cima a tabela volta a ser tabela.

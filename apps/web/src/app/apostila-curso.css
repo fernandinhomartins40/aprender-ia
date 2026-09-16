@@ -834,24 +834,9 @@
   line-height: 1.7;
   overflow-wrap: break-word;
 }
-/* Tabelas e prompts são as duas coisas que estouram a largura num celular.
-   A tabela rola sozinha dentro da própria caixa, em vez de empurrar a página
-   inteira para o lado; o prompt quebra a linha em vez de rolar. */
-.apostila-curso .tabela-rolavel {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin: 1rem 0;
-}
-.apostila-curso table {
-  min-width: 34rem;
-}
 .apostila-curso .prompt {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-.apostila-curso img {
-  max-width: 100%;
-  height: auto;
 }
 /* As quebras de página não significam nada aqui; viram um respiro. */
 .apostila-curso .quebra {
@@ -862,6 +847,127 @@
 .apostila-curso .faixa-encontro {
   margin: 1.5rem 0 0.75rem;
 }
+
+/* ---- ilustrações ----
+   Na folha A4 uma figura a 52% da largura ainda tinha 9cm e se via bem. Numa
+   tela de celular os mesmos 52% davam 161px: a legenda ficava maior que o
+   desenho. Aqui a ilustração ocupa a largura do texto, com um teto para não
+   virar um cartaz no computador.
+
+   A classe .metade entra na lista de propósito: ela é a que trazia os 52%, e
+   tem duas classes — sem citá-la, venceria por especificidade. */
+.apostila-curso .figura,
+.apostila-curso .figura-img,
+.apostila-curso .figura-img.metade {
+  width: 100%;
+  max-width: 34rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.apostila-curso .figura img,
+.apostila-curso .figura-img img {
+  width: 100%;
+  height: auto;
+}
+.apostila-curso img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---- tabelas ----
+   Uma tabela de 3 ou 4 colunas não cabe em 390px sem virar coluna de uma
+   palavra. No papel isso não era problema; aqui, empurrar a barra de rolagem
+   para o leitor é transferir a ele um problema de layout.
+
+   Então em tela estreita a tabela deixa de ser tabela: cada linha vira um
+   cartão, e cada célula ganha o rótulo da coluna ao lado. O conteúdo é o
+   mesmo, na ordem em que foi escrito, e nada rola para o lado. */
+.apostila-curso table {
+  width: 100%;
+  table-layout: auto;
+}
+.apostila-curso td,
+.apostila-curso th {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 48rem) {
+  .apostila-curso .tabela-rolavel {
+    overflow: visible;
+  }
+  .apostila-curso table,
+  .apostila-curso thead,
+  .apostila-curso tbody,
+  .apostila-curso tr,
+  .apostila-curso td {
+    display: block;
+    width: auto;
+  }
+  /* O cabeçalho some da tela, mas continua no documento: é dele que saem os
+     rótulos abaixo, e é ele que um leitor de tela anuncia. */
+  .apostila-curso thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .apostila-curso tbody tr {
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 0.35rem 0.9rem;
+    margin-bottom: 0.85rem;
+    background: #fff;
+  }
+  .apostila-curso tbody tr:nth-child(even) {
+    background: #FCFCFE;
+  }
+  .apostila-curso tbody td {
+    border: none;
+    border-bottom: 1px solid var(--borda);
+    padding: 0.6rem 0;
+  }
+  .apostila-curso tbody td:last-child {
+    border-bottom: none;
+  }
+  /* O rótulo da coluna, escrito pelo componente em `data-coluna`. Sem ele a
+     segunda célula de um cartão seria um texto solto sem dizer do que trata. */
+  .apostila-curso tbody td[data-coluna]::before {
+    content: attr(data-coluna);
+    display: block;
+    margin-bottom: 0.15rem;
+    font-family: var(--titulo);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--indigo-dark);
+  }
+  /* A primeira coluna costuma ser o nome da linha — a ferramenta, o termo — e
+     é o título do cartão. */
+  .apostila-curso tbody td:first-child {
+    font-family: var(--titulo);
+    font-weight: 700;
+    font-size: 1.02rem;
+    color: var(--tinta);
+  }
+}
+/* Da largura de um tablet para cima a tabela volta a ser tabela, e aí sim pode
+   rolar se for muito larga — mas nessa largura raramente é. */
+@media (min-width: 48.0625rem) {
+  .apostila-curso .tabela-rolavel {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1rem 0;
+  }
+  /* Sem um piso, o navegador estreitava a coluna do meio a ponto de quebrar
+     "Adaptação" no meio da palavra para caber. */
+  .apostila-curso td,
+  .apostila-curso th {
+    min-width: 6rem;
+  }
+}
+
 @media (max-width: 40rem) {
   .apostila-curso {
     font-size: 1.05rem;
@@ -875,5 +981,35 @@
   }
   .apostila-curso .duas-colunas > * + * {
     margin-top: 1rem;
+  }
+  /* A figura ao lado do texto passa a vir acima dele: 38% de uma tela estreita
+     não mostra ilustração nenhuma. */
+  .apostila-curso .img-texto {
+    display: block;
+  }
+  .apostila-curso .img-texto > .lado-img {
+    margin-bottom: 0.85rem;
+  }
+  /* A ficha de cada ferramenta tem uma grade de quatro colunas — Envia,
+     Devolve, Limite, Método. Em 390px cada uma teria menos de 90px, e a que
+     sobrava saía da tela. Duas colunas cabem e continuam comparáveis lado a
+     lado, que é a razão de ser da grade. */
+  .apostila-curso .ficha-ia-grade {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  /* 1fr tem mínimo automático igual ao conteúdo: uma célula com texto longo
+     empurrava a vizinha para 88px e saía da ficha. minmax(0,...) deixa a
+     coluna encolher, e a palavra quebra em vez de esticar a grade. */
+  .apostila-curso .ficha-ia-grade > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  /* Os selos eram etiquetas curtas na folha ("Gratuito", "Cota") e nasceram
+     com nowrap. Alguns cresceram — "Troca para modelo fraco" tem 200px — e um
+     nowrap numa coluna de 130px sai pela borda. Aqui eles quebram linha. */
+  .apostila-curso .selo,
+  .apostila-curso .tempo,
+  .apostila-curso .caso .tempo {
+    white-space: normal;
   }
 }
