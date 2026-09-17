@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma, type CanalNotificacao } from "@aprender/db";
 import { auth } from "@aprender/auth";
-import { enviarEmail } from "@aprender/auth/email";
+import { enviarEmail, montarEmailNotificacao } from "@aprender/auth/email";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
 import { lerTexto } from "./configuracoes";
@@ -181,7 +181,11 @@ export async function notificar(
       para: alvo.email,
       assunto: entrada.titulo,
       texto: entrada.corpo,
-      html: montarHtml(entrada.titulo, entrada.corpo, entrada.link ?? null),
+      html: montarEmailNotificacao({
+        titulo: entrada.titulo,
+        corpo: entrada.corpo,
+        link: entrada.link ?? null,
+      }),
     });
 
     await prisma.notification.update({
@@ -199,32 +203,6 @@ export async function notificar(
     console.error("[notificacoes] falha ao notificar:", e);
     return { registrada: false, emailEntregue: false };
   }
-}
-
-/** HTML simples: cliente de e-mail não é navegador, então nada de CSS externo. */
-function montarHtml(titulo: string, corpo: string, link: string | null): string {
-  const paragrafos = corpo
-    .split("\n\n")
-    .map((p) => `<p style="margin:0 0 14px;line-height:1.6">${escapar(p).replace(/\n/g, "<br>")}</p>`)
-    .join("");
-
-  const botao = link
-    ? `<p style="margin:24px 0 0"><a href="${escapar(link)}" style="background:#4F46E5;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir na plataforma</a></p>`
-    : "";
-
-  return `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1F2937">
-<h1 style="font-size:20px;margin:0 0 16px">${escapar(titulo)}</h1>
-${paragrafos}${botao}
-<p style="margin:28px 0 0;font-size:13px;color:#6B7280">Aprender IA — formação em Inteligência Artificial para professores.</p>
-</div>`;
-}
-
-function escapar(t: string): string {
-  return t
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /* ============================================================

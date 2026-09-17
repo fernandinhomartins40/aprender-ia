@@ -18,15 +18,51 @@ export type ResultadoEnvio = {
   motivo?: string;
 };
 
+export type OpcoesEmail = {
+  para: string;
+  assunto: string;
+  texto: string;
+  html: string;
+  /** ID de template privado na VeloMail, quando configurado no ambiente. */
+  templateId?: number;
+  /** Variáveis para um template VeloMail, caso ele seja utilizado. */
+  variaveis?: Record<string, string | number | boolean>;
+  /** Links de redefinição não devem passar pelo redirecionador de tracking. */
+  rastrear?: boolean;
+}
+
 function smtpConfigurado(): boolean {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
+function veloMailConfigurado(): boolean {
+  return Boolean(process.env.ULTRAZEND_API_KEY || process.env.VELOMAIL_API_KEY);
+}
+
 function remetente(): string {
   return (
+    process.env.ULTRAZEND_FROM ??
+    process.env.VELOMAIL_FROM ??
     process.env.SMTP_FROM ??
     `Aprender IA <${process.env.SMTP_USER ?? "nao-responda@aprenderia.site"}>`
   );
+}
+
+function apiVeloMail(): string {
+  return (
+    process.env.ULTRAZEND_API_URL ??
+    process.env.VELOMAIL_API_URL ??
+    "https://www.velomail.com.br/api"
+  ).replace(/\/$/, "");
+}
+
+function chaveVeloMail(): string | undefined {
+  return process.env.ULTRAZEND_API_KEY ?? process.env.VELOMAIL_API_KEY;
+}
+
+function trackingHabilitado(): boolean {
+  const valor = process.env.ULTRAZEND_TRACKING_ENABLED ?? process.env.VELOMAIL_TRACKING_ENABLED;
+  return valor?.toLowerCase() !== "false";
 }
 
 let transporte: nodemailer.Transporter | null = null;
@@ -50,12 +86,11 @@ function obterTransporte(): nodemailer.Transporter {
   return transporte;
 }
 
-export async function enviarEmail(opcoes: {
-  para: string;
-  assunto: string;
-  texto: string;
-  html: string;
-}): Promise<ResultadoEnvio> {
+export async function enviarEmail(opcoes: OpcoesEmail): Promise<ResultadoEnvio> {
+  if (veloMailConfigurado()) {
+    return enviarPelaVeloMail(opcoes);
+  }
+
   if (!smtpConfigurado()) {
     // Não é erro: é o modo de desenvolvimento. O link aparece aqui.
     console.warn(
@@ -94,6 +129,48 @@ export async function enviarEmail(opcoes: {
   }
 }
 
+async function enviarPelaVeloMail(opcoes: OpcoesEmail): Promise<ResultadoEnvio> {
+  const chave = chaveVeloMail();
+  if (!chave) return { entregue: false, motivo: "velomail-nao-configurado" };
+
+  const resposta = await fetch(`${apiVeloMail()}/emails/send`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": chave,
+    },
+    body: JSON.stringify({
+      from: remetente(),
+      to: opcoes.para,
+      subject: opcoes.assunto,
+      html: opcoes.html,
+      text: opcoes.texto,
+      ...(opcoes.templateId ? { template_id: opcoes.templateId } : {}),
+      ...(opcoes.variaveis ? { variables: opcoes.variaveis } : {}),
+      tracking_enabled: opcoes.rastrear ?? trackingHabilitado(),
+    }),
+    signal: AbortSignal.timeout(15_000),
+  }).catch((erro: unknown) => ({
+    ok: false,
+    status: 0,
+    textoErro: erro instanceof Error ? erro.message : "erro de rede",
+  }));
+
+  if (!resposta.ok) {
+    let motivo = "falha ao enviar pela VeloMail";
+    if ("text" in resposta) {
+      const corpo = await resposta.text().catch(() => "");
+      motivo = corpo.slice(0, 200) || `HTTP ${resposta.status}`;
+    } else if ("textoErro" in resposta) {
+      motivo = resposta.textoErro.slice(0, 200);
+    }
+    console.error("Falha ao enviar e-mail pela VeloMail:", motivo);
+    return { entregue: false, motivo };
+  }
+
+  return { entregue: true };
+}
+
 /* ============================================================
    MODELO: RECUPERAÇÃO DE SENHA
    ============================================================ */
@@ -119,31 +196,13 @@ export function montarEmailRecuperacao(dados: {
     "Se não foi você quem pediu, ignore esta mensagem — sua senha atual continua valendo.",
   ].join("\n");
 
-  const html = `
-<div style="font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size:16px; line-height:1.6; color:#1E293B; max-width:520px; margin:0 auto; padding:24px;">
-  <p style="font-size:20px; font-weight:800; margin:0 0 24px;">
-    Aprender<span style="color:#F97316;">IA</span>
-  </p>
-  <p>Olá, ${primeiroNome}.</p>
-  <p>Recebemos um pedido para redefinir a sua senha. Clique no botão abaixo para escolher uma nova:</p>
-  <p style="margin:28px 0;">
-    <a href="${dados.link}"
-       style="display:inline-block; background:#4F46E5; color:#ffffff; text-decoration:none; font-weight:700; padding:14px 24px; border-radius:12px;">
-      Criar nova senha
-    </a>
-  </p>
-  <p style="color:#475569; font-size:14px;">
-    O link vale por ${dados.validadeMinutos} minutos e só pode ser usado uma vez.
-  </p>
-  <p style="color:#475569; font-size:14px;">
-    Se o botão não funcionar, copie e cole este endereço no navegador:<br>
-    <span style="word-break:break-all; color:#4F46E5;">${dados.link}</span>
-  </p>
-  <hr style="border:none; border-top:1px solid #E2E8F0; margin:28px 0;">
-  <p style="color:#64748B; font-size:14px; margin:0;">
-    Se não foi você quem pediu, ignore esta mensagem — sua senha atual continua valendo.
-  </p>
-</div>`.trim();
+  const html = moldura(`
+  <p>Olá, ${escaparHtml(primeiroNome)}.</p>
+  <p>Recebemos um pedido para redefinir a sua senha. Escolha uma nova para continuar aprendendo.</p>
+  ${botao(dados.link, "Criar nova senha")}
+  <p style="color:#475569; font-size:14px;">O link vale por ${dados.validadeMinutos} minutos e só pode ser usado uma vez.</p>
+  <p style="color:#475569; font-size:14px;">Se o botão não funcionar, copie e cole este endereço no navegador:<br><span style="word-break:break-all; color:#4F46E5;">${escaparHtml(dados.link)}</span></p>
+  <p style="color:#64748B; font-size:14px;">Se não foi você quem pediu, ignore esta mensagem. Sua senha atual continua valendo.</p>`);
 
   return { assunto, texto, html };
 }
@@ -155,18 +214,52 @@ export function montarEmailRecuperacao(dados: {
 /** Moldura comum dos e-mails, para não repetir o HTML em cada modelo. */
 function moldura(corpo: string): string {
   return `
-<div style="font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size:16px; line-height:1.6; color:#1E293B; max-width:520px; margin:0 auto; padding:24px;">
-  <p style="font-size:20px; font-weight:800; margin:0 0 24px;">
-    Aprender<span style="color:#F97316;">IA</span>
-  </p>
-  ${corpo}
-</div>`.trim();
+<!doctype html>
+<html lang="pt-BR"><body style="margin:0;padding:0;background:#EEF0FE;color:#1E293B;font-family:Arial,'Helvetica Neue',sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#EEF0FE;padding:28px 12px;"><tr><td align="center">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#FFFFFF;border-radius:12px;overflow:hidden;">
+      <tr><td style="height:6px;background:#4F46E5;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr><td style="padding:32px 32px 12px;"><div style="font-size:24px;line-height:1;font-weight:800;letter-spacing:0;color:#1E293B;">Aprender<span style="color:#F97316;">IA</span></div></td></tr>
+      <tr><td style="padding:8px 32px 32px;font-size:16px;line-height:1.6;color:#1E293B;">${corpo}</td></tr>
+      <tr><td style="padding:20px 32px;background:#FCFCFE;border-top:1px solid #E2E8F0;font-size:13px;line-height:1.5;color:#64748B;">Formação em Inteligência Artificial para professores.</td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`.trim();
 }
 
 function botao(link: string, rotulo: string): string {
   return `<p style="margin:28px 0;">
-    <a href="${link}" style="display:inline-block; background:#4F46E5; color:#ffffff; text-decoration:none; font-weight:700; padding:14px 24px; border-radius:12px;">${rotulo}</a>
+    <a href="${escaparHtml(link)}" style="display:inline-block; background:#4F46E5; color:#ffffff; text-decoration:none; font-weight:700; padding:14px 24px; border-radius:8px;">${escaparHtml(rotulo)}</a>
   </p>`;
+}
+
+function escaparHtml(valor: string): string {
+  return valor
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** E-mails livres enviados pelo painel também usam a identidade da plataforma. */
+export function montarEmailNotificacao(dados: {
+  titulo: string;
+  corpo: string;
+  link?: string | null;
+}): string {
+  const paragrafos = dados.corpo
+    .split("\n\n")
+    .map(
+      (paragrafo) =>
+        `<p style="margin:0 0 14px;line-height:1.6;">${escaparHtml(paragrafo).replace(/\n/g, "<br>")}</p>`,
+    )
+    .join("");
+
+  return moldura(`
+  <h1 style="font-size:22px;line-height:1.25;margin:0 0 20px;color:#1E293B;">${escaparHtml(dados.titulo)}</h1>
+  ${paragrafos}
+  ${dados.link ? botao(dados.link, "Abrir na plataforma") : ""}`);
 }
 
 export function montarEmailAcessoAprovado(dados: {

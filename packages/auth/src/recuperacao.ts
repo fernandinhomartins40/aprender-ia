@@ -96,7 +96,27 @@ export async function pedirRecuperacao(
     validadeMinutos: VALIDADE_MINUTOS,
   });
 
-  const envio = await enviarEmail({ para: usuario.email, ...conteudo });
+  const templateId = Number(
+    process.env.ULTRAZEND_TEMPLATE_PASSWORD_RESET_ID ??
+      process.env.VELOMAIL_TEMPLATE_PASSWORD_RESET_ID ??
+      0,
+  );
+  const envio = await enviarEmail({
+    para: usuario.email,
+    ...conteudo,
+    ...(Number.isInteger(templateId) && templateId > 0
+      ? {
+          templateId,
+          variaveis: {
+            nome: usuario.nome.split(" ")[0] ?? "",
+            link_redefinicao: link,
+            validade_minutos: VALIDADE_MINUTOS,
+          },
+        }
+      : {}),
+    // O token no link é secreto; ele não deve passar por redirect de tracking.
+    rastrear: false,
+  });
 
   if (!envio.entregue) {
     return { ok: true, detalhe: "falha-envio", linkDesenvolvimento: link };
