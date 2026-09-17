@@ -13,32 +13,11 @@ import { AtivarAvisos } from "@/components/ativar-avisos";
 import { ConviteInstalar } from "@/components/convite-instalar";
 import { IconeApp } from "@/components/icone-app";
 import { BarraInferior } from "@/components/barra-inferior";
-import { MenuDesktop, type ItemMenuAluno } from "@/components/menu-desktop";
-
-// Ícones 3D autorais, como no painel administrativo.
-//
-// Os 11 itens não cabiam numa linha: somavam ~1.466px dentro dos 984px úteis
-// do cabeçalho, então os últimos quebravam para a segunda linha e
-// "Notificações" saía cortado. Ficam na barra os que o aluno usa durante o
-// encontro; o resto vai para o botão "Mais" (ver MenuDesktop).
-const MENU_PRINCIPAL: ItemMenuAluno[] = [
-  { href: "/app", rotulo: "Início", icone: "inicio" },
-  { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
-  { href: "/app/aula", rotulo: "Aulas", icone: "apresentacao" },
-  { href: "/app/prompts", rotulo: "Prompts", icone: "prompt" },
-  { href: "/app/ferramentas", rotulo: "Ferramentas", icone: "ferramentas" },
-];
-
-const MENU_SECUNDARIO: ItemMenuAluno[] = [
-  { href: "/app/apostila", rotulo: "Apostila", icone: "documentos" },
-  { href: "/app/criar-prompt", rotulo: "Criar prompt", icone: "ideias" },
-  { href: "/app/conhecimento", rotulo: "Conhecimento", icone: "ideias" },
-  { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
-  { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
-  { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
-  { href: "/app/meus-planos", rotulo: "Meus planos", icone: "planos" },
-  { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
-];
+import { MenuDesktop } from "@/components/menu-desktop";
+import {
+  MENU_DESKTOP_PRINCIPAL,
+  MENU_DESKTOP_SECUNDARIO,
+} from "@/lib/menu-aluno";
 
 function dataLonga(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(d));
@@ -123,7 +102,10 @@ export default async function LayoutAluno({ children }: { children: React.ReactN
         </div>
 
         {/* menu no desktop */}
-        <MenuDesktop principais={MENU_PRINCIPAL} secundarios={MENU_SECUNDARIO} />
+        <MenuDesktop
+          principais={MENU_DESKTOP_PRINCIPAL}
+          secundarios={MENU_DESKTOP_SECUNDARIO}
+        />
       </header>
 
       {situacaoFree?.avisar && conta?.freeAte && (

@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
+import { IconeApp } from "@/components/icone-app";
+import {
+  MENU_CELULAR_FIXO,
+  MENU_CELULAR_MAIS,
+  type ItemMenuAluno,
+} from "@/lib/menu-aluno";
 
 /**
  * Navegação inferior do aluno, no celular.
@@ -18,31 +23,23 @@ import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
  * pior do que uma lista nomeada.
  */
 
-type Posicao = { href: string; rotulo: string; icone: NomeIconeApp };
+type Posicao = ItemMenuAluno;
 
-const ESQUERDA: Posicao[] = [
-  { href: "/app", rotulo: "Início", icone: "inicio" },
-  { href: "/app/trilha", rotulo: "Trilha", icone: "trilhas" },
-];
-
-// "Acompanhar" fica numa posição fixa de propósito: é usado em sala, com o
-// professor falando, e não pode estar atrás do botão "Mais".
-const DIREITA: Posicao[] = [
-  { href: "/app/acompanhar", rotulo: "Acompanhar", icone: "apresentacao" },
-];
-
-/** O que não coube nas posições fixas. */
+/**
+ * As posições fixas da barra e o que fica no "Mais".
+ *
+ * A lista de destinos é única (`lib/menu-aluno`), compartilhada com o menu do
+ * computador: antes havia uma cópia aqui, e ela divergiu — a mesma página se
+ * chamava "Prompts" num aparelho e "Banco de prompts" no outro.
+ *
+ * O que continua sendo decisão daqui é a DIVISÃO: duas abas à esquerda do
+ * botão "Continuar", uma à direita, e o resto atrás do "Mais".
+ */
+const ESQUERDA: Posicao[] = MENU_CELULAR_FIXO.slice(0, 2);
+const DIREITA: Posicao[] = MENU_CELULAR_FIXO.slice(2, 3);
 const SECUNDARIOS: Posicao[] = [
-  { href: "/app/missoes", rotulo: "Missões", icone: "metas" },
-  { href: "/app/diario", rotulo: "Diário de bordo", icone: "documentos" },
-  { href: "/app/prompts", rotulo: "Banco de prompts", icone: "prompt" },
-  { href: "/app/criar-prompt", rotulo: "Criar prompt guiado", icone: "ideias" },
-  { href: "/app/ferramentas", rotulo: "Ferramentas de IA", icone: "ferramentas" },
-  { href: "/app/conhecimento", rotulo: "Conhecimento", icone: "ideias" },
-  { href: "/app/conquistas", rotulo: "Conquistas", icone: "conquistas" },
-  { href: "/app/notificacoes", rotulo: "Notificações", icone: "notificacoes" },
-  { href: "/app/meus-planos", rotulo: "Meus planos", icone: "planos" },
-  { href: "/app/acesso", rotulo: "Meu acesso", icone: "seguranca" },
+  ...MENU_CELULAR_FIXO.slice(3),
+  ...MENU_CELULAR_MAIS,
 ];
 
 export function BarraInferior({ aoSair }: { aoSair: React.ReactNode }) {

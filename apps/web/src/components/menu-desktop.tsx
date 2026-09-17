@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { IconeApp, type NomeIconeApp } from "@/components/icone-app";
+import { IconeApp } from "@/components/icone-app";
 
-export type ItemMenuAluno = { href: string; rotulo: string; icone: NomeIconeApp };
+// O tipo vive com a lista, em `lib/menu-aluno`. Reexportado aqui porque é
+// o que os componentes deste arquivo recebem.
+export type { ItemMenuAluno } from "@/lib/menu-aluno";
+import type { ItemMenuAluno } from "@/lib/menu-aluno";
 
 /**
  * Menu do aluno no desktop.
