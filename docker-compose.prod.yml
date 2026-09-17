@@ -96,7 +96,13 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_TRUST_HOST: "true"
       PUBLIC_APP_URL: ${CANONICAL_URL}
-      # Recuperação de senha. Sem SMTP o link vai para o log do container.
+      # E-mails transacionais. A VeloMail e prioritária; SMTP permanece como
+      # fallback para ambientes que ainda a utilizem.
+      ULTRAZEND_API_KEY: ${ULTRAZEND_API_KEY:-}
+      ULTRAZEND_API_URL: ${ULTRAZEND_API_URL:-https://www.velomail.com.br/api}
+      ULTRAZEND_FROM: ${ULTRAZEND_FROM:-}
+      ULTRAZEND_TRACKING_ENABLED: ${ULTRAZEND_TRACKING_ENABLED:-true}
+      ULTRAZEND_TEMPLATE_PASSWORD_RESET_ID: ${ULTRAZEND_TEMPLATE_PASSWORD_RESET_ID:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}

@@ -222,9 +222,15 @@ jobs:
       - name: Ensure .env exists on VPS
         env:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
+          # Standard VeloMail sending key (`re_...`), never an AI Agent key.
+          VELOMAIL_API_KEY: ${{ secrets.VELOMAIL_API_KEY }}
         run: |
-          sshpass -e ssh ${{ env.SSH_OPTS }} ${{ env.VPS_USER }}@${{ env.VPS_HOST }} \
-            "APP_ROOT='${{ env.APP_ROOT }}' CANONICAL_URL='${{ env.CANONICAL_URL }}' DEPLOY_PORT='${{ env.DEPLOY_PORT }}' bash -s" <<'ENDSSH'
+          VELOMAIL_API_KEY_B64="$(printf '%s' "$VELOMAIL_API_KEY" | base64 | tr -d '\n')"
+          {
+            # Base64 usa apenas caracteres seguros para a atribuição shell
+            # enviada pelo stdin criptografado do SSH.
+            printf 'VELOMAIL_API_KEY_B64=%s\n' "$VELOMAIL_API_KEY_B64"
+            cat <<'ENDSSH'
             set -euo pipefail
 
             ENV_FILE="$APP_ROOT/.env"
@@ -278,6 +284,21 @@ jobs:
             ensure_env "SMTP_PASS" ""
             ensure_env "SMTP_FROM" "Aprender IA <nao-responda@aprenderia.site>"
 
+            # The VeloMail secret is stored only in the VPS .env and never
+            # versioned or printed. An empty GitHub secret preserves SMTP as
+            # the fallback without overwriting an existing VPS key.
+            if [ -n "$VELOMAIL_API_KEY_B64" ]; then
+              VELOMAIL_API_KEY="$(printf '%s' "$VELOMAIL_API_KEY_B64" | base64 -d)"
+              upsert_env "ULTRAZEND_API_KEY" "$VELOMAIL_API_KEY"
+              unset VELOMAIL_API_KEY
+            else
+              ensure_env "ULTRAZEND_API_KEY" ""
+            fi
+            ensure_env "ULTRAZEND_API_URL" "https://www.velomail.com.br/api"
+            ensure_env "ULTRAZEND_FROM" "Aprender IA <nao-responda@aprenderia.site>"
+            ensure_env "ULTRAZEND_TRACKING_ENABLED" "true"
+            ensure_env "ULTRAZEND_TEMPLATE_PASSWORD_RESET_ID" ""
+
             # Chaves VAPID das notificações push.
             #
             # ensure_env (nunca upsert_env): o navegador amarra cada
@@ -321,6 +342,8 @@ jobs:
             chmod 600 "$ENV_FILE"
             echo "Arquivo .env pronto."
           ENDSSH
+          } | sshpass -e ssh ${{ env.SSH_OPTS }} ${{ env.VPS_USER }}@${{ env.VPS_HOST }} \
+            "APP_ROOT='${{ env.APP_ROOT }}' CANONICAL_URL='${{ env.CANONICAL_URL }}' DEPLOY_PORT='${{ env.DEPLOY_PORT }}' bash -s"
 
       # A imagem é privada (o repositório é privado), então a VPS precisa se
       # autenticar para baixá-la. O token é o GITHUB_TOKEN desta execução:
@@ -607,7 +630,7 @@ jobs:
           # Expressão regular das versões a poupar. `latest` é tag móvel e
           # aponta para a imagem mais recente — apagá-la deixaria o
           # fallback do compose sem destino.
-          ignore-versions: '^latest$'
+          ignore-versions: "^latest$"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify success

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Settings2 } from "lucide-react";
 
 /**
  * Ações de acesso gratuito de um aluno, na lista do painel.
@@ -35,9 +36,11 @@ export function AcoesAcessoAluno({
     return (
       <button
         onClick={() => setAberto(true)}
-        className="rounded-md border-2 border-borda px-2.5 py-1.5 text-xs font-bold text-tinta-clara hover:border-indigo"
+        title={`Gerenciar acesso de ${nome}`}
+        aria-label={`Gerenciar acesso de ${nome}`}
+        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border-2 border-borda text-tinta-clara hover:border-indigo hover:bg-indigo-soft"
       >
-        Acesso
+        <Settings2 size={17} aria-hidden="true" />
       </button>
     );
   }

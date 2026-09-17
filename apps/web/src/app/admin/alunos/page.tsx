@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma, type Papel } from "@aprender/db";
+import { Pencil, Save, Search, UsersRound } from "lucide-react";
 import {
   listarAlunos,
   listarInstrutores,
@@ -23,6 +24,7 @@ import { ImportarAlunos } from "@/components/importar-alunos";
 import { NovoAlunoIndividual } from "@/components/novo-aluno-individual";
 import { NovaTurma } from "@/components/painel-turma";
 import { AcoesAcessoAluno } from "@/components/acoes-acesso-aluno";
+import { concederPlanoEmLote } from "@/server/acesso-planos";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +86,7 @@ export default async function Alunos({
     instrutores,
     semTurma,
     diasPadraoFree,
+    planos,
   ] = await Promise.all([
       listarAlunos(busca, pagina),
       prisma.course.findMany({
@@ -106,7 +109,17 @@ export default async function Alunos({
       listarInstrutores(),
       contarAlunosSemTurma(),
       lerNumero("free.dias_ao_aprovar"),
+      prisma.plan.findMany({
+        where: { ativo: true },
+        orderBy: [{ gratuito: "desc" }, { ordem: "asc" }, { nome: "asc" }],
+        select: {
+          id: true, nome: true, gratuito: true, diasAcesso: true, diasFree: true,
+          cursos: { select: { course: { select: { titulo: true } } } },
+        },
+      }),
     ]);
+
+  const planoGratuito = planos.find((p) => p.gratuito) ?? null;
 
   return (
     <div>
@@ -119,7 +132,7 @@ export default async function Alunos({
           </p>
         </div>
 
-        <form className="flex gap-2">
+        <form className="flex gap-2" role="search">
           <input
             name="busca"
             defaultValue={busca}
@@ -127,11 +140,49 @@ export default async function Alunos({
             aria-label="Buscar aluno"
             className="campo w-72"
           />
-          <button type="submit" className="btn-primario">
-            Buscar
+          <button type="submit" className="btn-primario" title="Buscar aluno">
+            <Search size={18} aria-hidden="true" />
+            <span className="sr-only">Buscar</span>
           </button>
         </form>
       </div>
+
+      <section className="mb-6 border-y border-indigo-line bg-indigo-soft/40 px-5 py-4 sm:px-6">
+        <form id="conceder-plano-em-lote" action={concederPlanoEmLote} className="flex flex-wrap items-end gap-3">
+          <div className="mr-2 flex items-center gap-2 text-indigo-dark">
+            <UsersRound size={22} aria-hidden="true" />
+            <div>
+              <h2 className="font-titulo text-sm font-extrabold">Plano para alunos selecionados</h2>
+              <p className="text-xs">Marque os alunos na lista e aplique uma regra de prazo.</p>
+            </div>
+          </div>
+          <label className="text-sm">
+            <span className="mb-1 block font-bold text-tinta">Plano</span>
+            <select name="planId" required className="campo min-w-52">
+              <option value="">Selecione</option>
+              {planos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}{p.gratuito ? " (gratuito)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-bold text-tinta">Dias</span>
+            <input name="dias" type="number" min={0} className="campo w-28" placeholder="Do plano" />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-bold text-tinta">Início</span>
+            <input name="inicioEm" type="date" className="campo" />
+          </label>
+          <button type="submit" className="btn-primario min-h-[44px]">
+            Aplicar ao lote
+          </button>
+          <p className="basis-full text-xs text-tinta-clara">
+            Dias vazio usa o prazo do plano; 0 libera sem expiração. Um prazo do aluno já definido continua sendo a referência do acesso Free.
+          </p>
+        </form>
+      </section>
 
       {/* Fila de trabalho: quem entrou sozinho pela landing, sem código. */}
       {semTurma > 0 && (
@@ -219,6 +270,7 @@ export default async function Alunos({
           <table className="tabela-responsiva">
             <thead className="border-b border-borda bg-indigo-soft">
               <tr className="font-titulo text-sm text-indigo-dark">
+                <th className="w-12 p-4"><span className="sr-only">Selecionar</span></th>
                 <th className="p-4">Professor(a)</th>
                 <th className="p-4">Turma</th>
                 <th className="p-4">Escola / disciplina</th>
@@ -233,8 +285,28 @@ export default async function Alunos({
                 const progresso = u.matriculas[0]?.progressoPct ?? 0;
                 const ehVoce = u.id === admin.id;
                 const turmaAtual = u.membroTurmas[0]?.cohort;
+                const planosDaLinha = u.assinaturas.map((a) => a.plan);
+                const planosComFree =
+                  u.plano === "FREE" && planoGratuito && !planosDaLinha.some((p) => p.gratuito)
+                    ? [...planosDaLinha, planoGratuito]
+                    : planosDaLinha;
+                const cursosDoPlano = [
+                  ...new Set(planosComFree.flatMap((p) => p.cursos.map((c) => c.course.titulo))),
+                ];
                 return (
                   <tr key={u.id} className="border-b border-borda last:border-0">
+                    <td className="p-4">
+                      {u.papel === "ALUNO" && (
+                        <input
+                          form="conceder-plano-em-lote"
+                          type="checkbox"
+                          name="userIds"
+                          value={u.id}
+                          aria-label={`Selecionar ${u.nome} para concessão em lote`}
+                          className="h-5 w-5 accent-indigo"
+                        />
+                      )}
+                    </td>
                     <td data-rotulo="Professor(a)" className="p-4">
                       <div className="font-bold">
                         {u.nome}
@@ -277,48 +349,48 @@ export default async function Alunos({
                       {u.plano === "PREMIUM" ? (
                         <span className="selo-verde">Premium</span>
                       ) : (
-                        <>
-                          {(() => {
-                            const s = avaliarFree(u);
-                            if (s.revogado)
-                              return <span className="selo-vermelho">Revogado</span>;
-                            if (s.permanente)
-                              return <span className="selo-cinza">Sem prazo</span>;
-                            if (s.expirado)
-                              return <span className="selo-vermelho">Expirado</span>;
-                            return (
-                              <span className={s.avisar ? "selo-amarelo" : "selo-verde"}>
-                                {textoPrazo(s.diasRestantes ?? 0)}
-                              </span>
-                            );
-                          })()}
-                          {/* Planos e acessos efetivos têm tela própria:
-                              não cabem na linha de uma tabela, e é lá que
-                              se administra o que o aluno alcança. */}
-                          <div className="mt-2">
-                            <Link
-                              href={`/admin/alunos/${u.id}`}
-                              className="text-sm font-bold text-indigo hover:underline"
-                            >
-                              Editar cadastro, planos e acessos →
-                            </Link>
-                          </div>
-                          {u.papel === "ALUNO" && (
-                            <div className="mt-2">
-                              <AcoesAcessoAluno
-                                userId={u.id}
-                                nome={u.nome}
-                                freeAte={u.freeAte}
-                                revogado={Boolean(u.freeRevogadoEm)}
-                                diasPadrao={diasPadraoFree}
-                                acaoDefinir={definirPrazoFree}
-                                acaoProrrogar={prorrogarFree}
-                                acaoRevogar={revogarFree}
-                                acaoReativar={reativarFree}
-                              />
-                            </div>
-                          )}
-                        </>
+                        (() => {
+                          const s = avaliarFree(u);
+                          if (s.revogado) return <span className="selo-vermelho">Revogado</span>;
+                          if (s.permanente) return <span className="selo-cinza">Sem prazo</span>;
+                          if (s.expirado) return <span className="selo-vermelho">Expirado</span>;
+                          return (
+                            <span className={s.avisar ? "selo-amarelo" : "selo-verde"}>
+                              {textoPrazo(s.diasRestantes ?? 0)}
+                            </span>
+                          );
+                        })()
+                      )}
+                      <div className="mt-2">
+                        <Link
+                          href={`/admin/alunos/${u.id}`}
+                          title={`Abrir cadastro, planos e cursos de ${u.nome}`}
+                          aria-label={`Abrir cadastro, planos e cursos de ${u.nome}`}
+                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border-2 border-indigo-line text-indigo hover:border-indigo hover:bg-indigo-soft"
+                        >
+                          <Pencil size={18} aria-hidden="true" />
+                        </Link>
+                      </div>
+                      {cursosDoPlano.length > 0 && (
+                        <p className="mt-2 max-w-56 text-xs leading-relaxed text-tinta-clara">
+                          <span className="font-bold text-tinta">Cursos liberados: </span>
+                          {cursosDoPlano.join(", ")}
+                        </p>
+                      )}
+                      {u.papel === "ALUNO" && (
+                        <div className="mt-2">
+                          <AcoesAcessoAluno
+                            userId={u.id}
+                            nome={u.nome}
+                            freeAte={u.freeAte}
+                            revogado={Boolean(u.freeRevogadoEm)}
+                            diasPadrao={diasPadraoFree}
+                            acaoDefinir={definirPrazoFree}
+                            acaoProrrogar={prorrogarFree}
+                            acaoRevogar={revogarFree}
+                            acaoReativar={reativarFree}
+                          />
+                        </div>
                       )}
                     </td>
                     <td data-rotulo="Progresso" className="p-4">
@@ -363,9 +435,11 @@ export default async function Alunos({
                           </select>
                           <button
                             type="submit"
-                            className="rounded-md border-2 border-indigo-line px-3 py-1.5 text-sm font-bold text-indigo hover:border-indigo"
+                            title={`Salvar permissão de ${u.nome}`}
+                            aria-label={`Salvar permissão de ${u.nome}`}
+                            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border-2 border-indigo-line text-indigo hover:border-indigo hover:bg-indigo-soft"
                           >
-                            Salvar
+                            <Save size={17} aria-hidden="true" />
                           </button>
                         </form>
                       )}

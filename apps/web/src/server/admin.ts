@@ -53,7 +53,9 @@ export async function listarAlunos(busca?: string, pagina = 1, porPagina = 20) {
         OR: [
           { nome: { contains: busca, mode: "insensitive" as const } },
           { email: { contains: busca, mode: "insensitive" as const } },
+          { telefone: { contains: busca } },
           { escola: { contains: busca, mode: "insensitive" as const } },
+          { disciplina: { contains: busca, mode: "insensitive" as const } },
         ],
       }
     : {};
@@ -71,6 +73,18 @@ export async function listarAlunos(busca?: string, pagina = 1, porPagina = 20) {
         // Acesso: a coluna da tabela mostra prazo e permite prorrogar,
         // definir ou revogar sem sair da lista.
         plano: true, premiumAte: true, freeAte: true, freeRevogadoEm: true,
+        assinaturas: {
+          where: { status: { in: ["ATIVA", "INADIMPLENTE", "CANCELADA"] } },
+          select: {
+            plan: {
+              select: {
+                nome: true,
+                gratuito: true,
+                cursos: { select: { course: { select: { titulo: true } } } },
+              },
+            },
+          },
+        },
         ofensiva: { select: { diasSeguidos: true } },
         matriculas: { select: { progressoPct: true, xpTotal: true } },
         // A turma é parte da identidade do aluno neste painel: sem ela

@@ -77,6 +77,8 @@ async function carregarAluno(userId: string): Promise<AlunoParaAcesso | null> {
     select: {
       papel: true,
       situacao: true,
+      freeAte: true,
+      freeRevogadoEm: true,
       assinaturas: {
         select: {
           id: true,
@@ -106,6 +108,8 @@ async function carregarAluno(userId: string): Promise<AlunoParaAcesso | null> {
   return {
     papel: aluno.papel,
     situacao: aluno.situacao,
+    freeAte: aluno.freeAte,
+    freeRevogadoEm: aluno.freeRevogadoEm,
     assinaturas: aluno.assinaturas.map((a) => ({
       id: a.id,
       status: a.status,
@@ -135,8 +139,6 @@ async function carregarAluno(userId: string): Promise<AlunoParaAcesso | null> {
  * A assinatura sintética não é gravada: existe só durante o cálculo.
  */
 async function comPlanoGratuito(aluno: AlunoParaAcesso): Promise<AlunoParaAcesso> {
-  if (aluno.assinaturas.some((a) => a.plano.gratuito)) return aluno;
-
   const free = await prisma.plan.findFirst({
     where: { gratuito: true, ativo: true },
     select: {
@@ -154,15 +156,22 @@ async function comPlanoGratuito(aluno: AlunoParaAcesso): Promise<AlunoParaAcesso
   });
   if (!free) return aluno;
 
+  // O plano gratuito é global, mas seu prazo é individual. Normalizamos uma
+  // eventual assinatura gratuita antiga para que `freeAte` sempre prevaleça.
+  const assinaturasPagas = aluno.assinaturas.filter((a) => !a.plano.gratuito);
+  const freeValido =
+    !aluno.freeRevogadoEm &&
+    (!aluno.freeAte || aluno.freeAte.getTime() >= Date.now());
+
   return {
     ...aluno,
     assinaturas: [
-      ...aluno.assinaturas,
+      ...assinaturasPagas,
       {
         id: `free-implicito:${free.id}`,
-        status: "ATIVA",
-        cicloFimEm: null,
-        semExpiracao: true,
+        status: freeValido ? "ATIVA" : "EXPIRADA",
+        cicloFimEm: aluno.freeAte ?? null,
+        semExpiracao: !aluno.freeAte && !aluno.freeRevogadoEm,
         plano: {
           id: free.id,
           nome: free.nome,

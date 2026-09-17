@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma, type AbrangenciaPlano } from "@aprender/db";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
-import { sincronizarPlanoLegado } from "./acesso";
-import { calcularAcesso, type AlunoParaAcesso } from "@/lib/motor-acesso";
+import { acessoDoAluno, sincronizarPlanoLegado } from "./acesso";
+import { somarPeriodo } from "@/lib/assinaturas";
+import { prazoEmDias } from "@/lib/acesso-free";
+import { lerNumero } from "./configuracoes";
 
 /**
  * Administração do que cada plano libera e de quais planos cada aluno tem.
@@ -153,7 +155,10 @@ export async function concederPlano(dados: FormData): Promise<void> {
     prisma.user.findUnique({ where: { id: userId }, select: { id: true, nome: true } }),
     prisma.plan.findUnique({
       where: { id: planId },
-      select: { id: true, nome: true, precoCentavos: true, periodicidade: true },
+      select: {
+        id: true, nome: true, precoCentavos: true, periodicidade: true,
+        gratuito: true, diasAcesso: true, diasFree: true,
+      },
     }),
   ]);
   if (!aluno || !plano) return;
@@ -168,9 +173,34 @@ export async function concederPlano(dados: FormData): Promise<void> {
   });
   if (jaTem) return;
 
-  const semExpiracao = String(dados.get("semExpiracao") ?? "") === "on";
-  const fim = dataDe(dados, "cicloFimEm");
   const inicio = dataDe(dados, "inicioEm") ?? new Date();
+  const semExpiracao = String(dados.get("semExpiracao") ?? "") === "on";
+  const fimInformado = dataDe(dados, "cicloFimEm");
+
+  if (plano.gratuito) {
+    const dias = plano.diasFree ?? (await lerNumero("free.dias_padrao"));
+    const fim = semExpiracao ? null : fimInformado ?? prazoEmDias(dias);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { freeAte: fim, freeConcedidoEm: new Date(), freeRevogadoEm: null },
+    });
+    await registrarAcao({
+      acao: "acesso.free.concedido",
+      entidade: "User",
+      entidadeId: userId,
+      resumo: `${admin.nome} definiu o acesso gratuito de ${aluno.nome}`,
+      dados: { planId, cicloFimEm: fim, semExpiracao },
+    });
+    revalidatePath(`/admin/alunos/${userId}`);
+    revalidatePath("/admin/alunos");
+    revalidatePath("/app");
+    return;
+  }
+
+  // Sem data individual, a validade configurada no plano é aplicada.
+  const fim = semExpiracao
+    ? null
+    : fimInformado ?? somarPeriodo(inicio, plano.periodicidade, plano.diasAcesso);
 
   await prisma.subscription.create({
     data: {
@@ -201,6 +231,90 @@ export async function concederPlano(dados: FormData): Promise<void> {
   });
 
   revalidatePath(`/admin/alunos/${userId}`);
+  revalidatePath("/admin/alunos");
+  revalidatePath("/app");
+}
+
+/** Concede um plano a vários alunos, respeitando a validade do plano. */
+export async function concederPlanoEmLote(dados: FormData): Promise<void> {
+  const admin = await exigirAdmin();
+  const idsInformados = [...new Set(dados.getAll("userIds").map(String).filter(Boolean))];
+  const planId = String(dados.get("planId") ?? "").trim();
+  if (idsInformados.length === 0 || !planId) return;
+
+  // Checkbox é interface, não autorização: só contas de aluno entram no lote.
+  const alunos = await prisma.user.findMany({
+    where: { id: { in: idsInformados }, papel: "ALUNO" },
+    select: { id: true },
+  });
+  const userIds = alunos.map((aluno) => aluno.id);
+  if (userIds.length === 0) return;
+
+  const plano = await prisma.plan.findUnique({
+    where: { id: planId },
+    select: {
+      id: true, nome: true, gratuito: true, precoCentavos: true,
+      periodicidade: true, diasAcesso: true, diasFree: true,
+    },
+  });
+  if (!plano) return;
+
+  const inicio = dataDe(dados, "inicioEm") ?? new Date();
+  const brutoDias = String(dados.get("dias") ?? "").trim();
+  const dias = brutoDias === "" ? null : Number(brutoDias);
+  if (dias != null && (!Number.isInteger(dias) || dias < 0)) return;
+  const semExpiracao = dias === 0;
+
+  if (plano.gratuito) {
+    const diasDoPlano = plano.diasFree ?? (await lerNumero("free.dias_padrao"));
+    const fim = semExpiracao ? null : dias != null ? prazoEmDias(dias) : prazoEmDias(diasDoPlano);
+    await prisma.user.updateMany({
+      where: { id: { in: userIds }, papel: "ALUNO" },
+      data: { freeAte: fim, freeConcedidoEm: new Date(), freeRevogadoEm: null },
+    });
+  } else {
+    const fim = semExpiracao
+      ? null
+      : dias != null
+        ? prazoEmDias(dias)
+        : somarPeriodo(inicio, plano.periodicidade, plano.diasAcesso);
+    const existentes = await prisma.subscription.findMany({
+      where: {
+        userId: { in: userIds },
+        planId,
+        status: { in: ["ATIVA", "PENDENTE", "INADIMPLENTE", "SUSPENSA"] },
+      },
+      select: { userId: true },
+    });
+    const jaTem = new Set(existentes.map((s) => s.userId));
+    const novos = userIds.filter((id) => !jaTem.has(id));
+    if (novos.length > 0) {
+      await prisma.subscription.createMany({
+        data: novos.map((userId) => ({
+          userId,
+          planId,
+          status: "ATIVA",
+          precoCentavos: plano.precoCentavos,
+          periodicidade: plano.periodicidade,
+          inicioEm: inicio,
+          cicloFimEm: fim,
+          proximaEm: null,
+          semExpiracao,
+          concedidaManualmente: true,
+          observacoes: `Concessão em lote por ${admin.nome}`,
+        })),
+      });
+      await Promise.all(novos.map((userId) => sincronizarPlanoLegado(userId)));
+    }
+  }
+
+  await registrarAcao({
+    acao: "acesso.plano.concedido_em_lote",
+    entidade: "Plan",
+    entidadeId: planId,
+    resumo: `${admin.nome} concedeu "${plano.nome}" para ${userIds.length} aluno(s)`,
+    dados: { userIds, dias, inicioEm: inicio, plano: plano.nome },
+  });
   revalidatePath("/admin/alunos");
   revalidatePath("/app");
 }
@@ -362,28 +476,9 @@ export async function retratoDeAcesso(userId: string) {
   });
   if (!aluno) return null;
 
-  const paraMotor: AlunoParaAcesso = {
-    papel: aluno.papel,
-    situacao: aluno.situacao,
-    assinaturas: aluno.assinaturas.map((a) => ({
-      id: a.id,
-      status: a.status,
-      cicloFimEm: a.cicloFimEm,
-      semExpiracao: a.semExpiracao,
-      plano: {
-        id: a.plan.id,
-        nome: a.plan.nome,
-        gratuito: a.plan.gratuito,
-        cursos: a.plan.cursos.map((c) => ({
-          courseId: c.courseId,
-          abrangencia: c.abrangencia,
-          moduleIds: c.modulos.map((m) => m.moduleId),
-        })),
-      },
-    })),
-  };
-
-  const acesso = calcularAcesso(paraMotor);
+  // A tela administrativa usa a mesma ponte que autoriza a trilha do aluno.
+  // Isso inclui prazo Free individual e evita dois cálculos divergentes.
+  const acesso = await acessoDoAluno(userId);
 
   const cursos = await prisma.course.findMany({
     orderBy: { ordem: "asc" },

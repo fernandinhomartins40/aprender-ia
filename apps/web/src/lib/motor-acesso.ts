@@ -76,6 +76,10 @@ export type AlunoParaAcesso = {
   papel: string;
   /** Suspensão da CONTA bloqueia tudo, inclusive o gratuito. */
   situacao: "ATIVO" | "SUSPENSO" | "INATIVO" | string;
+  /** Prazo individual do acesso Free; vence qualquer prazo do plano Free. */
+  freeAte?: Date | null;
+  /** Revogação individual do acesso Free. */
+  freeRevogadoEm?: Date | null;
   assinaturas: AssinaturaParaAcesso[];
 };
 
