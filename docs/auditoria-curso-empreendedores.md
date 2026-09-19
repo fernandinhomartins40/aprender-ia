@@ -248,8 +248,8 @@ O deck de Educadores lê a duração do próprio slide e acerta.
 **3. Cópia falha em silêncio.**
 `pmCopiar.onclick=()=>navigator.clipboard.writeText(activePrompt)` — sem `catch`, sem confirmação visual. `navigator.clipboard` exige contexto seguro; o deck é aberto via `file://` pelo `.vbs`, onde a API **pode não existir**. O prompt não é copiado e o usuário não é avisado. O Educadores tem `fallback()` com `execCommand` exatamente para esse caso, e confirma com "✓ Copiado!".
 
-**4. Texto corrompido (mojibake).**
-O arquivo é UTF-8 válido e declara `<meta charset="utf-8">`, mas contém **21 sequências `Ã`** — texto que passou por uma conversão de codificação errada em algum dos scripts geradores. Há acentuação quebrada no material exibido aos alunos.
+**4. ~~Texto corrompido (mojibake).~~ — RETIRADO, era erro da auditoria.**
+A primeira medição contou 21 ocorrências da sequência de bytes de `Ã` e concluiu haver mojibake. A verificação com contexto mostrou que todas as 21 são texto legítimo: "FORMAÇÃO COMPLETA" e "MÃO NA MASSA". **O arquivo é UTF-8 válido e está íntegro.** Não há nada a corrigir aqui.
 
 **5. Botão "Abrir Gemini" não leva o prompt.**
 `pmGemini.onclick=()=>window.open('https://gemini.google.com','_blank')` — abre a ferramenta vazia. Combinado com o bug 3 (cópia silenciosamente falha), o aluno chega ao Gemini **sem o prompt e sem saber disso**.

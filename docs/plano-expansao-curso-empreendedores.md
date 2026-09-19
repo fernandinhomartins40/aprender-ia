@@ -2,7 +2,54 @@
 
 **Data:** 19/09/2026
 **Pré-requisito:** [`auditoria-curso-empreendedores.md`](./auditoria-curso-empreendedores.md)
-**Status:** plano para aprovação. Nenhum código alterado.
+**Status:** implementado — commits `eb82eeb` (aplicação) e `1d4f650` (deck).
+
+---
+
+## 0. O que foi entregue
+
+| Fase | Situação | Verificação |
+|---|---|---|
+| 01 — Escopo por curso | pronta | `courseId` em 7 modelos; Educadores continua com 104 prompts, 18 capítulos e 50 conquistas, como antes |
+| 02 — Rotas respeitam o curso | pronta | 7 rotas com `?curso=`; zero vazamento medido nas 5 telas |
+| 03 — Componentes novos | pronta | 4 tipos de lição; entrega salva no banco |
+| 04 — Banco de prompts | **parcial** | 37 prompts cobrindo as 17 áreas. A meta eram 170 — ver abaixo |
+| 05–08 — Conteúdo | pronta | 11 módulos, 31 lições, sem duplicatas |
+| 09 — Projeto final | pronta | preenchido de ponta a ponta; plano exportável gerado |
+| 10 — Responsividade | pronta | sem rolagem horizontal em 360, 390, 768, 1024, 1280, 1440, 1920 e 2560 |
+| 11 — QA | pronta | curso publicado; `tsc` limpo nos dois pacotes |
+| 12 — Aula ao vivo | não feita | o deck segue servindo, agora sem os bugs |
+| 13 — PDFs alinhados | pronta | apostila gerada **a partir do banco**; PDFs do deck regerados |
+
+### O que ficou faltando, e por quê
+
+**O banco tem 37 prompts, não 170.** As 17 áreas do item 8 estão todas
+cobertas, e cada prompt traz título, finalidade, ferramenta indicada,
+campos editáveis, exemplo preenchido, dica, tags e dificuldade — o padrão
+que o briefing pediu. O que não foi feito foi multiplicar por cinco esse
+conjunto. É trabalho de redação, não de código: a estrutura comporta, e
+acrescentar prompts é editar `packages/db/prisma/empreendedores/prompts.ts`
+e rodar o seed de novo.
+
+**A carga horária declarada é 20h, não 40h.** As 40h do deck vinham da
+repetição de dois moldes quatro vezes cada (§3.3 da auditoria). Preferi
+declarar o que existe de verdade a herdar um número inflado. Chegar a 40h
+reais é continuar a produção de conteúdo nos módulos existentes.
+
+**A Fase 12 (migrar o deck para `LessonScript`) não foi feita.** O deck
+continua em uso para aula presencial e teve os quatro bugs corrigidos, o
+que resolve o problema imediato. A migração pode vir depois, sem bloquear
+nada.
+
+### Como rodar
+
+```bash
+pnpm db:up                                        # sobe o Postgres
+pnpm --filter @aprender/db deploy                 # aplica a migração
+pnpm --filter @aprender/db seed                   # Educadores
+pnpm --filter @aprender/db seed:empreendedores    # Empreendedores (nasce despublicado)
+pnpm --filter @aprender/db apostila:empreendedores # gera a apostila do banco
+```
 
 ---
 
@@ -74,12 +121,12 @@ Resumo do que a auditoria apurou:
 | P4 | Cronômetro ignora `data-seconds` (5 min em vez de 20) | alta | deck |
 | P5 | 13% de slides duplicados; 62% do deck é template repetido | alta | conteúdo |
 | P6 | Cópia falha em silêncio sob `file://` | alta | deck |
-| P7 | Mojibake — 21 sequências `Ã` | média | geradores |
+| ~~P7~~ | ~~Mojibake~~ — **não existe**: a contagem inicial pegou "FORMAÇÃO" e "MÃO NA MASSA" como erro. O arquivo é UTF-8 íntegro. | — | — |
 | P8 | Botão "último slide" sem handler | baixa | deck |
 | P9 | Botão Gemini abre sem o prompt | média | deck |
 | P10 | Palco fixo impede responsividade | alta | formato |
 
-P4, P6, P8 e P9 desaparecem com a migração (o deck deixa de ser o curso). P7 deve ser corrigido antes de importar texto para o banco.
+P4, P6, P8 e P9 foram corrigidos nos geradores do deck (commit `1d4f650`), já que o deck segue em uso para aula presencial.
 
 ---
 
@@ -132,7 +179,7 @@ Do material existente, aproveita-se **conteúdo**, não formato:
 | 4 Casos (loja WhatsApp, salão, imobiliária, restaurante) | viram lições `CASO` — **bom material, subaproveitado** |
 | 4 Duelos (prompt vago × C.O.F.R.E.) | viram lições `DUELO` |
 | 4 Caças ao erro | viram lições `CACA_ERRO` |
-| 32 prompts do deck | viram registros `PromptTemplate` (após correção de mojibake) |
+| 32 prompts do deck | viram registros `PromptTemplate` |
 | `BIBLIOTECA_DE_PROMPTS.md` | importado para o banco |
 | 16 imagens | reaproveitadas como ilustração de lição |
 | Apostila HTML/PDF | vira `HandbookChapter` + download |
@@ -191,7 +238,7 @@ O modelo `PromptTemplate` já cobre título, corpo, variáveis, dica, ferramenta
 - `exemploPreenchido String?` — o item 8 pede "exemplo preenchido", hoje só há `variaveis[].exemplo`
 - novo `model PromptUserVersion` — "salvar versões personalizadas"
 
-Fonte inicial: 32 prompts do deck + `BIBLIOTECA_DE_PROMPTS.md`, com mojibake corrigido.
+Fonte inicial: 32 prompts do deck + `BIBLIOTECA_DE_PROMPTS.md`.
 
 ---
 
@@ -403,7 +450,7 @@ Regra: **nada é publicado para alunos até a Fase 10.** O curso fica `publicado
 - **Objetivo:** ≥ 170 prompts nas 17 áreas.
 - **Arquivos:** `packages/db/prisma/prompts-empreendedores.ts`; componentes de prompt
 - **Banco:** migração 2 + `PromptUserVersion`
-- **Implementar:** importar 32 do deck + `BIBLIOTECA_DE_PROMPTS.md` **com mojibake corrigido** (P7); redigir os restantes; busca, filtro, tags, favorito, versão própria
+- **Implementar:** importar 32 do deck + `BIBLIOTECA_DE_PROMPTS.md`; redigir os restantes; busca, filtro, tags, favorito, versão própria
 - **Aceite:** 17 áreas povoadas; copiar, testar com IA, favoritar e salvar versão funcionam
 - **Testar:** `db:seed`; buscar por área e por tag; validar 10 prompts ponta a ponta
 
