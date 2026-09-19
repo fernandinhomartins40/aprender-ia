@@ -1301,13 +1301,15 @@ async function main() {
       select: { id: true },
     });
 
+    // O roteiro é deste curso. Sem o vínculo, ele conta como comum e
+    // aparece também na lista de aulas do curso de Empreendedores.
     const script = existente
       ? await prisma.lessonScript.update({
           where: { id: existente.id },
-          data: { ordem: roteiro.encontro, ativo: true },
+          data: { ordem: roteiro.encontro, ativo: true, courseId: curso.id },
         })
       : await prisma.lessonScript.create({
-          data: { titulo: roteiro.titulo, ordem: roteiro.encontro },
+          data: { titulo: roteiro.titulo, ordem: roteiro.encontro, courseId: curso.id },
         });
 
     for (const [i, passo] of roteiro.passos.entries()) {

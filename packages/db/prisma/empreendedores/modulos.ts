@@ -23,7 +23,7 @@ import { TipoLicao } from "@prisma/client";
  * genérico.
  */
 
-type Licao = {
+export type Licao = {
   titulo: string;
   tipo: TipoLicao;
   xp: number;
@@ -32,7 +32,7 @@ type Licao = {
   conteudo: Record<string, unknown>;
 };
 
-type Modulo = {
+export type Modulo = {
   ordem: number;
   titulo: string;
   subtitulo: string;

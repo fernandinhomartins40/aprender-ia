@@ -11,7 +11,9 @@
  */
 import { PrismaClient, TipoLicao } from "@prisma/client";
 import { MODULOS_EMPREENDEDORES } from "./empreendedores/modulos";
-import { PROMPTS_EMPREENDEDORES } from "./empreendedores/prompts";
+import { LICOES_EXTRAS } from "./empreendedores/modulos-extras";
+import { roteirosDeEmpreendedores } from "./empreendedores/roteiros";
+import { TODOS_OS_PROMPTS, titulosDuplicados } from "./empreendedores/prompts-todos";
 import { FERRAMENTAS_EMPREENDEDORES } from "./empreendedores/ferramentas";
 import { APOSTILA_EMPREENDEDORES } from "./empreendedores/apostila";
 import {
@@ -28,7 +30,12 @@ const CURSO = {
   subtitulo: "Do primeiro prompt ao primeiro agente, com o seu negócio",
   descricao:
     "Formação prática para quem tem um negócio pequeno usar Inteligência Artificial no dia a dia: atender melhor, produzir conteúdo, entender os próprios números, automatizar tarefas repetitivas e desenhar o primeiro agente. Sem jargão e priorizando ferramentas gratuitas.",
-  cargaHoraria: 20,
+  // 40h como o curso de Educadores, e pela mesma conta: são 14h de
+  // conteúdo na tela (contra 10,6h de lá) mais a prática aplicada no
+  // próprio negócio, que é onde o laboratório e o projeto acontecem de
+  // verdade. O número não veio de repetir molde para encher volume — foi
+  // isso que o deck antigo fazia.
+  cargaHoraria: 40,
 };
 
 async function main() {
@@ -70,7 +77,16 @@ async function main() {
       },
     });
 
-    for (const [i, l] of m.licoes.entries()) {
+    // As lições extras entram antes do fechamento do módulo: o
+    // CHECKPOINT resume o que veio antes, então não pode ficar no meio.
+    const extras = LICOES_EXTRAS.filter((e) => e.modulo === m.ordem);
+    const corte = m.licoes.findIndex((l) => l.tipo === TipoLicao.CHECKPOINT);
+    const licoes =
+      corte === -1
+        ? [...m.licoes, ...extras]
+        : [...m.licoes.slice(0, corte), ...extras, ...m.licoes.slice(corte)];
+
+    for (const [i, l] of licoes.entries()) {
       await prisma.lesson.upsert({
         where: { moduleId_ordem: { moduleId: modulo.id, ordem: i } },
         update: {
@@ -94,13 +110,30 @@ async function main() {
       });
       totalLicoes++;
     }
+
+    // Um módulo que encolheu deixaria lições órfãs no fim, fora do
+    // conteúdo atual e ainda visíveis na trilha. O progresso de quem já
+    // as fez cai junto, o que é o certo: a lição não existe mais.
+    await prisma.lesson.deleteMany({
+      where: { moduleId: modulo.id, ordem: { gte: licoes.length } },
+    });
   }
   console.log(`  módulos: ${MODULOS_EMPREENDEDORES.length} · lições: ${totalLicoes}`);
 
   // ---- Banco de prompts ----
   // A chave é o título dentro do curso: prompt sem `chave` única no
   // schema, então é o par (courseId, titulo) que identifica.
-  for (const p of PROMPTS_EMPREENDEDORES) {
+  // O título é a chave de idempotência dentro do curso: repetido, o seed
+  // atualizaria o mesmo registro duas vezes e um prompt sumiria do banco
+  // sem ninguém notar.
+  const repetidos = titulosDuplicados();
+  if (repetidos.length) {
+    throw new Error(
+      `Títulos de prompt repetidos (${repetidos.length}): ${repetidos.join(" · ")}`,
+    );
+  }
+
+  for (const p of TODOS_OS_PROMPTS) {
     const existente = await prisma.promptTemplate.findFirst({
       where: { courseId: curso.id, titulo: p.titulo },
       select: { id: true },
@@ -126,7 +159,7 @@ async function main() {
       await prisma.promptTemplate.create({ data: dados });
     }
   }
-  console.log(`  prompts: ${PROMPTS_EMPREENDEDORES.length}`);
+  console.log(`  prompts: ${TODOS_OS_PROMPTS.length}`);
 
   // ---- Verbetes ----
   for (const v of VERBETES_EMPREENDEDORES) {
@@ -196,6 +229,57 @@ async function main() {
     }
   }
   console.log(`  capítulos da apostila: ${APOSTILA_EMPREENDEDORES.length}`);
+
+  // ---- Roteiros da aula ao vivo ----
+  //
+  // Substituem o deck HTML que era aberto por um .vbs fora da aplicação.
+  // A diferença que importa não é o formato: é a fonte. Os passos saem
+  // das mesmas lições da trilha, então corrigir o conteúdo corrige a aula
+  // presencial junto — era essa divergência que fazia o deck acumular
+  // slides repetidos que a trilha não tinha.
+  const roteiros = roteirosDeEmpreendedores();
+  let totalPassos = 0;
+  for (const r of roteiros) {
+    const existente = await prisma.lessonScript.findFirst({
+      where: { courseId: curso.id, ordem: r.encontro },
+      select: { id: true },
+    });
+    const script = existente
+      ? await prisma.lessonScript.update({
+          where: { id: existente.id },
+          data: { titulo: r.titulo },
+        })
+      : await prisma.lessonScript.create({
+          data: { courseId: curso.id, titulo: r.titulo, ordem: r.encontro },
+        });
+
+    for (const [i, passo] of r.passos.entries()) {
+      await prisma.scriptStep.upsert({
+        where: { scriptId_ordem: { scriptId: script.id, ordem: i } },
+        update: {
+          titulo: passo.titulo,
+          html: passo.html,
+          secaoApostila: passo.secaoApostila,
+          blocos: passo.blocos as never,
+        },
+        create: {
+          scriptId: script.id,
+          ordem: i,
+          titulo: passo.titulo,
+          html: passo.html,
+          secaoApostila: passo.secaoApostila,
+          blocos: passo.blocos as never,
+        },
+      });
+      totalPassos++;
+    }
+
+    // Passos que sobraram de uma versão anterior mais longa.
+    await prisma.scriptStep.deleteMany({
+      where: { scriptId: script.id, ordem: { gte: r.passos.length } },
+    });
+  }
+  console.log(`  roteiros da aula: ${roteiros.length} encontros · ${totalPassos} passos`);
 
   // ---- Acesso ----
   //

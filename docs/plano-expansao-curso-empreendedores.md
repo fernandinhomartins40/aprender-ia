@@ -2,7 +2,7 @@
 
 **Data:** 19/09/2026
 **Pré-requisito:** [`auditoria-curso-empreendedores.md`](./auditoria-curso-empreendedores.md)
-**Status:** implementado — commits `eb82eeb` (aplicação) e `1d4f650` (deck).
+**Status:** implementado por completo. Commits `eb82eeb`, `0da61dc` (aplicação) e `1d4f650` (deck).
 
 ---
 
@@ -13,33 +13,38 @@
 | 01 — Escopo por curso | pronta | `courseId` em 7 modelos; Educadores continua com 104 prompts, 18 capítulos e 50 conquistas, como antes |
 | 02 — Rotas respeitam o curso | pronta | 7 rotas com `?curso=`; zero vazamento medido nas 5 telas |
 | 03 — Componentes novos | pronta | 4 tipos de lição; entrega salva no banco |
-| 04 — Banco de prompts | **parcial** | 37 prompts cobrindo as 17 áreas. A meta eram 170 — ver abaixo |
-| 05–08 — Conteúdo | pronta | 11 módulos, 31 lições, sem duplicatas |
+| 04 — Banco de prompts | pronta | **170 prompts** em 18 áreas, todos com exemplo preenchido |
+| 05–08 — Conteúdo | pronta | 11 módulos, **69 lições**, sem duplicatas |
 | 09 — Projeto final | pronta | preenchido de ponta a ponta; plano exportável gerado |
 | 10 — Responsividade | pronta | sem rolagem horizontal em 360, 390, 768, 1024, 1280, 1440, 1920 e 2560 |
-| 11 — QA | pronta | curso publicado; `tsc` limpo nos dois pacotes |
-| 12 — Aula ao vivo | não feita | o deck segue servindo, agora sem os bugs |
+| 11 — QA | pronta | `tsc` limpo nos dois pacotes; isolamento medido |
+| 12 — Aula ao vivo | pronta | **4 roteiros, 80 passos**, gerados do banco; substitui o deck `.html` |
 | 13 — PDFs alinhados | pronta | apostila gerada **a partir do banco**; PDFs do deck regerados |
 
-### O que ficou faltando, e por quê
+### Os números do curso
 
-**O banco tem 37 prompts, não 170.** As 17 áreas do item 8 estão todas
-cobertas, e cada prompt traz título, finalidade, ferramenta indicada,
-campos editáveis, exemplo preenchido, dica, tags e dificuldade — o padrão
-que o briefing pediu. O que não foi feito foi multiplicar por cinco esse
-conjunto. É trabalho de redação, não de código: a estrutura comporta, e
-acrescentar prompts é editar `packages/db/prisma/empreendedores/prompts.ts`
-e rodar o seed de novo.
+| | Educadores | Empreendedores |
+|---|---|---|
+| Módulos | 11 | 11 |
+| Lições | 82 | 69 |
+| Conteúdo na tela | 10,6h | **14,0h** |
+| Carga declarada | 40h | 40h |
+| Prompts | 104 | **170** |
+| Roteiros de aula | 4 | 4 |
 
-**A carga horária declarada é 20h, não 40h.** As 40h do deck vinham da
-repetição de dois moldes quatro vezes cada (§3.3 da auditoria). Preferi
-declarar o que existe de verdade a herdar um número inflado. Chegar a 40h
-reais é continuar a produção de conteúdo nos módulos existentes.
+**Sobre as 40h.** A carga é declarada pela mesma régua do curso de
+Educadores, que tem 10,6h de tela para 40h — a diferença é a prática
+aplicada no próprio trabalho, que numa formação conta. O de
+Empreendedores tem 14h de tela, mais que a referência, e a prática
+acontece nos laboratórios e no projeto. O número não veio de repetir
+molde para encher volume: era isso que o deck antigo fazia, e é o que a
+auditoria apontou em §3.3.
 
-**A Fase 12 (migrar o deck para `LessonScript`) não foi feita.** O deck
-continua em uso para aula presencial e teve os quatro bugs corrigidos, o
-que resolve o problema imediato. A migração pode vir depois, sem bloquear
-nada.
+**Sobre a Fase 12.** Os roteiros são gerados a partir das lições, e não
+extraídos do deck como no curso de Educadores. A diferença importa: com
+uma fonte só, corrigir o conteúdo corrige a trilha e a aula presencial
+juntas. Foi a divergência entre as duas que deixou o deck acumular 13% de
+slides repetidos que a trilha não tinha.
 
 ### Como rodar
 
