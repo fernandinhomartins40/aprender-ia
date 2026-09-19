@@ -100,6 +100,11 @@ model User {
   desempenhos      ActivityPerformance[]
   /// O que marcou e digitou em cada passo do "Acompanhe a Aula".
   passosDaAula     StepProgress[]
+  /// O que o cursista produziu nos laboratórios e no projeto final —
+  /// o material que ele leva para fora do curso.
+  versoesPrompt    PromptUserVersion[]
+  entregasLab      LabDelivery[]
+  projetosFinais   FinalProject[]
 
   acoesAdmin       AdminAuditLog[]  @relation("AtorDaAcao")
   solicitacoes     AccessRequest[]  @relation("SolicitanteDoAcesso")
@@ -329,6 +334,19 @@ model Course {
   turmas     Cohort[]
   planos     PlanCourse[]
 
+  /// Conteúdo de apoio com escopo de curso. Em todos estes o `courseId`
+  /// nulo significa "vale para todos os cursos": era o comportamento de
+  /// quando a plataforma tinha um curso só, e é o que mantém o acervo
+  /// do curso de Educadores no lugar sem precisar reescrevê-lo.
+  promptTemplates PromptTemplate[]
+  ferramentas     AiTool[]
+  conhecimento    KnowledgeEntry[]
+  missoes         Mission[]
+  conquistas      Achievement[]
+  capitulos       HandbookChapter[]
+  roteiros        LessonScript[]
+  projetosFinais  FinalProject[]
+
   @@map("courses")
 }
 
@@ -375,6 +393,18 @@ enum TipoLicao {
   /// Guia de Bolso (Cap. 12): prompt de emergência para o imprevisto
   /// da rotina, consultado na hora do aperto.
   EMERGENCIA
+  /// O cursista produz algo e a entrega fica salva (`LabDelivery`).
+  /// Diferente de DESAFIO, que é cronometrado e não guarda resultado.
+  LABORATORIO
+  /// Mesma tarefa em duas colunas — como era antes da IA e como fica
+  /// com ela —, com o tempo economizado explícito.
+  ANTES_DEPOIS
+  /// Diagrama de um processo passo a passo (o lead que entra, o pedido
+  /// que chega). Ensina a lógica antes de abrir qualquer ferramenta.
+  FLUXO
+  /// Projeto final: o cursista preenche ao longo do curso e leva o
+  /// plano pronto para fora dele.
+  PROJETO
 }
 
 model Lesson {
@@ -395,6 +425,7 @@ model Lesson {
   progressos      LessonProgress[]
   desempenhos     ActivityPerformance[]
   missoes         Mission[]
+  entregasLab     LabDelivery[]
 
   @@unique([moduleId, ordem])
   @@index([tipo])
@@ -408,6 +439,10 @@ model Lesson {
 model PromptTemplate {
   id       String  @id @default(cuid())
   lessonId String?
+  /// Curso dono do prompt. Nulo = acervo comum, visível em qualquer
+  /// curso — é o que o banco de Educadores era antes de a plataforma
+  /// ter mais de um curso.
+  courseId String?
 
   titulo    String
   corpo     String  @db.Text
@@ -421,6 +456,14 @@ model PromptTemplate {
   /// prometer a usuários FREE um material que o servidor bloqueia.
   faixa     String  @default("Gratuito")
   etapaEnsino String?
+  /// Análogos de `disciplina` e `etapaEnsino` para cursos de negócio:
+  /// "vendas", "atendimento", "financeiro"… e o porte a que o prompt
+  /// serve ("MEI", "pequena empresa"). Nulos no curso de Educadores.
+  setor String?
+  porteEmpresa String?
+  /// O prompt já preenchido com um caso real, para o cursista ver o
+  /// que se espera antes de escrever o dele.
+  exemploPreenchido String? @db.Text
   objetivoPedagogico String?
   tipoAtividade String?
   nivelDificuldade String?
@@ -432,13 +475,39 @@ model PromptTemplate {
   atualizadoEm DateTime @updatedAt
 
   lesson    Lesson?     @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  course    Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
   execucoes PromptRun[]
   favoritos PromptFavorite[]
+  versoes   PromptUserVersion[]
 
   @@index([categoria])
   @@index([disciplina])
   @@index([etapaEnsino])
+  @@index([courseId])
+  @@index([setor])
   @@map("prompt_templates")
+}
+
+/// Versão que o cursista salvou de um prompt da biblioteca, depois de
+/// adaptá-lo ao próprio negócio. O original continua intocado: cada um
+/// guarda a sua, e a do vizinho não aparece.
+model PromptUserVersion {
+  id               String @id @default(cuid())
+  userId           String
+  promptTemplateId String
+
+  titulo String?
+  corpo  String  @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt PromptTemplate @relation(fields: [promptTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promptTemplateId])
+  @@index([userId])
+  @@map("prompt_user_versions")
 }
 
 /// Catálogo administrável de ferramentas externas. URLs ficam no banco para
@@ -446,6 +515,8 @@ model PromptTemplate {
 model AiTool {
   id           String   @id @default(cuid())
   chave        String   @unique
+  /// Nulo = ferramenta do catálogo comum, listada em qualquer curso.
+  courseId     String?
   nome         String
   descricao    String   @db.Text
   categoria    String
@@ -461,10 +532,27 @@ model AiTool {
   metodoAbertura String @default("COPIAR_E_ABRIR")
   urlComPrompt String?
   observacaoIntegracao String? @db.Text
+
+  /// GRATUITO | GRATUITO_COM_LIMITES | PAGO | DEPENDE_DO_PLANO.
+  /// O curso promete priorizar o que é acessível, e prometer isso sem
+  /// registrar a faixa é como o cursista descobre, tarde, que a aula
+  /// dependia de assinatura.
+  faixaAcesso String @default("GRATUITO_COM_LIMITES")
+  /// O limite concreto, na linguagem de quem vai esbarrar nele:
+  /// "50 fontes por notebook", "1.000 operações por mês".
+  limiteGratuito String? @db.Text
+  /// Data da última conferência na documentação oficial. Ferramenta de
+  /// IA muda rápido; sem isto não há como saber se a aula envelheceu.
+  verificadoEm DateTime?
+  fonteUrl     String?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   @@index([ativo, ordem])
+  @@index([courseId])
   @@map("ai_tools")
 }
 
@@ -486,6 +574,8 @@ model PromptFavorite {
 model KnowledgeEntry {
   id String @id @default(cuid())
   slug String @unique
+  /// Nulo = verbete do acervo comum (o que já existia).
+  courseId String?
   termo String
   sinonimos String[] @default([])
   categoria String
@@ -500,8 +590,11 @@ model KnowledgeEntry {
   atualizadoEm DateTime @updatedAt
   criadoEm DateTime @default(now())
 
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   @@index([publicado, categoria])
   @@index([termo])
+  @@index([courseId])
   @@map("knowledge_entries")
 }
 
@@ -609,6 +702,67 @@ model RespostaAberta {
   @@map("respostas_abertas")
 }
 
+/// O que o cursista produziu numa lição de LABORATORIO.
+///
+/// Fica preso ao usuário e à lição, e não ao `LessonProgress`, porque
+/// a entrega sobrevive a refazer a lição: quem volta ao laboratório
+/// continua de onde parou, em vez de encontrar a folha em branco.
+model LabDelivery {
+  id       String @id @default(cuid())
+  userId   String
+  lessonId String
+
+  /// A entrega, no formato que cada laboratório define: o texto da
+  /// resposta ao cliente, os passos do procedimento, as caixas do
+  /// fluxo de automação.
+  conteudo Json
+  /// O cursista deu por pronta. Enquanto falso é rascunho, e o painel
+  /// não cobra qualidade de rascunho.
+  concluida Boolean @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@map("lab_deliveries")
+}
+
+/// "Minha Empresa Aumentada por IA": o projeto que atravessa o curso.
+///
+/// O cursista preenche as seções ao longo dos módulos, e no fim leva o
+/// Plano de Adoção — que precisa fazer sentido fora do curso, lido por
+/// quem nunca viu a plataforma.
+model FinalProject {
+  id       String @id @default(cuid())
+  userId   String
+  courseId String
+
+  /// O negócio escolhido: { nome, ramo, porte, fictício? }.
+  negocio Json
+  /// Uma chave por seção do plano — tarefas repetitivas, oportunidades,
+  /// processo a automatizar, marketing, dados, agente. Json porque as
+  /// seções mudam com o curso, e cada mudança dessas não deve virar
+  /// migração de banco.
+  secoes  Json @default("{}")
+
+  concluidoEm DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@map("final_projects")
+}
+
 // ============================================================
 // MATRÍCULA E PROGRESSO
 // ============================================================
@@ -679,6 +833,8 @@ model Streak {
 model Achievement {
   id        String @id @default(cuid())
   chave     String @unique
+  /// Nulo = conquista da plataforma, válida em qualquer curso.
+  courseId  String?
   titulo    String
   descricao String
   icone     String
@@ -688,7 +844,9 @@ model Achievement {
   recompensaTitulo String?
 
   usuarios UserAchievement[]
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
+  @@index([courseId])
   @@map("achievements")
 }
 
@@ -1423,6 +1581,8 @@ model Mission {
   icone     String @default("metas")
   recompensaTitulo String?
   lessonId  String?
+  /// Nulo = missão de toda a plataforma (ex.: manter a ofensiva).
+  courseId  String?
   ativo     Boolean @default(true)
   oculto    Boolean @default(false)
   iniciaEm  DateTime?
@@ -1432,9 +1592,11 @@ model Mission {
 
   usuarios UserMission[]
   lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([ativo, tipo])
   @@index([lessonId])
+  @@index([courseId])
   @@map("missions")
 }
 
@@ -1557,6 +1719,8 @@ model LessonScript {
   cohortId  String?
   /// Ou preso a um encontro do calendário.
   meetingId String? @unique
+  /// Curso a que o roteiro serve, quando não é de uma turma específica.
+  courseId  String?
 
   titulo   String
   /// Encontro 1, 2, 3... Ordena a lista quando há vários roteiros.
@@ -1568,8 +1732,10 @@ model LessonScript {
 
   passos  ScriptStep[]
   sessoes LiveSession[]
+  course  Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([cohortId, ordem])
+  @@index([courseId, ordem])
   @@map("lesson_scripts")
 }
 
@@ -1617,6 +1783,9 @@ model HandbookChapter {
 
   /// "cap-1", "anexo-a" — é o que aparece no endereço.
   chave String @unique
+  /// Apostila a que o capítulo pertence. Nulo = a de Educadores, que
+  /// era a única quando a apostila foi para o banco.
+  courseId String?
   /// 1, 2, 3… Nulo nos anexos, que não são numerados.
   numero Int?
   titulo String
@@ -1634,8 +1803,10 @@ model HandbookChapter {
   atualizadoEm DateTime @updatedAt
 
   secoes HandbookSection[]
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([ordem])
+  @@index([courseId])
   @@map("handbook_chapters")
 }
 

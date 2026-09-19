@@ -13,6 +13,8 @@ import { AcessoBloqueado } from "@/components/acesso-bloqueado";
 import { IconeApp } from "@/components/icone-app";
 import { verbetes } from "@/server/conhecimento";
 import { Termo } from "@/components/termo";
+import { entregaDoLab, salvarEntregaLab } from "@/server/laboratorio";
+import { meuProjeto, salvarProjeto } from "@/server/projeto-final";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +82,15 @@ export default async function Licao({
   const { licao, resumo, proxima, posicao, totalLicoes } = dados;
   const template = licao.promptTemplates[0];
 
+  // Só as lições que produzem algo carregam o que já foi escrito. As
+  // outras não pagam a consulta.
+  const entregaLab =
+    licao.tipo === "LABORATORIO" ? await entregaDoLab(user.id, licao.id) : undefined;
+  const projetoSalvo =
+    licao.tipo === "PROJETO"
+      ? ((await meuProjeto(user.id, dados.courseId)) ?? undefined)
+      : undefined;
+
   const termos = Object.fromEntries(
     todosVerbetes
       .filter((v) => !FORA_DA_MARCACAO.has(v.slug))
@@ -110,10 +121,16 @@ export default async function Licao({
         <h1 className="mt-3 font-titulo text-3xl font-extrabold">
           {licao.titulo}
         </h1>
+        {/* A lição não repete a apostila: quando o assunto pede mais
+            fôlego, aponta o capítulo. O link fecha o caminho — antes era
+            só um rótulo, e o cursista tinha de procurar sozinho. */}
         {licao.capituloRef && (
-          <p className="mt-1 text-sm text-cinza">
-            Apostila · {licao.capituloRef}
-          </p>
+          <Link
+            href="/app/apostila"
+            className="mt-1 inline-block text-sm text-cinza hover:text-indigo hover:underline"
+          >
+            Aprofunde na apostila · {licao.capituloRef} →
+          </Link>
         )}
       </div>
 
@@ -141,6 +158,10 @@ export default async function Licao({
         concluidaInicialmente={resumo.status === "CONCLUIDA"}
         respostasAbertas={dados.respostasAbertas}
         termos={termos}
+        entregaLab={entregaLab}
+        salvarEntrega={salvarEntregaLab}
+        projetoSalvo={projetoSalvo}
+        salvarProjeto={salvarProjeto}
       />
     </div>
   );

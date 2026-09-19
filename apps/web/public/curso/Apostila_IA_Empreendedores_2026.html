@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>IA para Empreendedores — Apostila</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 11.5pt; line-height: 1.55; color: #1a1a2e;
+    max-width: 780px; margin: 0 auto; padding: 24px;
+  }
+  h1 { font-family: system-ui, sans-serif; font-size: 26pt; margin: 0 0 4px; }
+  h2 {
+    font-family: system-ui, sans-serif; font-size: 16pt;
+    margin: 28px 0 8px; padding-bottom: 5px;
+    border-bottom: 2px solid #6366F1; break-after: avoid;
+  }
+  h3 {
+    font-family: system-ui, sans-serif; font-size: 12.5pt;
+    margin: 18px 0 6px; color: #4338CA; break-after: avoid;
+  }
+  p { margin: 0 0 10px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  strong { color: #111; }
+  .capa { text-align: center; padding: 60px 0 40px; break-after: page; }
+  .capa .sub { font-size: 13pt; color: #555; margin-top: 8px; }
+  .capa .nota {
+    margin-top: 40px; font-size: 10pt; color: #666;
+    border-top: 1px solid #ddd; padding-top: 16px;
+  }
+  .sumario { break-after: page; }
+  .sumario li { font-family: system-ui, sans-serif; font-size: 11pt; }
+  .cap { break-before: page; }
+  .abertura { color: #444; font-style: italic; }
+  .rodape {
+    margin-top: 40px; padding-top: 14px; border-top: 1px solid #ddd;
+    font-size: 9.5pt; color: #666;
+  }
+  /* Na tela, um aviso de como salvar em PDF; no papel, ele some. */
+  .como-imprimir {
+    background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px;
+    padding: 14px; font-family: system-ui, sans-serif; font-size: 10pt;
+    margin-bottom: 24px;
+  }
+  @media print { .como-imprimir { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="como-imprimir">
+  <strong>Para salvar em PDF:</strong> use Imprimir no seu navegador
+  (Ctrl+P) e escolha "Salvar como PDF". Este aviso não sai na impressão.
+</div>
+
+<div class="capa">
+  <h1>IA para Empreendedores</h1>
+  <p class="sub">Do primeiro prompt ao primeiro agente, com o seu negócio</p>
+  <p class="nota">
+    Material de consulta · gerado em 19 de setembro de 2026<br>
+    As aulas não repetem esta apostila: elas explicam, demonstram e fazem
+    produzir. Isto aqui é onde se procura a referência depois.
+  </p>
+</div>
+
+<section class="sumario">
+  <h2>Sumário</h2>
+  <ol><li>1. O que a IA faz e o que ela não faz<ul><li>1.1 O que esperar</li><li>1.2 Alucinação: quando ela inventa com segurança</li><li>1.3 O que não colar na IA</li></ul></li><li>2. C.O.F.R.E. — a estrutura de um bom pedido<ul><li>2.1 As cinco partes</li><li>2.2 Restrições que valem para quase tudo</li></ul></li><li>3. Prompt visual: pedir imagem<ul><li>3.1 As oito partes</li><li>3.2 Por que pedir sem texto</li></ul></li><li>4. Ferramentas e o que é gratuito de verdade<ul><li>4.1 Assistentes de texto</li><li>4.2 Documentos, planilhas e base de conhecimento</li><li>4.3 Imagem, vídeo e automação</li></ul></li><li>5. Automação e agentes<ul><li>5.1 Chatbot, automação e agente</li><li>5.2 Regras que não se negociam</li><li>5.3 Antes de ligar uma automação</li></ul></li><li>Guia de bolso<ul><li>A.1 A resposta veio genérica</li><li>A.2 A IA citou um dado que eu não dei</li><li>A.3 Preciso colar algo com dado de cliente</li><li>A.4 O texto não parece meu</li></ul></li></ol>
+</section>
+
+
+    <section class="cap">
+      <h2>🤖 1. O que a IA faz e o que ela não faz</h2>
+      <div class="abertura"><p>Resumo de consulta rápida. A explicação completa está nas lições do Módulo 1.</p></div>
+      <h3>1.1 O que esperar</h3><p><strong>Faz bem:</strong> escrever, reescrever, resumir, organizar informação, dar ideias, explicar algo complicado em linguagem simples, transformar anotação em documento.</p><p><strong>Não faz:</strong> saber o que aconteceu no seu negócio, garantir que um número está certo, decidir preço ou crédito, conhecer seus clientes e contratos — a menos que você mostre.</p>
+<h3>1.2 Alucinação: quando ela inventa com segurança</h3><p>A IA monta o texto mais provável. Quando não tem o dado, ela completa mesmo assim — e com a mesma confiança de quando acerta.</p><p><strong>Onde ela mais inventa:</strong> preço, prazo, medida, telefone, endereço, CNPJ, lei e número de norma, dados do seu negócio, fontes de pesquisa (inclusive links que não abrem).</p><p><strong>Regra:</strong> nada que tenha número, nome ou consequência sai sem conferência.</p>
+<h3>1.3 O que não colar na IA</h3><p>Nome completo, CPF, RG, telefone, endereço, dado bancário, número de cartão, prontuário, informação sob sigilo contratual.</p><p><strong>O que fazer:</strong> trocar por marcadores — CLIENTE A, VALOR X, FORNECEDOR 1. O resultado é o mesmo e o dado não sai da sua casa.</p>
+    </section>
+
+    <section class="cap">
+      <h2>🔐 2. C.O.F.R.E. — a estrutura de um bom pedido</h2>
+      <div class="abertura"><p>As cinco partes, para consultar na hora de escrever.</p></div>
+      <h3>2.1 As cinco partes</h3><p><strong>C — Contexto:</strong> quem é você e qual é a situação.</p><p><strong>O — Objetivo:</strong> o que você quer conseguir.</p><p><strong>F — Formato:</strong> como a resposta deve chegar.</p><p><strong>R — Restrições:</strong> o que não pode. A parte mais esquecida e a que mais muda o resultado.</p><p><strong>E — Entrada:</strong> o material com que ela deve trabalhar, sem dado pessoal.</p>
+<h3>2.2 Restrições que valem para quase tudo</h3><ul><li>Não invente preço, prazo ou medida — deixe [VALOR] onde eu devo preencher</li><li>Não prometa o que depende de mim confirmar</li><li>Não use promessa absoluta ('o melhor', 'garantido')</li><li>Onde faltar informação, escreva [CONFIRMAR] em vez de supor</li><li>Separe o que é fato do que é hipótese</li></ul>
+    </section>
+
+    <section class="cap">
+      <h2>🖼️ 3. Prompt visual: pedir imagem</h2>
+      <div class="abertura"><p>As oito partes de um pedido de imagem.</p></div>
+      <h3>3.1 As oito partes</h3><ol><li><strong>Assunto</strong> — o que aparece, com detalhe</li><li><strong>Ambiente</strong> — onde está</li><li><strong>Composição</strong> — de onde se vê</li><li><strong>Iluminação</strong> — que luz</li><li><strong>Estilo</strong> — fotografia realista, ilustração</li><li><strong>Cores</strong> — a paleta da sua marca</li><li><strong>Formato</strong> — quadrado, deitado</li><li><strong>Restrições</strong> — sem texto, sem marca de terceiros, sem pessoas</li></ol>
+<h3>3.2 Por que pedir sem texto</h3><p>Letra gerada por IA costuma sair torta ou com erro de grafia. Gere a imagem limpa e escreva o texto depois, no Canva: fica melhor e dá para corrigir quando quiser.</p>
+    </section>
+
+    <section class="cap">
+      <h2>🧰 4. Ferramentas e o que é gratuito de verdade</h2>
+      <div class="abertura"><p>Faixas conferidas na documentação oficial em setembro de 2026. Isto envelhece: confirme na própria ferramenta antes de decidir.</p></div>
+      <h3>4.1 Assistentes de texto</h3><p><strong>ChatGPT</strong> — gratuito com limites. Conversa de texto sem limite fixo; imagem, upload e voz têm cota. Plano Go a US$ 8/mês amplia 10×.</p><p><strong>Gemini</strong> — gratuito com conta Google, com cota diária nos modelos melhores.</p><p><strong>Claude</strong> — gratuito com cota. Delegar trabalho sobre pastas de arquivos é dos planos pagos.</p>
+<h3>4.2 Documentos, planilhas e base de conhecimento</h3><p><strong>Gemini no Documentos e Planilhas</strong> — depende do plano. Montar planilha inteira por descrição exige Google AI Pro ou Ultra. O caminho gratuito é exportar CSV e analisar no chat.</p><p><strong>NotebookLM (Gemini Notebook)</strong> — gratuito com limites: até 50 fontes por caderno, cada uma com até 500 mil palavras ou 200 MB.</p>
+<h3>4.3 Imagem, vídeo e automação</h3><p><strong>ChatGPT Imagens</strong> — gratuito com limites; poucas imagens por dia.</p><p><strong>Google Veo</strong> — cerca de 10 gerações por mês em conta comum.</p><p><strong>Pika</strong> — gratuito com uso comercial permitido, limitado a 480p.</p><p><strong>Make</strong> — 1.000 operações por mês e 2 automações ativas no gratuito.</p><p><em>Nota: o Sora foi encerrado pela OpenAI em março de 2026 e não consta deste material.</em></p>
+    </section>
+
+    <section class="cap">
+      <h2>⚙️ 5. Automação e agentes</h2>
+      <div class="abertura"><p>As definições e as regras de segurança.</p></div>
+      <h3>5.1 Chatbot, automação e agente</h3><p><strong>Chatbot</strong> responde perguntas.</p><p><strong>Automação</strong> executa passos fixos, sempre na mesma ordem.</p><p><strong>Agente</strong> recebe um objetivo e decide os passos.</p>
+<h3>5.2 Regras que não se negociam</h3><ul><li>Automação gera rascunho; quem envia ao cliente é uma pessoa</li><li>O agente nunca decide preço, desconto, crédito, cancelamento ou questão jurídica</li><li>Quando não souber, ele diz que vai confirmar — nunca inventa</li><li>Todo processo tem de ter um jeito de desligar</li></ul>
+<h3>5.3 Antes de ligar uma automação</h3><p>Teste: dado faltando, dado errado, execução em duplicidade, pico de volume e desligamento no meio. Se não houver resposta para 'como eu desligo isso numa sexta às duas da tarde', não ligue.</p>
+    </section>
+
+    <section class="cap">
+      <h2>🆘 Guia de bolso</h2>
+      <div class="abertura"><p>Para consultar no meio do expediente, quando não há tempo de procurar a lição.</p></div>
+      <h3>A.1 A resposta veio genérica</h3><p>Falta uma das cinco partes — quase sempre a restrição. Acrescente o que NÃO pode e peça de novo.</p>
+<h3>A.2 A IA citou um dado que eu não dei</h3><p>É alucinação. Acrescente: 'use somente as informações que eu forneci; onde faltar dado, escreva [FALTA]'.</p>
+<h3>A.3 Preciso colar algo com dado de cliente</h3><p>Troque por marcadores antes: CLIENTE A, VALOR X. Se for muito texto, peça primeiro à IA que aponte o que deve ser removido — e cole só o texto limpo.</p>
+<h3>A.4 O texto não parece meu</h3><p>Dê um exemplo de algo que você escreveu e peça para seguir aquele tom. Descrever o tom funciona menos que mostrar.</p>
+    </section>
+
+<p class="rodape">
+  Os limites e planos das ferramentas foram conferidos na documentação
+  oficial na data indicada em cada item. Ferramentas de IA mudam rápido:
+  confirme antes de decidir assinar.
+</p>
+
+</body>
+</html>

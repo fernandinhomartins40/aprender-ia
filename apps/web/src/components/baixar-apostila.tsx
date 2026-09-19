@@ -1,14 +1,23 @@
 /**
  * O PDF da apostila, para quem quiser imprimir ou ler off-line.
  *
- * Fica como alternativa, e não como caminho principal: são 9 MB e 113 páginas
+ * Fica como alternativa, e não como caminho principal: são páginas
  * desenhadas para papel A4 — abrir isso no celular para achar o trecho da aula
  * era justamente o problema que a página resolve.
+ *
+ * O arquivo vem por parâmetro porque cada curso tem a sua apostila, e o
+ * PDF precisa ser o mesmo material que o aluno lê na tela. Um caminho
+ * fixo aqui era o que faria o cursista de Empreendedores baixar a
+ * apostila de Educadores.
  */
-export function BaixarApostila() {
+export function BaixarApostila({
+  arquivo = "/curso/Apostila_IA_Educadores_2026.pdf",
+}: {
+  arquivo?: string;
+} = {}) {
   return (
     <a
-      href="/curso/Apostila_IA_Educadores_2026.pdf"
+      href={arquivo}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center gap-3 rounded-xl border border-borda bg-white p-4 transition-colors hover:bg-indigo-soft"

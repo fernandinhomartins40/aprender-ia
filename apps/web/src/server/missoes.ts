@@ -92,7 +92,7 @@ export async function avaliarMissoes(userId: string) {
   return novas;
 }
 
-export async function missoesDoAluno(userId: string) {
+export async function missoesDoAluno(userId: string, courseId?: string) {
   await avaliarMissoes(userId);
   const agora = new Date();
   const missoes = await prisma.mission.findMany({
@@ -101,6 +101,9 @@ export async function missoesDoAluno(userId: string) {
       AND: [
         { OR: [{ iniciaEm: null }, { iniciaEm: { lte: agora } }] },
         { OR: [{ terminaEm: null }, { terminaEm: { gte: agora } }] },
+        // Missão de outro curso não aparece; a de `courseId` nulo, sim —
+        // manter a ofensiva vale em qualquer curso.
+        ...(courseId ? [{ OR: [{ courseId }, { courseId: null }] }] : []),
       ],
     },
     orderBy: [{ tipo: "asc" }, { criadoEm: "asc" }],
@@ -112,9 +115,9 @@ export async function missoesDoAluno(userId: string) {
   }));
 }
 
-export async function minhasMissoes() {
+export async function minhasMissoes(courseId?: string) {
   const user = await exigirAluno();
-  return missoesDoAluno(user.id);
+  return missoesDoAluno(user.id, courseId);
 }
 
 export async function minhasRecompensas() {

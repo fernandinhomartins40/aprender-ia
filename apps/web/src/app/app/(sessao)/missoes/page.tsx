@@ -2,15 +2,30 @@ import Link from "next/link";
 import { IconeApp } from "@/components/icone-app";
 import { minhasMissoes, minhasRecompensas } from "@/server/missoes";
 import { Termo } from "@/components/termo";
+import { exigirAluno } from "@/server/trilha";
+import { cursosDoAluno, resolverCursoAtivo } from "@/server/curso-ativo";
+import { SeletorCurso } from "@/components/seletor-curso";
 
 export const dynamic = "force-dynamic";
 
 const ROTULO = { DIARIA: "Hoje", SEMANAL: "Nesta semana", ESPECIAL: "Especial" } as const;
 
-export default async function Missoes() {
-  const [missoes, recompensas] = await Promise.all([minhasMissoes(), minhasRecompensas()]);
+export default async function Missoes({
+  searchParams,
+}: {
+  searchParams: Promise<{ curso?: string }>;
+}) {
+  const user = await exigirAluno();
+  const { curso: cursoPedido } = await searchParams;
+  const curso = await resolverCursoAtivo(user.id, cursoPedido);
+  const [missoes, recompensas, cursos] = await Promise.all([
+    minhasMissoes(curso?.id),
+    minhasRecompensas(),
+    cursosDoAluno(user.id),
+  ]);
   return (
     <div className="mx-auto max-w-3xl">
+      <SeletorCurso cursos={cursos} ativo={curso?.id ?? null} base="/app/missoes" />
       <div className="flex items-center gap-4"><div className="rounded-2xl bg-amarelo-soft p-3"><IconeApp nome="metas" tamanho={48} prioridade /></div><div><h1 className="font-titulo text-3xl font-extrabold">Missões<Termo slug="missao" contexto="missoes" rotulo="Missões" /></h1><p className="text-tinta-clara">Objetivos opcionais que acompanham sua aprendizagem real.</p></div></div>
       <div className="mt-7 space-y-4">
         {missoes.map((m) => {

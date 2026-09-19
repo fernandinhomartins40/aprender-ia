@@ -45,12 +45,27 @@ type Item = {
   relacionadoSlugs: string[];
 };
 
-const EXEMPLOS = [
+/**
+ * As perguntas de exemplo, por curso.
+ *
+ * Ficam separadas porque são o primeiro texto que a pessoa lê aqui: um
+ * dono de salão diante de "O que significa EF05CI05?" conclui, com razão,
+ * que a tela não é para ele.
+ */
+const EXEMPLOS_EDUCACAO = [
   "O que é BNCC?",
   "Diferença entre competência e habilidade",
   "O que significa EF05CI05?",
   "O que é avaliação formativa?",
   "Como anonimizar dados de estudantes?",
+];
+
+const EXEMPLOS_NEGOCIO = [
+  "O que é um agente de IA?",
+  "Diferença entre automação e agente",
+  "Por que a IA inventa informação?",
+  "O que posso colar sem risco?",
+  "O que é gratuito de verdade?",
 ];
 
 export type AchadoHistorico = {
@@ -63,9 +78,12 @@ export function CentralConhecimento({
   itens,
   categorias,
   aoConsultarHistorico,
+  negocio = false,
 }: {
   itens: Item[];
   categorias: string[];
+  /** Curso de negócios: muda os exemplos e o aviso sobre a BNCC. */
+  negocio?: boolean;
   /**
    * Busca no diário do próprio professor.
    *
@@ -151,12 +169,16 @@ export function CentralConhecimento({
           className="campo"
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
-          placeholder="Ex.: O que é BNCC? · avaliação formativa · EF05CI05"
+          placeholder={
+            negocio
+              ? "Ex.: O que é um agente? · automação · alucinação"
+              : "Ex.: O que é BNCC? · avaliação formativa · EF05CI05"
+          }
         />
 
         {!consulta && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {EXEMPLOS.map((e) => (
+            {(negocio ? EXEMPLOS_NEGOCIO : EXEMPLOS_EDUCACAO).map((e) => (
               <button
                 key={e}
                 onClick={() => setConsulta(e)}

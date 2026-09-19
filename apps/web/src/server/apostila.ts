@@ -27,9 +27,15 @@ export type CapituloLido = {
   secoes: SecaoLida[];
 };
 
-/** O sumário: só o que a lista precisa, sem carregar o conteúdo inteiro. */
-export async function sumarioDaApostila() {
+/**
+ * O sumário: só o que a lista precisa, sem carregar o conteúdo inteiro.
+ *
+ * Cada curso tem a sua apostila. Capítulo de `courseId` nulo é o acervo
+ * antigo, de quando havia um curso só, e continua aparecendo.
+ */
+export async function sumarioDaApostila(courseId?: string) {
   return prisma.handbookChapter.findMany({
+    where: courseId ? { OR: [{ courseId }, { courseId: null }] } : {},
     orderBy: { ordem: "asc" },
     select: {
       chave: true,

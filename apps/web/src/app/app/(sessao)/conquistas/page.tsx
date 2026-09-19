@@ -3,31 +3,44 @@ import { exigirAluno } from "@/server/trilha";
 import { IconeApp } from "@/components/icone-app";
 import { iconeGamificacao } from "@/lib/icones-gamificacao";
 import { Termo } from "@/components/termo";
+import { cursosDoAluno, doCurso, resolverCursoAtivo } from "@/server/curso-ativo";
+import { SeletorCurso } from "@/components/seletor-curso";
 
 export const dynamic = "force-dynamic";
 
-export default async function Conquistas() {
+export default async function Conquistas({
+  searchParams,
+}: {
+  searchParams: Promise<{ curso?: string }>;
+}) {
   const user = await exigirAluno();
+  const { curso: cursoPedido } = await searchParams;
+  const curso = await resolverCursoAtivo(user.id, cursoPedido);
 
-  const [todas, minhas] = await Promise.all([
-    prisma.achievement.findMany({ orderBy: { ordem: "asc" } }),
+  const [todas, minhas, cursos] = await Promise.all([
+    prisma.achievement.findMany({ where: doCurso(curso), orderBy: { ordem: "asc" } }),
     prisma.userAchievement.findMany({
       where: { userId: user.id },
       select: { achievementId: true, conquistadoEm: true },
     }),
+    cursosDoAluno(user.id),
   ]);
 
   const conquistadas = new Map(minhas.map((m) => [m.achievementId, m.conquistadoEm]));
+  // Conta só as deste curso: dizer "3 de 20" somando as do outro curso
+  // faria o cursista achar que perdeu marcos que nunca esteve fazendo.
+  const feitasAqui = todas.filter((c) => conquistadas.has(c.id)).length;
 
   return (
     <div>
+      <SeletorCurso cursos={cursos} ativo={curso?.id ?? null} base="/app/conquistas" />
       <div className="mb-6">
         <h1 className="font-titulo text-3xl font-extrabold">
           Conquistas
           <Termo slug="conquista" contexto="conquistas" rotulo="Conquistas" />
         </h1>
         <p className="mt-1 text-tinta-clara">
-          {minhas.length} de {todas.length} conquistadas
+          {feitasAqui} de {todas.length} conquistadas
         </p>
       </div>
 

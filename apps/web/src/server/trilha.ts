@@ -293,6 +293,9 @@ export async function carregarLicao(userId: string, lessonId: string) {
       respostasAbertas.map(({ chave, texto }) => [chave, texto]),
     ),
     matriculaId: trilha.matriculaId,
+    // O curso dono da lição. Quem abre um laboratório ou o projeto final
+    // precisa dele para achar o material certo do cursista.
+    courseId: origem.module.courseId,
     proxima: todas[indice + 1] ?? null,
     posicao: indice + 1,
     totalLicoes: trilha.totalLicoes,

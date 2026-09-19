@@ -104,8 +104,10 @@ export function CardPrompt({
       {/* ---- Campos das variáveis ---- */}
       {chaves.length > 0 && (
         <div className="border-b border-borda bg-indigo-soft p-4 sm:p-5">
+          {/* "Sua turma" só existe num dos cursos. Sem complemento, a
+              frase serve ao professor e a quem tem um negócio. */}
           <p className="mb-3 font-titulo text-sm font-bold text-indigo-dark">
-            Personalize para a sua turma
+            Personalize para o seu caso
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {chaves.map((v) => (

@@ -1069,6 +1069,9 @@ async function main() {
 
         const dados = {
           lessonId: licao.id,
+          // O prompt nasce de uma lição deste curso, então pertence a ele
+          // — senão entraria na biblioteca do curso de Empreendedores.
+          courseId: curso.id,
           titulo: l.titulo,
           corpo: c.corpo,
           variaveis,
@@ -1117,6 +1120,10 @@ async function main() {
     const dados = {
       titulo: p.titulo,
       corpo: p.corpo,
+      // Estes prompts são da apostila de Educadores e falam de disciplina,
+      // ano escolar e BNCC. Sem o curso preenchido, contariam como acervo
+      // comum e apareceriam também para quem cursa Empreendedores.
+      courseId: curso.id,
       // Os prompts da apostila trazem [VARIÁVEL] no corpo; o CardPrompt
       // extrai sozinho quando `variaveis` vem vazio, e é o que queremos:
       // declarar à mão 102 conjuntos de campos seria manutenção dupla.
@@ -1149,9 +1156,12 @@ async function main() {
     // `importancias` é Json? no schema: `null` em TypeScript significaria
     // "não mexa neste campo" para o Prisma, e o verbete manteria o valor
     // antigo. `Prisma.DbNull` é o que grava NULL de verdade.
+    // Este acervo é pedagógico — BNCC, DUA, sequência didática, parecer.
+    // Fica preso ao curso; o de Empreendedores tem os verbetes dele.
     const dados = {
       ...item,
       importancias: item.importancias ?? Prisma.DbNull,
+      courseId: curso.id,
     };
     await prisma.knowledgeEntry.upsert({
       where: { slug: item.slug },
@@ -1223,11 +1233,15 @@ async function main() {
   }
 
   // ---- Conquistas ----
+  // Vão para este curso, e não para o acervo comum: várias falam do
+  // número exato de atividades desta formação ("as 82") e do público
+  // ("Professor que experimenta"). Num curso de negócios, a medalha
+  // prometeria um marco que não existe lá.
   for (const c of CONQUISTAS) {
     await prisma.achievement.upsert({
       where: { chave: c.chave },
-      update: c,
-      create: c,
+      update: { ...c, courseId: curso.id },
+      create: { ...c, courseId: curso.id },
     });
   }
   console.log(`  conquistas: ${CONQUISTAS.length}`);
@@ -1235,8 +1249,8 @@ async function main() {
   for (const missao of MISSOES) {
     await prisma.mission.upsert({
       where: { chave: missao.chave },
-      update: missao,
-      create: missao,
+      update: { ...missao, courseId: curso.id },
+      create: { ...missao, courseId: curso.id },
     });
   }
   console.log(`  missões: ${MISSOES.length}`);
@@ -1346,6 +1360,9 @@ async function main() {
         icone: cap.icone,
         aberturaHtml: cap.aberturaHtml,
         ordem: i + 1,
+        // Cada curso tem a sua apostila. Sem o curso aqui, os capítulos
+        // sobre BNCC e parecer descritivo apareceriam no de Empreendedores.
+        courseId: curso.id,
       },
       create: {
         chave: cap.id,
@@ -1354,6 +1371,7 @@ async function main() {
         icone: cap.icone,
         aberturaHtml: cap.aberturaHtml,
         ordem: i + 1,
+        courseId: curso.id,
       },
     });
 

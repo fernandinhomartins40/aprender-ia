@@ -21,6 +21,8 @@ export type VerbeteCompleto = ItemAjuda & {
   categoria: string;
   sinonimos: string[];
   relacionadoSlugs: string[];
+  /** Nulo = verbete comum, visível em qualquer curso. */
+  courseId: string | null;
 };
 
 const carregarPublicados = unstable_cache(
@@ -41,15 +43,29 @@ const carregarPublicados = unstable_cache(
       fonteUrl: i.fonteUrl,
       saibaMaisUrl: i.saibaMaisUrl,
       relacionadoSlugs: i.relacionadoSlugs,
+      courseId: i.courseId,
     }));
   },
   ["base-conhecimento"],
   { tags: [TAG_CONHECIMENTO] },
 );
 
-/** Todos os verbetes publicados, em ordem alfabética. */
-export async function verbetes(): Promise<VerbeteCompleto[]> {
-  return carregarPublicados();
+/**
+ * Todos os verbetes publicados, em ordem alfabética.
+ *
+ * Com `courseId`, tira da lista os verbetes de outro curso. Os de
+ * `courseId` nulo ficam sempre: "prompt" e "alucinação" querem dizer a
+ * mesma coisa para um professor e para um dono de loja, e duplicá-los
+ * por curso só criaria duas versões para manter.
+ *
+ * O filtro é feito aqui, e não na consulta, porque a lista inteira é
+ * pequena e fica em cache — vale mais reaproveitá-la do que ter um cache
+ * por curso.
+ */
+export async function verbetes(courseId?: string): Promise<VerbeteCompleto[]> {
+  const todos = await carregarPublicados();
+  if (!courseId) return todos;
+  return todos.filter((v) => v.courseId === null || v.courseId === courseId);
 }
 
 /**
@@ -80,8 +96,8 @@ export async function mapaVerbetes(
 }
 
 /** As categorias que têm ao menos um verbete publicado, na ordem da base. */
-export async function categoriasComVerbetes(ordem: readonly string[]) {
-  const todos = await carregarPublicados();
+export async function categoriasComVerbetes(ordem: readonly string[], courseId?: string) {
+  const todos = await verbetes(courseId);
   const presentes = new Set(todos.map((v) => v.categoria));
   const conhecidas = ordem.filter((c) => presentes.has(c));
   const extras = [...presentes].filter((c) => !ordem.includes(c)).sort();

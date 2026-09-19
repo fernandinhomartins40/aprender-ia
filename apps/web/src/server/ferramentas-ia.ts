@@ -17,8 +17,33 @@ function urlSegura(valor: string) {
   }
 }
 
-export async function ferramentasAtivas() {
-  return prisma.aiTool.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
+/**
+ * Ferramentas que o aluno vê.
+ *
+ * Sem curso devolve o catálogo inteiro — é o que o painel do
+ * administrador quer. Com curso, devolve as dele mais as de `courseId`
+ * nulo, que são as comuns a todos.
+ *
+ * A mesma ferramenta pode estar nos dois lugares: o ChatGPT genérico e o
+ * ChatGPT descrito para quem tem um negócio, com o limite do plano
+ * gratuito. Quando isso acontece, vale a do curso — ela fala a língua de
+ * quem está lendo. Sem este desempate a tela mostrava "ChatGPT" duas
+ * vezes, lado a lado, com descrições diferentes.
+ */
+export async function ferramentasAtivas(courseId?: string) {
+  const todas = await prisma.aiTool.findMany({
+    where: {
+      ativo: true,
+      ...(courseId ? { OR: [{ courseId }, { courseId: null }] } : {}),
+    },
+    orderBy: [{ ordem: "asc" }, { nome: "asc" }],
+  });
+  if (!courseId) return todas;
+
+  const doCurso = new Set(
+    todas.filter((f) => f.courseId === courseId).map((f) => f.nome.toLowerCase()),
+  );
+  return todas.filter((f) => f.courseId === courseId || !doCurso.has(f.nome.toLowerCase()));
 }
 
 export async function salvarFerramenta(dados: FormData) {

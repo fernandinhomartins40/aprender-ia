@@ -72,14 +72,20 @@ async function atualizarOfensiva(userId: string) {
    ============================================================ */
 
 async function conferirConquistas(userId: string) {
-  const [licoes, prompts, ofensiva, matricula] = await Promise.all([
+  const [licoes, prompts, ofensiva, matriculas] = await Promise.all([
     prisma.lessonProgress.count({
       where: { status: "CONCLUIDA", enrollment: { userId } },
     }),
     prisma.promptRun.count({ where: { userId } }),
     prisma.streak.findUnique({ where: { userId } }),
-    prisma.enrollment.findFirst({ where: { userId } }),
+    // Todas as matrículas, e não a primeira: com dois cursos, "concluiu o
+    // curso" tem de ser medido no curso da própria conquista. Uma
+    // matrícula qualquer daria a medalha de um curso pelo avanço no outro.
+    prisma.enrollment.findMany({ where: { userId } }),
   ]);
+  const progressoPorCurso = new Map(matriculas.map((m) => [m.courseId, m.progressoPct]));
+  /** Para conquistas sem curso definido, vale o curso mais adiantado. */
+  const progressoMaximo = Math.max(0, ...matriculas.map((m) => m.progressoPct));
 
   const todas = await prisma.achievement.findMany();
   const jaTem = await prisma.userAchievement.findMany({
@@ -106,11 +112,16 @@ async function conferirConquistas(userId: string) {
         atingiu = (ofensiva?.diasSeguidos ?? 0) >= criterio.valor;
         break;
       case "curso":
-        atingiu = (matricula?.progressoPct ?? 0) >= criterio.valor;
+        atingiu =
+          (c.courseId
+            ? (progressoPorCurso.get(c.courseId) ?? 0)
+            : progressoMaximo) >= criterio.valor;
         break;
       case "modulo": {
-        // conta módulos com todas as lições concluídas
+        // conta módulos com todas as lições concluídas — só do curso da
+        // conquista, senão módulos de um curso contariam para o outro
         const modulos = await prisma.module.findMany({
+          where: c.courseId ? { courseId: c.courseId } : {},
           include: { licoes: { select: { id: true } } },
         });
         const feitas = await prisma.lessonProgress.findMany({

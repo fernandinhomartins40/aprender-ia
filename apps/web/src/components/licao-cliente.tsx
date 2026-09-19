@@ -17,6 +17,13 @@ import {
   PlayerEmergencia,
   type Analisar,
 } from "./players";
+import {
+  PlayerLaboratorio,
+  PlayerAntesDepois,
+  PlayerFluxo,
+  PlayerProjeto,
+  type SalvarEntrega,
+} from "./players-negocio";
 import type { TermoDetectavel } from "./texto-explicado";
 import {
   FeedbackConclusao,
@@ -37,6 +44,10 @@ export function LicaoCliente({
   concluidaInicialmente = false,
   respostasAbertas = {},
   termos = {},
+  entregaLab,
+  salvarEntrega,
+  projetoSalvo,
+  salvarProjeto,
 }: {
   tipo: string;
   conteudo: any;
@@ -64,6 +75,15 @@ export function LicaoCliente({
   registrar: (d: FormData) => Promise<void>;
   analisar: Analisar;
   registrarDesempenho: (d: FormData) => Promise<void>;
+  /**
+   * O que o cursista já escreveu no laboratório ou no projeto, e como
+   * salvar. Opcionais: uma lição que não seja LABORATORIO nem PROJETO
+   * não recebe nenhum dos dois, e os players simplesmente não salvam.
+   */
+  entregaLab?: Record<string, string>;
+  salvarEntrega?: SalvarEntrega;
+  projetoSalvo?: { negocio?: Record<string, string>; secoes?: Record<string, string[]> };
+  salvarProjeto?: SalvarEntrega;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -261,6 +281,33 @@ export function LicaoCliente({
         />
       ) : (
         <p className="text-tinta-clara">Prompt indisponível.</p>
+      );
+      break;
+    case "LABORATORIO":
+      player = (
+        <PlayerLaboratorio
+          conteudo={conteudo}
+          onCompleto={finalizar}
+          lessonId={lessonId}
+          entregaSalva={entregaLab}
+          aoSalvar={salvarEntrega}
+        />
+      );
+      break;
+    case "ANTES_DEPOIS":
+      player = <PlayerAntesDepois conteudo={conteudo} onCompleto={finalizar} />;
+      break;
+    case "FLUXO":
+      player = <PlayerFluxo conteudo={conteudo} onCompleto={finalizar} />;
+      break;
+    case "PROJETO":
+      player = (
+        <PlayerProjeto
+          conteudo={conteudo}
+          onCompleto={finalizar}
+          projetoSalvo={projetoSalvo}
+          aoSalvar={salvarProjeto}
+        />
       );
       break;
     default:

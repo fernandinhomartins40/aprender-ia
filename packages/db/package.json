@@ -15,6 +15,8 @@
     "studio": "prisma studio",
     "reset": "prisma migrate reset --force",
     "seed": "tsx prisma/seed.ts",
+    "seed:empreendedores": "tsx prisma/seed-empreendedores.ts",
+    "apostila:empreendedores": "tsx prisma/empreendedores/gerar-pdf.ts",
     "roteiros": "tsx prisma/gerar-roteiros.ts",
     "apostila": "tsx prisma/gerar-apostila.ts",
     "typecheck": "tsc --noEmit"

@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { CardPrompt } from "./card-prompt";
-import { GeradorPrompt } from "./gerador-prompt";
+import {
+  GeradorPrompt,
+  ROTULOS_GERADOR_EDUCACAO,
+  ROTULOS_GERADOR_NEGOCIO,
+} from "./gerador-prompt";
 import { AjudaContextual, type ItemAjuda } from "./ajuda-contextual";
 
 /**
@@ -20,6 +24,12 @@ type Item = {
   titulo: string;
   corpo: string;
   categoria: string;
+  /**
+   * O recorte do prompt. Num curso de educação é a disciplina; num de
+   * negócios, o setor ("vendas", "atendimento"). São o mesmo eixo com
+   * nomes diferentes, então a página manda um só campo e o rótulo
+   * abaixo acompanha — em vez de dois filtros, um deles sempre vazio.
+   */
   disciplina: string | null;
   dica: string | null;
   origem: string | null;
@@ -30,9 +40,42 @@ type Item = {
   objetivoPedagogico: string | null;
   tipoAtividade: string | null;
   nivelDificuldade: string | null;
+  /** O prompt já preenchido com um caso real, quando existe. */
+  exemploPreenchido?: string | null;
   tags: string[];
   usos: number;
   favorito: boolean;
+};
+
+/**
+ * As palavras que mudam de um curso para o outro.
+ *
+ * "Disciplina" e "ano escolar" não dizem nada a um dono de salão, e
+ * "setor" não diz nada a um professor. O eixo é o mesmo; só o nome muda.
+ */
+export type RotulosBiblioteca = {
+  /** Nome do recorte no singular, para o filtro: "disciplina", "setor". */
+  recorte: string;
+  /** O mesmo, no plural e com artigo: "Todas as disciplinas". */
+  recorteTodos: string;
+  /** Exemplo do que se pode buscar, no campo de busca. */
+  exemploBusca: string;
+  /** Público do curso. Decide também os rótulos do gerador. */
+  publico: "educacao" | "negocio";
+};
+
+export const ROTULOS_EDUCACAO: RotulosBiblioteca = {
+  recorte: "Disciplina",
+  recorteTodos: "Todas as disciplinas",
+  exemploBusca: "Tema, turma, objetivo ou atividade",
+  publico: "educacao",
+};
+
+export const ROTULOS_NEGOCIO: RotulosBiblioteca = {
+  recorte: "Área",
+  recorteTodos: "Todas as áreas",
+  exemploBusca: "Tarefa, área do negócio ou objetivo",
+  publico: "negocio",
 };
 
 type Tool = {
@@ -53,6 +96,7 @@ export function BibliotecaPrompts({
   onFavoritar,
   ajuda = {},
   aoMontarPrompt,
+  rotulos = ROTULOS_EDUCACAO,
 }: {
   prompts: Item[];
   ferramentas: Tool[];
@@ -62,6 +106,8 @@ export function BibliotecaPrompts({
   ajuda?: Record<string, ItemAjuda>;
   /** Registra no diário um prompt montado no gerador. */
   aoMontarPrompt?: (d: FormData) => Promise<void>;
+  /** Vocabulário do curso. O padrão é o de Educadores, que já estava aqui. */
+  rotulos?: RotulosBiblioteca;
 }) {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("todas");
@@ -101,7 +147,16 @@ export function BibliotecaPrompts({
 
   return (
     <div className="space-y-6">
-      <GeradorPrompt ferramentas={ferramentas} ajuda={ajuda} aoUsar={aoMontarPrompt} />
+      <GeradorPrompt
+        ferramentas={ferramentas}
+        ajuda={ajuda}
+        aoUsar={aoMontarPrompt}
+        rotulos={
+          rotulos.publico === "negocio"
+            ? ROTULOS_GERADOR_NEGOCIO
+            : ROTULOS_GERADOR_EDUCACAO
+        }
+      />
 
       <div className="rounded-xl border border-borda bg-indigo-soft p-4">
         <div className="flex flex-wrap gap-3">
@@ -113,7 +168,7 @@ export function BibliotecaPrompts({
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Tema, turma, objetivo ou atividade"
+              placeholder={rotulos.exemploBusca}
               className="campo w-full"
             />
           </label>
@@ -131,13 +186,13 @@ export function BibliotecaPrompts({
 
           <label>
             <span className="mb-1 block text-sm font-bold text-tinta">
-              Disciplina
+              {rotulos.recorte}
               <Ajuda slug="componente-curricular" />
             </span>
             <select className="campo" value={disciplina} onChange={(e) => setDisciplina(e.target.value)}>
               {disciplinas.map((x) => (
                 <option key={x} value={x}>
-                  {x === "todas" ? "Todas as disciplinas" : x}
+                  {x === "todas" ? rotulos.recorteTodos : x}
                 </option>
               ))}
             </select>

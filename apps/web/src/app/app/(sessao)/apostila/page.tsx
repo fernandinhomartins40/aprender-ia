@@ -1,27 +1,42 @@
 import Link from "next/link";
 import { sumarioDaApostila } from "@/server/apostila";
 import { BaixarApostila } from "@/components/baixar-apostila";
+import { exigirAluno } from "@/server/trilha";
+import { cursosDoAluno, resolverCursoAtivo } from "@/server/curso-ativo";
+import { SeletorCurso } from "@/components/seletor-curso";
+import { APOSTILA_PDF } from "@/lib/cursos";
 
 export const metadata = { title: "Apostila do curso" };
 
-export default async function PaginaApostila() {
-  const capitulos = await sumarioDaApostila();
+export default async function PaginaApostila({
+  searchParams,
+}: {
+  searchParams: Promise<{ curso?: string }>;
+}) {
+  const user = await exigirAluno();
+  const { curso: cursoPedido } = await searchParams;
+  const curso = await resolverCursoAtivo(user.id, cursoPedido);
+  const [capitulos, cursos] = await Promise.all([
+    sumarioDaApostila(curso?.id),
+    cursosDoAluno(user.id),
+  ]);
 
   return (
     // Sem padding lateral próprio: o layout do aplicativo já dá o dele, e
     // somar os dois tirava 64px dos 390 de um celular — o texto ficava com
     // 267px de largura útil.
     <main className="mx-auto max-w-3xl py-6">
+      <SeletorCurso cursos={cursos} ativo={curso?.id ?? null} base="/app/apostila" />
       <h1 className="mb-1 font-titulo text-2xl font-extrabold text-tinta">
         Apostila do curso
       </h1>
       <p className="mb-5 text-tinta-clara">
-        O material completo, para ler aqui mesmo. Durante a aula, o botão
-        <span className="font-bold"> Ler na apostila</span> leva direto ao
-        trecho que o professor está mostrando.
+        O material de consulta, para ler aqui mesmo. As aulas não repetem a
+        apostila: quando um assunto merece mais fôlego, a lição aponta o
+        capítulo certo.
       </p>
 
-      <BaixarApostila />
+      <BaixarApostila arquivo={APOSTILA_PDF(curso?.slug)} />
 
       <ol className="mt-6 space-y-3">
         {capitulos.map((c) => (
