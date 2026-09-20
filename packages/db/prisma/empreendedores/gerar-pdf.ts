@@ -37,6 +37,21 @@ const CSS_DO_CURSO = `
 <style>
   @page { size: A4; margin: 16mm 14mm; }
   .quebra { break-before: page; }
+  /* A capa com a foto, como no material impresso do curso. */
+  .capa-com-foto {
+    background-image:
+      linear-gradient(150deg, rgba(238,240,254,.92), rgba(246,244,255,.82), rgba(255,248,240,.84)),
+      url("imagens/capa_empreendedores_ia.png");
+    background-position: center; background-size: cover;
+  }
+  /* As figuras do material: meia largura no papel, com legenda. */
+  .figura-img { margin: 16px 0; break-inside: avoid; text-align: center; }
+  .figura-img img { width: 100%; border-radius: 10px; display: block; }
+  .figura-img.metade { max-width: 78%; margin-left: auto; margin-right: auto; }
+  .figura-img .legenda {
+    font-family: var(--titulo, system-ui); font-size: 9.5pt;
+    color: var(--cinza, #667); margin-top: 6px; font-style: italic;
+  }
   .como-imprimir {
     background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px;
     padding: 14px; font-family: var(--titulo, system-ui); font-size: 10pt;
@@ -120,7 +135,7 @@ ${CSS_DO_CURSO}
   (Ctrl+P) e escolha "Salvar como PDF". Este aviso não sai na impressão.
 </div>
 
-<div class="capa">
+<div class="capa capa-com-foto">
   <div class="capa-selo">MATERIAL DE CONSULTA · ${curso.cargaHoraria} HORAS</div>
   <div class="capa-icone">💼</div>
   <h1>Inteligência Artificial<span class="destaque">para Empreendedores</span></h1>

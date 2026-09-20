@@ -10,6 +10,21 @@
 <style>
   @page { size: A4; margin: 16mm 14mm; }
   .quebra { break-before: page; }
+  /* A capa com a foto, como no material impresso do curso. */
+  .capa-com-foto {
+    background-image:
+      linear-gradient(150deg, rgba(238,240,254,.92), rgba(246,244,255,.82), rgba(255,248,240,.84)),
+      url("imagens/capa_empreendedores_ia.png");
+    background-position: center; background-size: cover;
+  }
+  /* As figuras do material: meia largura no papel, com legenda. */
+  .figura-img { margin: 16px 0; break-inside: avoid; text-align: center; }
+  .figura-img img { width: 100%; border-radius: 10px; display: block; }
+  .figura-img.metade { max-width: 78%; margin-left: auto; margin-right: auto; }
+  .figura-img .legenda {
+    font-family: var(--titulo, system-ui); font-size: 9.5pt;
+    color: var(--cinza, #667); margin-top: 6px; font-style: italic;
+  }
   .como-imprimir {
     background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px;
     padding: 14px; font-family: var(--titulo, system-ui); font-size: 10pt;
@@ -25,7 +40,7 @@
   (Ctrl+P) e escolha "Salvar como PDF". Este aviso não sai na impressão.
 </div>
 
-<div class="capa">
+<div class="capa capa-com-foto">
   <div class="capa-selo">MATERIAL DE CONSULTA · 40 HORAS</div>
   <div class="capa-icone">💼</div>
   <h1>Inteligência Artificial<span class="destaque">para Empreendedores</span></h1>
@@ -50,6 +65,11 @@
       <h2>1.1 O que é IA generativa, sem jargão</h2><p>Quando se fala em Inteligência Artificial, muita gente imagina um robô de filme. A realidade é mais simples e mais útil. A IA generativa é um programa treinado para identificar padrões em texto e prever o que vem a seguir.</p>
 
 <p>Você já usa uma forma simples disso todo dia. Quando digita "bom d" no WhatsApp e o teclado sugere "dia", ele não sabe que dia é hoje nem se o seu dia está bom. Ele aprendeu que, depois de "bom", a maioria das pessoas escreve "dia". É previsão de padrão, não compreensão.</p>
+
+<div class="figura-img metade">
+  <img src="imagens/01_equipe_digital.png" alt="A IA como equipe de apoio: ela rascunha, você decide.">
+  <div class="legenda">A IA como equipe de apoio: ela rascunha, você decide.</div>
+</div>
 
 <p>Agora multiplique isso por bilhões. Os modelos como ChatGPT, Gemini e Claude leram uma quantidade enorme de texto: livros, sites, manuais, artigos, conversas. Aprenderam como as pessoas escrevem, estruturam ideias e resolvem problemas com palavras. Por isso, quando você pede uma resposta para um cliente, sai um texto coerente — ela "viu" milhões de respostas parecidas.</p>
 
@@ -131,7 +151,12 @@
       <div class="faixa-encontro">Capítulo 2</div>
       <h1 class="cap"><span class="ic">🔐</span>Capítulo 2: C.O.F.R.E. — a estrutura de um bom pedido</h1>
       <p class="abertura">Resposta genérica quase sempre é resposta a um pedido genérico. Este capítulo é a referência para consultar na hora de escrever — as cinco partes, as restrições que valem para quase tudo, e o que fazer quando a resposta vem ruim.</p>
-      <h2>2.1 As cinco partes</h2><p>Um pedido que funciona tem cinco partes. A palavra C.O.F.R.E. ajuda a lembrar — e também a ideia: é onde você guarda o que tem valor.</p>
+      <h2>2.1 As cinco partes</h2><div class="figura-img metade">
+  <img src="imagens/02_formula_cofre.png" alt="C.O.F.R.E.: as cinco partes de um pedido que funciona.">
+  <div class="legenda">C.O.F.R.E.: as cinco partes de um pedido que funciona.</div>
+</div>
+
+<p>Um pedido que funciona tem cinco partes. A palavra C.O.F.R.E. ajuda a lembrar — e também a ideia: é onde você guarda o que tem valor.</p>
 
 <div class="etiqueta">C — Contexto</div>
 <p>Quem é você e qual é a situação. Não "tenho uma loja", mas "tenho uma loja de roupa feminina de bairro; minhas clientes têm entre 35 e 55 anos e compram quando avisamos por WhatsApp".</p>
@@ -204,7 +229,12 @@ Meu texto de referência: [COLE AQUI]</div>
       <div class="faixa-encontro">Capítulo 3</div>
       <h1 class="cap"><span class="ic">🏪</span>Capítulo 3: IA no dia a dia da empresa</h1>
       <p class="abertura">Os prompts das tarefas que se repetem toda semana. Cada um já traz as restrições que evitam o problema mais comum daquele caso.</p>
-      <h2>3.1 Atendimento: responder, recusar, cobrar</h2><div class="etiqueta">Responder cliente insatisfeito</div>
+      <h2>3.1 Atendimento: responder, recusar, cobrar</h2><div class="figura-img metade">
+  <img src="imagens/07_atendimento_cliente.png" alt="Atendimento: responder no mesmo dia vale mais que responder perfeito.">
+  <div class="legenda">Atendimento: responder no mesmo dia vale mais que responder perfeito.</div>
+</div>
+
+<div class="etiqueta">Responder cliente insatisfeito</div>
 <div class="prompt">Contexto: sou dono de [NEGÓCIO]. Um cliente enviou a mensagem abaixo e está insatisfeito. O que realmente aconteceu, pelo que eu sei: [SUA VERSÃO].
 Objetivo: escrever uma resposta que reconheça o problema e proponha um próximo passo concreto.
 Formato: mensagem de até 6 linhas, tom [TOM], pronta para enviar.
@@ -227,7 +257,12 @@ Restrições: nada de ameaça, constrangimento ou menção a terceiros. Em todas
   <div class="t">⚠️ Quando não usar texto gerado</div>
   <p>Reclamação que envolve saúde, segurança ou dano grave não se responde por mensagem. Ligue. A IA ajuda a preparar o que dizer, não a evitar a conversa.</p>
 </div>
-<h2>3.2 Vendas: orçamento, proposta e follow-up</h2><div class="etiqueta">Orçamento que o cliente entende sozinho</div>
+<h2>3.2 Vendas: orçamento, proposta e follow-up</h2><div class="figura-img metade">
+  <img src="imagens/06_vendas_proposta.png" alt="A proposta que o cliente entende sem precisar ligar de volta.">
+  <div class="legenda">A proposta que o cliente entende sem precisar ligar de volta.</div>
+</div>
+
+<div class="etiqueta">Orçamento que o cliente entende sozinho</div>
 <div class="prompt">Contexto: vou orçar [SERVIÇO]. Os itens e valores são: [ITENS].
 Objetivo: um orçamento que ele leia sem me ligar.
 Formato: cada item com o que é, por que é necessário e o valor; total; validade; forma de pagamento; e o que acontece se ele quiser tirar algum item.
@@ -252,7 +287,12 @@ O que foi conversado: [COLE AQUI]</div>
 Objetivo: retomar sem parecer insistente.
 Formato: três mensagens para momentos diferentes; a última oferecendo encerrar o assunto.
 Restrições: nada de "passando para saber"; cada mensagem traz algo novo. Nada de urgência inventada.</div>
-<h2>3.3 Administrativo: procedimento, reunião, e-mail difícil</h2><div class="etiqueta">Transformar o jeito de fazer em procedimento</div>
+<h2>3.3 Administrativo: procedimento, reunião, e-mail difícil</h2><div class="figura-img metade">
+  <img src="imagens/04_rotina_administrativa.png" alt="Procedimento escrito é o que permite delegar — e, depois, automatizar.">
+  <div class="legenda">Procedimento escrito é o que permite delegar — e, depois, automatizar.</div>
+</div>
+
+<div class="etiqueta">Transformar o jeito de fazer em procedimento</div>
 <div class="prompt">Contexto: no meu [NEGÓCIO], [PROCESSO] é feito assim: [COMO É HOJE].
 Objetivo: transformar num procedimento de uma página que uma pessoa nova consiga seguir.
 Formato: passo a passo numerado, responsável por passo, o que fazer quando der errado e um checklist final.
@@ -283,7 +323,12 @@ Restrições: nada de passivo-agressivo; não ameace; não peça desculpa por al
       <div class="faixa-encontro">Capítulo 4</div>
       <h1 class="cap"><span class="ic">💬</span>Capítulo 4: ChatGPT além da conversa</h1>
       <p class="abertura">A maioria usa uma fração do que a ferramenta faz — e justamente a fração que menos economiza tempo. Este capítulo reúne os recursos que resolvem trabalho de verdade.</p>
-      <h2>4.1 Anexar arquivo: pare de copiar e colar</h2><p>Copiar e colar funciona para um parágrafo. Para um contrato de 20 páginas, uma planilha de vendas ou uma nota fiscal, não funciona — e nem precisa. O botão de anexo aceita PDF, imagem, planilha e documento.</p>
+      <h2>4.1 Anexar arquivo: pare de copiar e colar</h2><div class="figura-img metade">
+  <img src="imagens/03_dois_canais.png" alt="Dois caminhos: pedir uma resposta ou entregar um trabalho inteiro.">
+  <div class="legenda">Dois caminhos: pedir uma resposta ou entregar um trabalho inteiro.</div>
+</div>
+
+<p>Copiar e colar funciona para um parágrafo. Para um contrato de 20 páginas, uma planilha de vendas ou uma nota fiscal, não funciona — e nem precisa. O botão de anexo aceita PDF, imagem, planilha e documento.</p>
 
 <div class="dica">
   <div class="t">💡 Usos que resolvem hoje</div>
@@ -375,7 +420,12 @@ Restrições: sem texto, sem marca de outra empresa, sem mão ou pessoa, sem exa
   <div class="t">💡 Peça espaço vazio para o texto</div>
   <p>Acrescente "espaço vazio na parte superior para o texto entrar depois". Sem isso você recebe uma imagem bonita e cheia, sem onde escrever.</p>
 </div>
-<h2>5.2 As três restrições que evitam problema</h2><p>Estas três cabem em toda imagem e evitam os erros que mais custam:</p>
+<h2>5.2 As três restrições que evitam problema</h2><div class="figura-img metade">
+  <img src="imagens/05_marketing_calendario.png" alt="Campanha planejada de uma vez rende mais que post decidido na hora.">
+  <div class="legenda">Campanha planejada de uma vez rende mais que post decidido na hora.</div>
+</div>
+
+<p>Estas três cabem em toda imagem e evitam os erros que mais custam:</p>
 
 <div class="atencao">
   <div class="t">⚠️ Sempre inclua</div>
@@ -457,7 +507,12 @@ Restrições: nada que exija equipe ou iluminação especial; a primeira frase t
       <div class="faixa-encontro">Capítulo 7</div>
       <h1 class="cap"><span class="ic">📊</span>Capítulo 7: Documentos e planilhas com IA</h1>
       <p class="abertura">Este capítulo diz o que a propaganda não diz: quais recursos dependem de assinatura, e qual é o caminho gratuito que dá quase o mesmo resultado.</p>
-      <h2>7.1 O caminho gratuito e o caminho pago</h2><p>O Google mostra a IA montando planilhas inteiras por descrição, criando painéis e cruzando dados dos seus arquivos. Funciona bem — e é preciso dizer uma coisa.</p>
+      <h2>7.1 O caminho gratuito e o caminho pago</h2><div class="figura-img metade">
+  <img src="imagens/08_pesquisa_mercado.png" alt="Pesquisa e planilha: exigir fonte é o que separa dado de chute bem escrito.">
+  <div class="legenda">Pesquisa e planilha: exigir fonte é o que separa dado de chute bem escrito.</div>
+</div>
+
+<p>O Google mostra a IA montando planilhas inteiras por descrição, criando painéis e cruzando dados dos seus arquivos. Funciona bem — e é preciso dizer uma coisa.</p>
 
 <div class="atencao">
   <div class="t">⚠️ A parte que depende de assinatura</div>
@@ -498,7 +553,12 @@ Restrições: use funções que existam no Google Planilhas gratuito; nada de ma
       <div class="faixa-encontro">Capítulo 8</div>
       <h1 class="cap"><span class="ic">📈</span>Capítulo 8: Perguntar aos próprios números</h1>
       <p class="abertura">O objetivo não é virar analista. É fazer perguntas melhores sobre o próprio negócio — e saber separar o que os dados mostram do que é chute bem escrito.</p>
-      <h2>8.1 O teste da decisão</h2><p>Antes de perguntar qualquer coisa aos seus dados, responda: <strong>se a resposta vier, o que eu faço diferente?</strong> Se não houver resposta para isso, a pergunta é curiosidade — e curiosidade pode esperar.</p>
+      <h2>8.1 O teste da decisão</h2><div class="figura-img metade">
+  <img src="imagens/10_dados_seguros.png" alt="Dados do negócio: anonimize antes de colar, sempre.">
+  <div class="legenda">Dados do negócio: anonimize antes de colar, sempre.</div>
+</div>
+
+<p>Antes de perguntar qualquer coisa aos seus dados, responda: <strong>se a resposta vier, o que eu faço diferente?</strong> Se não houver resposta para isso, a pergunta é curiosidade — e curiosidade pode esperar.</p>
 
 <div class="dica">
   <div class="t">✅ Perguntas que mudam alguma coisa</div>
@@ -528,6 +588,11 @@ Restrições: nenhuma pergunta que exija dado que eu não tenho; sem termo técn
 Objetivo: saber o que está parado e o que preciso repor.
 Formato: três listas — parado há mais tempo, perto de acabar, e giro saudável. Em cada uma, o critério que você usou.
 Restrições: use apenas os dados que eu dei; não estime demanda futura sem dizer que é estimativa.</div>
+
+<div class="figura-img metade">
+  <img src="imagens/caso_loja_roupas.png" alt="A loja que não percebeu os clientes sumindo: o total escondia a perda.">
+  <div class="legenda">A loja que não percebeu os clientes sumindo: o total escondia a perda.</div>
+</div>
 
 <p><strong>Cliente que some raramente avisa.</strong> Ele não reclama, não cancela — simplesmente para de aparecer. Quem olha só o faturamento total não percebe, porque clientes novos cobrem o buraco.</p>
 
@@ -570,7 +635,12 @@ Restrições: não invente motivo do sumiço; trate como hipótese a ser confirm
       <div class="faixa-encontro">Capítulo 9</div>
       <h1 class="cap"><span class="ic">📚</span>Capítulo 9: Seus documentos respondendo por você</h1>
       <p class="abertura">Todas as IAs deste curso respondem com o que aprenderam na internet. Existe uma que faz o contrário: responde só com o que você entregou — e mostra de onde tirou.</p>
-      <h2>9.1 O que muda quando a resposta tem citação</h2><p>Você sobe seus contratos, manuais e procedimentos. Ela responde perguntas sobre eles e aponta o trecho de onde tirou cada resposta. Isso muda tudo: <strong>dá para conferir</strong>.</p>
+      <h2>9.1 O que muda quando a resposta tem citação</h2><div class="figura-img metade">
+  <img src="imagens/caso_imobiliaria.png" alt="Documentos que respondem: a equipe pergunta ao caderno, não a você.">
+  <div class="legenda">Documentos que respondem: a equipe pergunta ao caderno, não a você.</div>
+</div>
+
+<p>Você sobe seus contratos, manuais e procedimentos. Ela responde perguntas sobre eles e aponta o trecho de onde tirou cada resposta. Isso muda tudo: <strong>dá para conferir</strong>.</p>
 
 <div class="traduzindo">
   <div class="t">📖 Sobre o nome</div>
@@ -623,7 +693,12 @@ Restrições: não invente motivo do sumiço; trate como hipótese a ser confirm
       <div class="faixa-encontro">Capítulo 10</div>
       <h1 class="cap"><span class="ic">⚙️</span>Capítulo 10: Automação sem programar</h1>
       <p class="abertura">Automatizar é ensinar um sistema a fazer sozinho o que você faria na mão. A parte que as pessoas pulam — e que decide se vai funcionar — é desenhar o processo antes de abrir qualquer ferramenta.</p>
-      <h2>10.1 A lógica antes da ferramenta</h2><p>Você já usa automação: o alarme do celular é uma. Chegou a hora, toca. Um gatilho e uma ação.</p>
+      <h2>10.1 A lógica antes da ferramenta</h2><div class="figura-img metade">
+  <img src="imagens/09_automacao_fluxo.png" alt="O fluxo de uma automação: gatilho, passos, e a parada humana antes do cliente.">
+  <div class="legenda">O fluxo de uma automação: gatilho, passos, e a parada humana antes do cliente.</div>
+</div>
+
+<p>Você já usa automação: o alarme do celular é uma. Chegou a hora, toca. Um gatilho e uma ação.</p>
 
 <p>Num negócio funciona igual. O lead que chega pelo site:</p>
 
@@ -671,7 +746,12 @@ Restrições: a automação gera rascunho e nunca envia sozinha nada que chegue 
       <div class="faixa-encontro">Capítulo 11</div>
       <h1 class="cap"><span class="ic">🤝</span>Capítulo 11: Agentes sem complicação</h1>
       <p class="abertura">Três palavras que aparecem juntas e significam coisas diferentes. A diferença está em quem decide os passos — e é dela que sai toda a regra de segurança.</p>
-      <h2>11.1 Chatbot, automação e agente</h2><div class="etiqueta">Chatbot</div>
+      <h2>11.1 Chatbot, automação e agente</h2><div class="figura-img metade">
+  <img src="imagens/caso_restaurante.png" alt="Chatbot, automação e agente: a diferença está em quem decide os passos.">
+  <div class="legenda">Chatbot, automação e agente: a diferença está em quem decide os passos.</div>
+</div>
+
+<div class="etiqueta">Chatbot</div>
 <p>Responde perguntas. Você pergunta, ele responde. Não faz nada além disso.</p>
 
 <div class="etiqueta">Automação</div>
@@ -717,7 +797,12 @@ Restrições: ele nunca decide preço, desconto, crédito, cancelamento ou quest
       <div class="faixa-encontro">Capítulo 12</div>
       <h1 class="cap"><span class="ic">🧰</span>Capítulo 12: Qual IA usar para cada coisa</h1>
       <p class="abertura">"Qual é a melhor" não tem resposta útil — é como perguntar qual ferramenta é melhor numa caixa de ferramentas. Este capítulo responde a pergunta que resolve: qual serve para o que você precisa agora.</p>
-      <h2>12.1 Escolhendo pela tarefa</h2><div class="dica">
+      <h2>12.1 Escolhendo pela tarefa</h2><div class="figura-img metade">
+  <img src="imagens/caso_salao.png" alt="Escolher pela tarefa, não pela fama: cada ferramenta tem menos atrito num caso.">
+  <div class="legenda">Escolher pela tarefa, não pela fama: cada ferramenta tem menos atrito num caso.</div>
+</div>
+
+<div class="dica">
   <div class="t">💡 Qual abrir para cada coisa</div>
   <p><strong>Responder cliente, escrever post, criar imagem</strong> → ChatGPT<br>
   <strong>Mexer em planilha, documento e e-mail do Google</strong> → Gemini<br>
@@ -789,7 +874,12 @@ Restrições: ele nunca decide preço, desconto, crédito, cancelamento ou quest
 
 <div class="etiqueta">8. O primeiro passo, com data</div>
 <p>O que você vai fazer nos próximos 30 dias, e quando? Plano sem data é intenção.</p>
-<h2>13.2 O que faz um plano acontecer</h2><p>A maior parte dos planos morre na gaveta. Não por serem ruins: por não terem a primeira coisa a fazer numa segunda-feira.</p>
+<h2>13.2 O que faz um plano acontecer</h2><div class="figura-img metade">
+  <img src="imagens/11_plano_30_dias.png" alt="Plano de 30 dias: uma frente por vez, com data para revisar.">
+  <div class="legenda">Plano de 30 dias: uma frente por vez, com data para revisar.</div>
+</div>
+
+<p>A maior parte dos planos morre na gaveta. Não por serem ruins: por não terem a primeira coisa a fazer numa segunda-feira.</p>
 
 <div class="checklist">
   <div class="cki">Uma única frente por vez, não cinco simultâneas</div>

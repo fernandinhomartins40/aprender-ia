@@ -48,6 +48,11 @@ export const APOSTILA_EMPREENDEDORES: Capitulo[] = [
 
 <p>Você já usa uma forma simples disso todo dia. Quando digita "bom d" no WhatsApp e o teclado sugere "dia", ele não sabe que dia é hoje nem se o seu dia está bom. Ele aprendeu que, depois de "bom", a maioria das pessoas escreve "dia". É previsão de padrão, não compreensão.</p>
 
+<div class="figura-img metade">
+  <img src="imagens/01_equipe_digital.png" alt="A IA como equipe de apoio: ela rascunha, você decide.">
+  <div class="legenda">A IA como equipe de apoio: ela rascunha, você decide.</div>
+</div>
+
 <p>Agora multiplique isso por bilhões. Os modelos como ChatGPT, Gemini e Claude leram uma quantidade enorme de texto: livros, sites, manuais, artigos, conversas. Aprenderam como as pessoas escrevem, estruturam ideias e resolvem problemas com palavras. Por isso, quando você pede uma resposta para um cliente, sai um texto coerente — ela "viu" milhões de respostas parecidas.</p>
 
 <div class="traduzindo">
@@ -151,7 +156,12 @@ export const APOSTILA_EMPREENDEDORES: Capitulo[] = [
       {
         numero: "2.1",
         titulo: "As cinco partes",
-        html: `<p>Um pedido que funciona tem cinco partes. A palavra C.O.F.R.E. ajuda a lembrar — e também a ideia: é onde você guarda o que tem valor.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/02_formula_cofre.png" alt="C.O.F.R.E.: as cinco partes de um pedido que funciona.">
+  <div class="legenda">C.O.F.R.E.: as cinco partes de um pedido que funciona.</div>
+</div>
+
+<p>Um pedido que funciona tem cinco partes. A palavra C.O.F.R.E. ajuda a lembrar — e também a ideia: é onde você guarda o que tem valor.</p>
 
 <div class="etiqueta">C — Contexto</div>
 <p>Quem é você e qual é a situação. Não "tenho uma loja", mas "tenho uma loja de roupa feminina de bairro; minhas clientes têm entre 35 e 55 anos e compram quando avisamos por WhatsApp".</p>
@@ -247,7 +257,12 @@ Meu texto de referência: [COLE AQUI]</div>
       {
         numero: "3.1",
         titulo: "Atendimento: responder, recusar, cobrar",
-        html: `<div class="etiqueta">Responder cliente insatisfeito</div>
+        html: `<div class="figura-img metade">
+  <img src="imagens/07_atendimento_cliente.png" alt="Atendimento: responder no mesmo dia vale mais que responder perfeito.">
+  <div class="legenda">Atendimento: responder no mesmo dia vale mais que responder perfeito.</div>
+</div>
+
+<div class="etiqueta">Responder cliente insatisfeito</div>
 <div class="prompt">Contexto: sou dono de [NEGÓCIO]. Um cliente enviou a mensagem abaixo e está insatisfeito. O que realmente aconteceu, pelo que eu sei: [SUA VERSÃO].
 Objetivo: escrever uma resposta que reconheça o problema e proponha um próximo passo concreto.
 Formato: mensagem de até 6 linhas, tom [TOM], pronta para enviar.
@@ -274,7 +289,12 @@ Restrições: nada de ameaça, constrangimento ou menção a terceiros. Em todas
       {
         numero: "3.2",
         titulo: "Vendas: orçamento, proposta e follow-up",
-        html: `<div class="etiqueta">Orçamento que o cliente entende sozinho</div>
+        html: `<div class="figura-img metade">
+  <img src="imagens/06_vendas_proposta.png" alt="A proposta que o cliente entende sem precisar ligar de volta.">
+  <div class="legenda">A proposta que o cliente entende sem precisar ligar de volta.</div>
+</div>
+
+<div class="etiqueta">Orçamento que o cliente entende sozinho</div>
 <div class="prompt">Contexto: vou orçar [SERVIÇO]. Os itens e valores são: [ITENS].
 Objetivo: um orçamento que ele leia sem me ligar.
 Formato: cada item com o que é, por que é necessário e o valor; total; validade; forma de pagamento; e o que acontece se ele quiser tirar algum item.
@@ -303,7 +323,12 @@ Restrições: nada de "passando para saber"; cada mensagem traz algo novo. Nada 
       {
         numero: "3.3",
         titulo: "Administrativo: procedimento, reunião, e-mail difícil",
-        html: `<div class="etiqueta">Transformar o jeito de fazer em procedimento</div>
+        html: `<div class="figura-img metade">
+  <img src="imagens/04_rotina_administrativa.png" alt="Procedimento escrito é o que permite delegar — e, depois, automatizar.">
+  <div class="legenda">Procedimento escrito é o que permite delegar — e, depois, automatizar.</div>
+</div>
+
+<div class="etiqueta">Transformar o jeito de fazer em procedimento</div>
 <div class="prompt">Contexto: no meu [NEGÓCIO], [PROCESSO] é feito assim: [COMO É HOJE].
 Objetivo: transformar num procedimento de uma página que uma pessoa nova consiga seguir.
 Formato: passo a passo numerado, responsável por passo, o que fazer quando der errado e um checklist final.
@@ -345,7 +370,12 @@ Restrições: nada de passivo-agressivo; não ameace; não peça desculpa por al
       {
         numero: "4.1",
         titulo: "Anexar arquivo: pare de copiar e colar",
-        html: `<p>Copiar e colar funciona para um parágrafo. Para um contrato de 20 páginas, uma planilha de vendas ou uma nota fiscal, não funciona — e nem precisa. O botão de anexo aceita PDF, imagem, planilha e documento.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/03_dois_canais.png" alt="Dois caminhos: pedir uma resposta ou entregar um trabalho inteiro.">
+  <div class="legenda">Dois caminhos: pedir uma resposta ou entregar um trabalho inteiro.</div>
+</div>
+
+<p>Copiar e colar funciona para um parágrafo. Para um contrato de 20 páginas, uma planilha de vendas ou uma nota fiscal, não funciona — e nem precisa. O botão de anexo aceita PDF, imagem, planilha e documento.</p>
 
 <div class="dica">
   <div class="t">💡 Usos que resolvem hoje</div>
@@ -460,7 +490,12 @@ Restrições: sem texto, sem marca de outra empresa, sem mão ou pessoa, sem exa
       {
         numero: "5.2",
         titulo: "As três restrições que evitam problema",
-        html: `<p>Estas três cabem em toda imagem e evitam os erros que mais custam:</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/05_marketing_calendario.png" alt="Campanha planejada de uma vez rende mais que post decidido na hora.">
+  <div class="legenda">Campanha planejada de uma vez rende mais que post decidido na hora.</div>
+</div>
+
+<p>Estas três cabem em toda imagem e evitam os erros que mais custam:</p>
 
 <div class="atencao">
   <div class="t">⚠️ Sempre inclua</div>
@@ -572,7 +607,12 @@ Restrições: nada que exija equipe ou iluminação especial; a primeira frase t
       {
         numero: "7.1",
         titulo: "O caminho gratuito e o caminho pago",
-        html: `<p>O Google mostra a IA montando planilhas inteiras por descrição, criando painéis e cruzando dados dos seus arquivos. Funciona bem — e é preciso dizer uma coisa.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/08_pesquisa_mercado.png" alt="Pesquisa e planilha: exigir fonte é o que separa dado de chute bem escrito.">
+  <div class="legenda">Pesquisa e planilha: exigir fonte é o que separa dado de chute bem escrito.</div>
+</div>
+
+<p>O Google mostra a IA montando planilhas inteiras por descrição, criando painéis e cruzando dados dos seus arquivos. Funciona bem — e é preciso dizer uma coisa.</p>
 
 <div class="atencao">
   <div class="t">⚠️ A parte que depende de assinatura</div>
@@ -628,7 +668,12 @@ Restrições: use funções que existam no Google Planilhas gratuito; nada de ma
       {
         numero: "8.1",
         titulo: "O teste da decisão",
-        html: `<p>Antes de perguntar qualquer coisa aos seus dados, responda: <strong>se a resposta vier, o que eu faço diferente?</strong> Se não houver resposta para isso, a pergunta é curiosidade — e curiosidade pode esperar.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/10_dados_seguros.png" alt="Dados do negócio: anonimize antes de colar, sempre.">
+  <div class="legenda">Dados do negócio: anonimize antes de colar, sempre.</div>
+</div>
+
+<p>Antes de perguntar qualquer coisa aos seus dados, responda: <strong>se a resposta vier, o que eu faço diferente?</strong> Se não houver resposta para isso, a pergunta é curiosidade — e curiosidade pode esperar.</p>
 
 <div class="dica">
   <div class="t">✅ Perguntas que mudam alguma coisa</div>
@@ -662,6 +707,11 @@ Restrições: nenhuma pergunta que exija dado que eu não tenho; sem termo técn
 Objetivo: saber o que está parado e o que preciso repor.
 Formato: três listas — parado há mais tempo, perto de acabar, e giro saudável. Em cada uma, o critério que você usou.
 Restrições: use apenas os dados que eu dei; não estime demanda futura sem dizer que é estimativa.</div>
+
+<div class="figura-img metade">
+  <img src="imagens/caso_loja_roupas.png" alt="A loja que não percebeu os clientes sumindo: o total escondia a perda.">
+  <div class="legenda">A loja que não percebeu os clientes sumindo: o total escondia a perda.</div>
+</div>
 
 <p><strong>Cliente que some raramente avisa.</strong> Ele não reclama, não cancela — simplesmente para de aparecer. Quem olha só o faturamento total não percebe, porque clientes novos cobrem o buraco.</p>
 
@@ -719,7 +769,12 @@ Restrições: não invente motivo do sumiço; trate como hipótese a ser confirm
       {
         numero: "9.1",
         titulo: "O que muda quando a resposta tem citação",
-        html: `<p>Você sobe seus contratos, manuais e procedimentos. Ela responde perguntas sobre eles e aponta o trecho de onde tirou cada resposta. Isso muda tudo: <strong>dá para conferir</strong>.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/caso_imobiliaria.png" alt="Documentos que respondem: a equipe pergunta ao caderno, não a você.">
+  <div class="legenda">Documentos que respondem: a equipe pergunta ao caderno, não a você.</div>
+</div>
+
+<p>Você sobe seus contratos, manuais e procedimentos. Ela responde perguntas sobre eles e aponta o trecho de onde tirou cada resposta. Isso muda tudo: <strong>dá para conferir</strong>.</p>
 
 <div class="traduzindo">
   <div class="t">📖 Sobre o nome</div>
@@ -787,7 +842,12 @@ Restrições: não invente motivo do sumiço; trate como hipótese a ser confirm
       {
         numero: "10.1",
         titulo: "A lógica antes da ferramenta",
-        html: `<p>Você já usa automação: o alarme do celular é uma. Chegou a hora, toca. Um gatilho e uma ação.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/09_automacao_fluxo.png" alt="O fluxo de uma automação: gatilho, passos, e a parada humana antes do cliente.">
+  <div class="legenda">O fluxo de uma automação: gatilho, passos, e a parada humana antes do cliente.</div>
+</div>
+
+<p>Você já usa automação: o alarme do celular é uma. Chegou a hora, toca. Um gatilho e uma ação.</p>
 
 <p>Num negócio funciona igual. O lead que chega pelo site:</p>
 
@@ -850,7 +910,12 @@ Restrições: a automação gera rascunho e nunca envia sozinha nada que chegue 
       {
         numero: "11.1",
         titulo: "Chatbot, automação e agente",
-        html: `<div class="etiqueta">Chatbot</div>
+        html: `<div class="figura-img metade">
+  <img src="imagens/caso_restaurante.png" alt="Chatbot, automação e agente: a diferença está em quem decide os passos.">
+  <div class="legenda">Chatbot, automação e agente: a diferença está em quem decide os passos.</div>
+</div>
+
+<div class="etiqueta">Chatbot</div>
 <p>Responde perguntas. Você pergunta, ele responde. Não faz nada além disso.</p>
 
 <div class="etiqueta">Automação</div>
@@ -911,7 +976,12 @@ Restrições: ele nunca decide preço, desconto, crédito, cancelamento ou quest
       {
         numero: "12.1",
         titulo: "Escolhendo pela tarefa",
-        html: `<div class="dica">
+        html: `<div class="figura-img metade">
+  <img src="imagens/caso_salao.png" alt="Escolher pela tarefa, não pela fama: cada ferramenta tem menos atrito num caso.">
+  <div class="legenda">Escolher pela tarefa, não pela fama: cada ferramenta tem menos atrito num caso.</div>
+</div>
+
+<div class="dica">
   <div class="t">💡 Qual abrir para cada coisa</div>
   <p><strong>Responder cliente, escrever post, criar imagem</strong> → ChatGPT<br>
   <strong>Mexer em planilha, documento e e-mail do Google</strong> → Gemini<br>
@@ -1002,7 +1072,12 @@ Restrições: ele nunca decide preço, desconto, crédito, cancelamento ou quest
       {
         numero: "13.2",
         titulo: "O que faz um plano acontecer",
-        html: `<p>A maior parte dos planos morre na gaveta. Não por serem ruins: por não terem a primeira coisa a fazer numa segunda-feira.</p>
+        html: `<div class="figura-img metade">
+  <img src="imagens/11_plano_30_dias.png" alt="Plano de 30 dias: uma frente por vez, com data para revisar.">
+  <div class="legenda">Plano de 30 dias: uma frente por vez, com data para revisar.</div>
+</div>
+
+<p>A maior parte dos planos morre na gaveta. Não por serem ruins: por não terem a primeira coisa a fazer numa segunda-feira.</p>
 
 <div class="checklist">
   <div class="cki">Uma única frente por vez, não cinco simultâneas</div>
