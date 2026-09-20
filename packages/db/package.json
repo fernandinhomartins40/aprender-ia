@@ -17,6 +17,7 @@
     "seed": "tsx prisma/seed.ts",
     "seed:empreendedores": "tsx prisma/seed-empreendedores.ts",
     "apostila:empreendedores": "tsx prisma/empreendedores/gerar-pdf.ts",
+    "deck:empreendedores": "tsx prisma/empreendedores/gerar-deck.ts",
     "roteiros": "tsx prisma/gerar-roteiros.ts",
     "apostila": "tsx prisma/gerar-apostila.ts",
     "typecheck": "tsc --noEmit"
