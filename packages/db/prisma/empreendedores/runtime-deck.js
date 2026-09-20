@@ -218,13 +218,14 @@ document.querySelectorAll('.prompt-acoes').forEach(cx => {
   bt.onclick = () => copiar(ler(), bt);
   cx.appendChild(bt);
 
-  // Por padrão oferece todas; a lição pode restringir com `data-ias`,
-  // para não sugerir uma ferramenta que não faz o que o prompt pede —
-  // mandar um pedido de imagem para o NotebookLM, por exemplo.
+  // A lição diz em `data-ias` quais ferramentas fazem o que o prompt
+  // pede. Sem isso, valem as de uso geral: oferecer as oito do curso em
+  // todo prompt mandaria o aluno gerar um plano de negócio no Pika, que
+  // faz vídeo. Quem escreve texto resolve qualquer prompt do curso.
   const pedidas = (cx.dataset.ias || '').split(',').filter(Boolean);
   const oferecidas = pedidas.length
     ? pedidas.map(id => LISTA_IAS.find(ia => ia.id === id)).filter(Boolean)
-    : LISTA_IAS;
+    : LISTA_IAS.filter(ia => ia.geral);
 
   const links = oferecidas.map(ia => {
     const a = document.createElement('a');

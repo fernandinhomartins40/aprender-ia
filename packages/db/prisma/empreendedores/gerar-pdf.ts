@@ -17,7 +17,7 @@
  * Puppeteer que já existe na pasta `cursos/IA Professores/node_modules`.
  */
 import { PrismaClient } from "@prisma/client";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const prisma = new PrismaClient();
@@ -181,11 +181,34 @@ ${corpo}
     },
   ];
 
+  // Os três CSS que o HTML pede, ao lado dele. Sem isto o `public/` da
+  // aplicação ficava só com o HTML, e quem abrisse a apostila pela
+  // plataforma via o texto cru, sem formatação nenhuma — os `<link>`
+  // apontavam para arquivos que não estavam lá.
+  const folhas = [
+    "estilo.css",
+    "componentes_novos.css",
+    "componentes_ferramentas.css",
+  ];
+  const origemCss = resolve(
+    import.meta.dirname,
+    "../../../../../cursos/Curso_IA_Empreendedores_2026",
+  );
+
   for (const d of destinos) {
     mkdirSync(d.pasta, { recursive: true });
     const caminho = resolve(d.pasta, d.arquivo);
     writeFileSync(caminho, html, "utf8");
     console.log(`  gravado em ${caminho}`);
+
+    if (d.pasta === origemCss) continue; // já é a pasta das folhas
+    for (const f of folhas) {
+      try {
+        copyFileSync(resolve(origemCss, f), resolve(d.pasta, f));
+      } catch {
+        console.warn(`  aviso: não achei ${f} para copiar`);
+      }
+    }
   }
 
   const secoes = capitulos.reduce((n, c) => n + c.secoes.length, 0);

@@ -567,16 +567,33 @@ async function main() {
     // escrito. Nas outras o botão só abre a ferramenta, e o prompt vai
     // pelo "Copiar" ao lado.
     ...(chave.startsWith("chatgpt") ? { q: "q" } : {}),
+    // `geral` marca quem escreve texto, e por isso serve para qualquer
+    // prompt do curso. É o que um prompt recebe quando a lição não diz
+    // suas ferramentas. As de imagem, vídeo e automação ficam de fora:
+    // só aparecem onde a lição pedir.
+    ...(/^(chatgpt-negocios|gemini-negocios|claude-negocios)$/.test(chave)
+      ? { geral: true }
+      : {}),
   }));
   // Uma chave por id: `chatgpt-negocios` e `chatgpt-imagens` viram o
   // mesmo `chatgpt`, e dois botões iguais não ajudam ninguém. Entre as
   // que colidem vence o nome mais curto — o botão diz para onde leva,
   // e "ChatGPT" leva ao mesmo lugar que "ChatGPT Imagens" com metade da
   // largura.
+  // Vence o nome mais curto, mas `q` e `geral` são somados: senão
+  // `chatgpt-imagens`, de nome mais curto que `chatgpt-negocios`,
+  // levaria o botão do ChatGPT e deixaria o `geral` para trás — e
+  // nenhum prompt sem ferramenta declarada teria onde abrir.
   const unicas = [
     ...listaIas
       .sort((a, b) => a.nome.length - b.nome.length)
-      .reduce((m, i) => (m.has(i.id) ? m : m.set(i.id, i)), new Map())
+      .reduce((m, i) => {
+        const antes = m.get(i.id);
+        if (!antes) return m.set(i.id, i);
+        if ((i as any).q) (antes as any).q = (i as any).q;
+        if ((i as any).geral) (antes as any).geral = true;
+        return m;
+      }, new Map())
       .values(),
   ] as typeof listaIas;
   runtime = runtime.replace(

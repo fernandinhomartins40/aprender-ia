@@ -1,0 +1,219 @@
+/* =========================================================
+   COMPONENTES DO CAPÍTULO DE FERRAMENTAS (1.7 a 1.9)
+
+   Ficha de ferramenta, passo de criação de conta e glossário.
+   Arquivo separado de `componentes_novos.css` para que o
+   capítulo novo possa ser revisado e ajustado sem risco de
+   mexer no que já está impresso e aprovado.
+   ========================================================= */
+
+/* ---------- Ficha de ferramenta ---------- */
+.ficha-ia{
+  border: 1.5px solid var(--borda);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 16px 0 20px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.ficha-ia-topo{
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 18px;
+  color: #fff;
+}
+
+.ficha-ia-nome{
+  font-family: var(--titulo);
+  font-size: 15pt;
+  font-weight: 800;
+}
+
+.ficha-ia-tipo{
+  font-family: var(--titulo);
+  font-size: 9.5pt;
+  font-weight: 700;
+  opacity: .9;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.ficha-ia-corpo{ padding: 16px 18px; background: #fff; }
+
+.ficha-ia-frase{
+  font-size: 11pt;
+  color: var(--tinta-clara);
+  font-style: italic;
+  margin: 0 0 14px;
+}
+
+.ficha-ia-grade{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  margin-bottom: 14px;
+}
+
+.ficha-ia-rot{
+  font-family: var(--titulo);
+  font-size: 8.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--cinza);
+  margin-bottom: 3px;
+}
+
+.ficha-ia-grade p{ margin: 0; font-size: 10pt; }
+
+.ficha-ia-faz .t,
+.ficha-ia-teste .t{
+  font-family: var(--titulo);
+  font-size: 11pt;
+  font-weight: 800;
+  color: var(--tinta);
+  margin-bottom: 7px;
+}
+
+.ficha-ia-faz ul{ margin: 0 0 14px; padding-left: 20px; }
+.ficha-ia-faz li{ font-size: 10.2pt; margin-bottom: 4px; }
+
+.ficha-ia-teste{
+  background: var(--indigo-soft);
+  border-radius: 9px;
+  padding: 13px 16px;
+}
+.ficha-ia-teste .prompt{ margin: 0; }
+
+/* ---------- Passo de criação de conta ---------- */
+.passo-conta{
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  border: 1.5px solid var(--borda);
+  border-radius: 11px;
+  padding: 15px 18px;
+  margin: 12px 0;
+  background: #fff;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.passo-num{
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: var(--titulo);
+  font-weight: 800;
+  font-size: 14pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.passo-corpo{ flex: 1; min-width: 0; }
+
+.passo-tit{
+  font-family: var(--titulo);
+  font-size: 12pt;
+  font-weight: 800;
+  color: var(--tinta);
+  margin-bottom: 6px;
+}
+
+.passo-tempo{
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: var(--cinza);
+}
+
+.passo-corpo ol{ margin: 0 0 7px; padding-left: 20px; }
+.passo-corpo li{ font-size: 10.2pt; margin-bottom: 3px; }
+
+.passo-obs{
+  font-size: 9.5pt;
+  color: var(--tinta-clara);
+  background: var(--indigo-soft);
+  border-radius: 7px;
+  padding: 8px 11px;
+  margin: 0;
+}
+
+/* ---------- Glossário (Anexo D) ---------- */
+.glossario-cat{
+  font-family: var(--titulo);
+  font-size: 12pt;
+  font-weight: 800;
+  color: var(--indigo);
+  border-bottom: 2px solid var(--indigo-line);
+  padding-bottom: 5px;
+  margin: 20px 0 11px;
+}
+
+.verbete{
+  margin-bottom: 11px;
+  padding-bottom: 10px;
+  border-bottom: 1px dotted var(--borda);
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.verbete:last-child{ border-bottom: none; }
+
+.verbete-termo{
+  font-family: var(--titulo);
+  font-size: 11pt;
+  font-weight: 800;
+  color: var(--tinta);
+}
+
+.verbete-resumo{
+  font-size: 10.2pt;
+  color: var(--tinta-clara);
+  margin: 2px 0 0;
+}
+
+/* ---------- Fase da formação avançada ---------- */
+.fase{
+  border-left: 5px solid var(--indigo);
+  background: var(--indigo-soft);
+  border-radius: 0 11px 11px 0;
+  padding: 14px 18px;
+  margin: 13px 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.fase-tit{
+  font-family: var(--titulo);
+  font-size: 12.5pt;
+  font-weight: 800;
+  color: var(--indigo-dark);
+  margin-bottom: 3px;
+}
+
+.fase-sub{
+  font-size: 10pt;
+  color: var(--tinta-clara);
+  font-style: italic;
+  margin: 0 0 9px;
+}
+
+.fase ul{ margin: 0; padding-left: 20px; }
+.fase li{ font-size: 10.2pt; margin-bottom: 3px; }
+
+.fase-produto{
+  background: #fff;
+  border-radius: 7px;
+  padding: 9px 12px;
+  margin-top: 10px;
+  font-size: 9.8pt;
+}
+
+.fase-produto strong{ color: var(--indigo-dark); }

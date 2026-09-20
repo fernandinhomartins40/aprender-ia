@@ -135,7 +135,43 @@ async function medirEQuebrar(pagina, TOLERANCIA) {
       slides.forEach((s) => s.classList.remove("active"));
       slide.classList.add("active");
 
-      if (slide.scrollHeight - slide.clientHeight <= tolerancia) continue;
+      // Primeiro o título: ele é absoluto, e o `.corpo` começa num `top`
+      // calculado para uma linha só. Um título que quebra em duas passa
+      // por cima do conteúdo — era o que cortava 52 dos 201 slides. A
+      // classe desce o corpo; e precisa vir antes de medir a altura,
+      // senão a medida é a do layout errado.
+      const titulo2l = slide.querySelector("h1.st");
+      if (titulo2l) {
+        const umaLinha =
+          parseFloat(getComputedStyle(titulo2l).lineHeight) ||
+          titulo2l.offsetHeight;
+        slide.classList.toggle(
+          "titulo-2l",
+          titulo2l.offsetHeight > umaLinha * 1.5,
+        );
+      }
+
+      // O que transborda é o conteúdo em relação ao corpo, que tem
+      // altura fixa. Medir pelo slide não pega nada: o slide é o palco,
+      // e o conteúdo que escapa dele é recortado sem alterar a altura.
+      //
+      // E não dá para usar `scrollHeight` do corpo: ele é um flex com
+      // `justify-content:center`, e o que passa da borda de cima não
+      // entra nessa conta — nos duelos ela dava 0 com 269px sobrando.
+      // Somar os filhos e os intervalos entre eles é o que mede de fato.
+      const sobra = () => {
+        const gap = parseFloat(getComputedStyle(corpo).gap) || 0;
+        let alto = 0;
+        let n = 0;
+        for (const f of corpo.children) {
+          if (f.style.display === "none") continue;
+          alto += f.offsetHeight;
+          n++;
+        }
+        if (n > 1) alto += gap * (n - 1);
+        return alto - corpo.clientHeight;
+      };
+      if (sobra() <= tolerancia) continue;
 
       let filhos = [...corpo.children];
 
@@ -178,7 +214,7 @@ async function medirEQuebrar(pagina, TOLERANCIA) {
         filhos.forEach((f, i) => {
           f.style.display = i < corte ? "" : "none";
         });
-        if (slide.scrollHeight - slide.clientHeight <= tolerancia) break;
+        if (sobra() <= tolerancia) break;
       }
 
       // Esse é o corte máximo, não o melhor. Enchendo o primeiro slide
@@ -191,7 +227,7 @@ async function medirEQuebrar(pagina, TOLERANCIA) {
         filhos.forEach((f, i) => {
           f.style.display = i < corte - 1 ? "" : "none";
         });
-        if (slide.scrollHeight - slide.clientHeight > tolerancia) break;
+        if (sobra() > tolerancia) break;
         corte--;
       }
 
@@ -202,8 +238,15 @@ async function medirEQuebrar(pagina, TOLERANCIA) {
       // O que sobrou vai para um slide novo, logo depois deste.
       const novo = slide.cloneNode(false);
       novo.classList.remove("active");
-      const titulo = slide.dataset.title || "";
-      novo.dataset.title = titulo + " (continua)";
+
+      // Só um "(continua)", por mais vezes que o slide seja quebrado.
+      // Acrescentar o sufixo sem olhar produzia "(continua) (continua)",
+      // que estourava o título em duas linhas — e como o título é
+      // posicionado, o conteúdo passava por baixo dele.
+      const marca = " (continua)";
+      const limpo = (t) => t.replace(/( \(continua\))+$/, "");
+      const titulo = limpo(slide.dataset.title || "");
+      novo.dataset.title = titulo + marca;
 
       // Cabeçalho igual, para a turma saber que é o mesmo assunto: a
       // faixa de cor, o badge e o título, com a marca de continuação.
@@ -214,7 +257,7 @@ async function medirEQuebrar(pagina, TOLERANCIA) {
       const h = slide.querySelector("h1.st");
       if (h) {
         const h2 = h.cloneNode(true);
-        h2.textContent = h.textContent + " (continua)";
+        h2.textContent = limpo(h.textContent) + marca;
         novo.appendChild(h2);
       }
 
