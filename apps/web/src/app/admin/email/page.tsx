@@ -1,6 +1,11 @@
 import {
   lerEstadoChave,
+  lerEstadoEnvio,
+  lerTemplates,
+  lerHistorico,
   salvarChave,
+  salvarEnvio,
+  salvarTemplates,
   testarEnvio,
   removerChave,
 } from "@/server/credenciais-email";
@@ -11,7 +16,12 @@ export const dynamic = "force-dynamic";
 
 export default async function Email() {
   const admin = await exigirAdmin();
-  const estado = await lerEstadoChave();
+  const [estado, envio, templates, historico] = await Promise.all([
+    lerEstadoChave(),
+    lerEstadoEnvio(),
+    lerTemplates(),
+    lerHistorico(),
+  ]);
 
   return (
     <div>
@@ -28,9 +38,14 @@ export default async function Email() {
 
       <FormChaveEmail
         estadoAtual={estado}
+        estadoEnvio={envio}
+        templates={templates}
+        historico={historico}
         acaoSalvar={salvarChave}
         acaoTestar={testarEnvio}
         acaoRemover={removerChave}
+        acaoSalvarEnvio={salvarEnvio}
+        acaoSalvarTemplates={salvarTemplates}
         emailDoAdmin={admin.email ?? ""}
       />
     </div>

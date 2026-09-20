@@ -223,6 +223,165 @@ export function FormChaveEmail({
 
         <Recado estado={testou} />
       </section>
+
+      <section className="card">
+        <h2 className="font-titulo text-xl font-extrabold">Remetente</h2>
+        <p className="mt-1 text-sm text-tinta-clara">
+          De quem o aluno recebe. O endereço precisa pertencer a um domínio
+          verificado na VeloMail, senão o envio é recusado.
+        </p>
+
+        <form action={salvarEnvio} className="mt-4 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="remetente_email"
+                className="block font-titulo text-sm font-bold"
+              >
+                Endereço
+              </label>
+              <input
+                id="remetente_email"
+                name="remetente_email"
+                type="email"
+                defaultValue={estadoEnvio.remetenteEmail}
+                placeholder="nao-responda@aprenderia.site"
+                className="campo mt-1"
+              />
+              <p className="mt-1 text-xs text-cinza">
+                Só o endereço, sem o nome junto.
+              </p>
+            </div>
+            <div>
+              <label
+                htmlFor="remetente_nome"
+                className="block font-titulo text-sm font-bold"
+              >
+                Nome de exibição
+              </label>
+              <input
+                id="remetente_nome"
+                name="remetente_nome"
+                type="text"
+                defaultValue={estadoEnvio.remetenteNome}
+                placeholder="Aprender IA"
+                className="campo mt-1"
+              />
+              <p className="mt-1 text-xs text-cinza">
+                Opcional. É o que aparece na caixa de entrada.
+              </p>
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              name="tracking"
+              defaultChecked={estadoEnvio.tracking}
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-2 border-borda accent-indigo"
+            />
+            <span className="text-sm">
+              <span className="font-bold">Rastrear aberturas e cliques</span>
+              <span className="block text-cinza">
+                Os links do aluno passam a ir pelo redirecionador da VeloMail. O
+                e-mail de recuperação de senha nunca é rastreado, mesmo com isto
+                ligado — o link carrega um token secreto.
+              </span>
+            </span>
+          </label>
+
+          {estadoEnvio.remetenteDoAmbiente && (
+            <p className="text-xs text-cinza">
+              Hoje vem da variável de ambiente da VPS. Salvar aqui substitui.
+            </p>
+          )}
+
+          <button type="submit" disabled={salvandoEnvio} className="btn-primario">
+            {salvandoEnvio ? "Salvando..." : "Salvar remetente"}
+          </button>
+        </form>
+
+        <Recado estado={salvouEnvio} />
+      </section>
+
+      <section className="card">
+        <h2 className="font-titulo text-xl font-extrabold">Templates</h2>
+        <p className="mt-1 text-sm text-tinta-clara">
+          Se você criou um template na VeloMail, cole aqui o número (ID) dele.
+          Deixando vazio, vale o modelo visual da própria plataforma — que já
+          funciona e não exige nada.
+        </p>
+
+        <form action={salvarTpl} className="mt-4 space-y-4">
+          {templates.map((t) => (
+            <div key={t.chave}>
+              <label htmlFor={t.chave} className="block font-titulo text-sm font-bold">
+                {t.rotulo}
+              </label>
+              <input
+                id={t.chave}
+                name={t.chave}
+                type="text"
+                inputMode="numeric"
+                defaultValue={t.valor}
+                placeholder="usar o modelo da plataforma"
+                className="campo mt-1 max-w-xs"
+              />
+              <p className="mt-1 text-xs text-cinza">{t.descricao}</p>
+            </div>
+          ))}
+
+          <button type="submit" disabled={salvandoTpl} className="btn-primario">
+            {salvandoTpl ? "Salvando..." : "Salvar templates"}
+          </button>
+        </form>
+
+        <Recado estado={salvouTpl} />
+      </section>
+
+      <section className="card">
+        <h2 className="font-titulo text-xl font-extrabold">Histórico</h2>
+        <p className="mt-1 text-sm text-tinta-clara">
+          As últimas alterações e testes feitos por aqui.
+        </p>
+
+        {historico.length === 0 ? (
+          <p className="mt-4 text-sm text-cinza">Nada registrado ainda.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-borda">
+            {historico.map((h) => (
+              <li key={h.id} className="py-2.5 text-sm">
+                <p>{h.resumo}</p>
+                <p className="mt-0.5 text-xs text-cinza">
+                  {h.quem} ·{" "}
+                  {new Intl.DateTimeFormat("pt-BR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  }).format(new Date(h.quando))}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="card">
+        <h2 className="font-titulo text-xl font-extrabold">No painel da VeloMail</h2>
+        <p className="mt-1 text-sm text-tinta-clara">
+          Criar templates, verificar domínios (SPF/DKIM), ver analytics e
+          configurar webhooks acontece no site da VeloMail: a API usada por esta
+          plataforma só faz o envio. O que você define aqui é qual template e
+          qual remetente usar.
+        </p>
+        <a
+          href="https://www.velomail.com.br/app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-fantasma mt-4 inline-flex text-sm"
+        >
+          Abrir o painel da VeloMail
+        </a>
+      </section>
     </div>
   );
 }
