@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
   const filtro: FiltroRelatorio = {
     tipo,
     turmaId: p.get("turmaId") ?? undefined,
+    // Sem isto, o CSV baixaria todos os cursos enquanto a tela mostra um:
+    // o arquivo contradiria a própria página de onde foi pedido.
+    cursoId: p.get("curso") ?? undefined,
     desde: p.get("desde") ?? undefined,
     ate: p.get("ate") ?? undefined,
     situacao: p.get("situacao") ?? undefined,

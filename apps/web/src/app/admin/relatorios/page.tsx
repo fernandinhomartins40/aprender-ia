@@ -1,6 +1,7 @@
 import { prisma } from "@aprender/db";
 import { gerarRelatorio, type FiltroRelatorio } from "@/server/relatorios";
 import { exigirAdmin } from "@/server/admin";
+import { cursoDoPainel, cursosDoPainel } from "@/server/curso-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function Relatorios({
   searchParams: Promise<{
     tipo?: string;
     turmaId?: string;
+    curso?: string;
     desde?: string;
     ate?: string;
     situacao?: string;
@@ -43,12 +45,16 @@ export default async function Relatorios({
   await exigirAdmin();
   const params = await searchParams;
 
+  const curso = await cursoDoPainel(params.curso);
+  const cursos = await cursosDoPainel();
+
   const tipo = (TIPOS.find((t) => t.valor === params.tipo)?.valor ??
     "alunos") as FiltroRelatorio["tipo"];
 
   const filtro: FiltroRelatorio = {
     tipo,
     turmaId: params.turmaId || undefined,
+    cursoId: curso?.id,
     desde: params.desde || undefined,
     ate: params.ate || undefined,
     situacao: params.situacao || undefined,
@@ -57,6 +63,9 @@ export default async function Relatorios({
   const [relatorio, turmas] = await Promise.all([
     gerarRelatorio(filtro),
     prisma.cohort.findMany({
+      // A lista de turmas segue o curso escolhido: oferecer turma de outro
+      // curso produziria um cruzamento que devolve sempre zero linhas.
+      where: curso ? { courseId: curso.id } : {},
       orderBy: { criadoEm: "desc" },
       select: { id: true, nome: true },
     }),
@@ -64,7 +73,13 @@ export default async function Relatorios({
 
   const situacoes = SITUACOES[tipo];
   const parametrosCSV = new URLSearchParams(
-    Object.entries({ ...filtro }).filter(([, v]) => Boolean(v)) as [string, string][],
+    Object.entries({
+      ...filtro,
+      // Na URL o curso se chama `curso`, como nas demais telas do painel;
+      // no filtro ele é `cursoId`. Sem esta troca o CSV ignoraria o recorte.
+      cursoId: undefined,
+      curso: curso?.id,
+    }).filter(([, v]) => Boolean(v)) as [string, string][],
   ).toString();
 
   return (
@@ -77,7 +92,7 @@ export default async function Relatorios({
       </div>
 
       {/* ---- Filtros ---- */}
-      <form className="card grid gap-4 md:grid-cols-5">
+      <form className="card grid gap-4 md:grid-cols-6">
         <label className="md:col-span-2">
           <span className="mb-1 block font-titulo text-sm font-bold text-tinta-clara">
             Relatório
@@ -90,6 +105,26 @@ export default async function Relatorios({
             ))}
           </select>
         </label>
+
+        {/* Curso entra como campo do formulário, e não como as abas usadas
+            nas outras telas: aqui ele convive com período e situação, e um
+            link solto descartaria o que já estava preenchido. */}
+        {cursos.length > 1 && (
+          <label>
+            <span className="mb-1 block font-titulo text-sm font-bold text-tinta-clara">
+              Curso
+            </span>
+            <select name="curso" defaultValue={curso?.id ?? ""} className="campo w-full">
+              <option value="">Todos</option>
+              {cursos.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.titulo}
+                  {!c.publicado ? " (rascunho)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label>
           <span className="mb-1 block font-titulo text-sm font-bold text-tinta-clara">Turma</span>
@@ -145,7 +180,7 @@ export default async function Relatorios({
           </>
         )}
 
-        <div className="flex items-end gap-2 md:col-span-5">
+        <div className="flex items-end gap-2 md:col-span-6">
           <button type="submit" className="btn-primario">
             Gerar relatório
           </button>

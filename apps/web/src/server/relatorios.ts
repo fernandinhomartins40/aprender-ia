@@ -15,6 +15,15 @@ import { lerNumero } from "./configuracoes";
 export type FiltroRelatorio = {
   tipo: "alunos" | "financeiro" | "progresso" | "presenca";
   turmaId?: string;
+  /**
+   * Recorte por curso.
+   *
+   * Cada relatório chega ao curso por um caminho diferente — o aluno pela
+   * matrícula, o encontro pela turma —, então o filtro é montado em cada
+   * um e não num `where` comum. O financeiro não tem recorte: uma cobrança
+   * é do aluno, não de um curso.
+   */
+  cursoId?: string;
   desde?: string;
   ate?: string;
   situacao?: string;
@@ -86,6 +95,8 @@ async function relatorioAlunos(
       papel: "ALUNO",
       ...(desde || ate ? { criadoEm: { ...(desde ? { gte: desde } : {}), ...(ate ? { lte: ate } : {}) } } : {}),
       ...(filtro.turmaId ? { membroTurmas: { some: { cohortId: filtro.turmaId } } } : {}),
+      // O aluno pertence ao curso pela matrícula.
+      ...(filtro.cursoId ? { matriculas: { some: { courseId: filtro.cursoId } } } : {}),
       ...(filtro.situacao === "ativos" ? { ultimoAcessoEm: { gte: corte } } : {}),
       ...(filtro.situacao === "inativos"
         ? { OR: [{ ultimoAcessoEm: null }, { ultimoAcessoEm: { lt: corte } }] }
@@ -207,9 +218,13 @@ async function relatorioFinanceiro(
 
 async function relatorioProgresso(filtro: FiltroRelatorio): Promise<Relatorio> {
   const matriculas = await prisma.enrollment.findMany({
-    where: filtro.turmaId
-      ? { user: { membroTurmas: { some: { cohortId: filtro.turmaId } } } }
-      : {},
+    where: {
+      ...(filtro.turmaId
+        ? { user: { membroTurmas: { some: { cohortId: filtro.turmaId } } } }
+        : {}),
+      // Aqui o curso é direto: a matrícula é a ligação aluno–curso.
+      ...(filtro.cursoId ? { courseId: filtro.cursoId } : {}),
+    },
     orderBy: { progressoPct: "desc" },
     include: {
       user: {
@@ -270,6 +285,8 @@ async function relatorioPresenca(filtro: FiltroRelatorio): Promise<Relatorio> {
   const encontros = await prisma.cohortMeeting.findMany({
     where: {
       ...(filtro.turmaId ? { cohortId: filtro.turmaId } : {}),
+      // O encontro chega ao curso pela turma, que sempre tem um.
+      ...(filtro.cursoId ? { cohort: { courseId: filtro.cursoId } } : {}),
       canceladoEm: null,
     },
     orderBy: { data: "asc" },

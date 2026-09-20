@@ -47,18 +47,29 @@ export async function ferramentasMaisUsadas() {
   return dados.map((d) => ({ ferramenta: d.ferramenta, usos: d._count.ferramenta }));
 }
 
-export async function listarAlunos(busca?: string, pagina = 1, porPagina = 20) {
-  const where = busca
-    ? {
-        OR: [
-          { nome: { contains: busca, mode: "insensitive" as const } },
-          { email: { contains: busca, mode: "insensitive" as const } },
-          { telefone: { contains: busca } },
-          { escola: { contains: busca, mode: "insensitive" as const } },
-          { disciplina: { contains: busca, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
+export async function listarAlunos(
+  busca?: string,
+  pagina = 1,
+  porPagina = 20,
+  cursoId?: string,
+) {
+  const where = {
+    // A busca é um OR entre campos; o curso é um E por cima dela. Juntar
+    // os dois no mesmo objeto (em vez de substituir) mantém as duas
+    // condições válidas: "quem casa com o texto E está neste curso".
+    ...(busca
+      ? {
+          OR: [
+            { nome: { contains: busca, mode: "insensitive" as const } },
+            { email: { contains: busca, mode: "insensitive" as const } },
+            { telefone: { contains: busca } },
+            { escola: { contains: busca, mode: "insensitive" as const } },
+            { disciplina: { contains: busca, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(cursoId ? { matriculas: { some: { courseId: cursoId } } } : {}),
+  };
 
   const [total, usuarios] = await Promise.all([
     prisma.user.count({ where }),
@@ -131,8 +142,11 @@ export async function listarCursos() {
   });
 }
 
-export async function listarTurmas() {
+export async function listarTurmas(cursoId?: string) {
   return prisma.cohort.findMany({
+    // Toda turma pertence a um curso (courseId é obrigatório no schema),
+    // então aqui o filtro é exato — não existe turma "de todos os cursos".
+    where: cursoId ? { courseId: cursoId } : {},
     orderBy: [{ inicioEm: "desc" }, { criadoEm: "desc" }],
     include: {
       course: { select: { id: true, titulo: true } },

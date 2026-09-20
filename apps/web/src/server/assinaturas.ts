@@ -219,10 +219,17 @@ export async function excluirPlano(dados: FormData): Promise<void> {
   revalidatePath("/");
 }
 
-export async function listarPlanos() {
+export async function listarPlanos(cursoId?: string) {
   await exigirAdmin();
   try {
     return await prisma.plan.findMany({
+      // Um plano cobre vários cursos (PlanCourse), então filtrar por curso
+      // é "os planos que dão acesso a este". Plano sem curso nenhum é o
+      // que vale para a plataforma toda, e por isso entra em qualquer
+      // recorte — some-lo do filtro esconderia o gratuito.
+      where: cursoId
+        ? { OR: [{ cursos: { some: { courseId: cursoId } } }, { cursos: { none: {} } }] }
+        : {},
       // O gratuito primeiro: é o plano que define o piso de acesso de
       // todo mundo, e vê-lo no topo evita configurá-lo por último.
       orderBy: [{ gratuito: "desc" }, { ativo: "desc" }, { ordem: "asc" }, { precoCentavos: "asc" }],

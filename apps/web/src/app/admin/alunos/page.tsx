@@ -8,6 +8,7 @@ import {
   exigirAdmin,
   contarAlunosSemTurma,
 } from "@/server/admin";
+import { cursoDoPainel } from "@/server/curso-admin";
 import { importarAlunos } from "@/server/importar-alunos";
 import { criarAluno } from "@/server/aluno-individual";
 import { salvarTurma } from "@/server/turmas";
@@ -72,12 +73,18 @@ async function alterarPapel(dados: FormData) {
 export default async function Alunos({
   searchParams,
 }: {
-  searchParams: Promise<{ busca?: string; pagina?: string; semTurma?: string }>;
+  searchParams: Promise<{
+    busca?: string;
+    pagina?: string;
+    semTurma?: string;
+    curso?: string;
+  }>;
 }) {
   const admin = await exigirAdmin();
   const params = await searchParams;
   const busca = params.busca?.trim() || undefined;
   const pagina = Math.max(1, Number(params.pagina ?? 1) || 1);
+  const cursoFiltro = await cursoDoPainel(params.curso);
 
   const [
     { usuarios, total, paginas },
@@ -88,9 +95,12 @@ export default async function Alunos({
     diasPadraoFree,
     planos,
   ] = await Promise.all([
-      listarAlunos(busca, pagina),
+      listarAlunos(busca, pagina, 20, cursoFiltro?.id),
+      // Sem filtro de curso: esta lista alimenta os formulários de
+      // matrícula, que precisam oferecer TODOS os cursos mesmo quando a
+      // listagem está recortada por um.
       prisma.course.findMany({
-        select: { id: true, titulo: true },
+        select: { id: true, titulo: true, publicado: true },
         orderBy: { ordem: "asc" },
       }),
       prisma.cohort.findMany({
@@ -132,7 +142,7 @@ export default async function Alunos({
           </p>
         </div>
 
-        <form className="flex gap-2" role="search">
+        <form className="flex flex-wrap gap-2" role="search">
           <input
             name="busca"
             defaultValue={busca}
@@ -140,6 +150,24 @@ export default async function Alunos({
             aria-label="Buscar aluno"
             className="campo w-72"
           />
+          {/* No mesmo formulário da busca: assim os dois filtros são
+              enviados juntos e um não apaga o outro. */}
+          {cursos.length > 1 && (
+            <select
+              name="curso"
+              defaultValue={cursoFiltro?.id ?? ""}
+              aria-label="Filtrar por curso"
+              className="campo"
+            >
+              <option value="">Todos os cursos</option>
+              {cursos.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.titulo}
+                  {!c.publicado ? " (rascunho)" : ""}
+                </option>
+              ))}
+            </select>
+          )}
           <button type="submit" className="btn-primario" title="Buscar aluno">
             <Search size={18} aria-hidden="true" />
             <span className="sr-only">Buscar</span>
@@ -261,8 +289,10 @@ export default async function Alunos({
         <div className="card text-center">
           <p className="py-8 text-cinza">
             {busca
-              ? `Nenhum resultado para "${busca}".`
-              : "Ainda não há professores cadastrados."}
+              ? `Nenhum resultado para "${busca}"${cursoFiltro ? ` em ${cursoFiltro.titulo}` : ""}.`
+              : cursoFiltro
+                ? `Ninguém matriculado em ${cursoFiltro.titulo} ainda.`
+                : "Ainda não há professores cadastrados."}
           </p>
         </div>
       ) : (
@@ -457,7 +487,7 @@ export default async function Alunos({
           {Array.from({ length: paginas }, (_, i) => i + 1).map((p) => (
             <a
               key={p}
-              href={`/admin/alunos?pagina=${p}${busca ? `&busca=${encodeURIComponent(busca)}` : ""}`}
+              href={`/admin/alunos?pagina=${p}${busca ? `&busca=${encodeURIComponent(busca)}` : ""}${cursoFiltro ? `&curso=${cursoFiltro.id}` : ""}`}
               aria-current={p === pagina ? "page" : undefined}
               className={`rounded-md px-3.5 py-2 font-titulo text-sm font-bold ${
                 p === pagina

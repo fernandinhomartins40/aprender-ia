@@ -3,11 +3,19 @@ import { listarPlanos, salvarPlano, excluirPlano } from "@/server/assinaturas";
 import { FormPlano } from "@/components/form-plano";
 import { reais } from "@/lib/dinheiro";
 import { ROTULO_PERIODO, porMes, receitaRecorrenteMensal } from "@/lib/assinaturas";
+import { cursoDaUrl, cursoDoPainel, cursosDoPainel } from "@/server/curso-admin";
+import { SeletorCursoAdmin } from "@/components/seletor-curso-admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function Planos() {
-  const planos = await listarPlanos();
+export default async function Planos({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const curso = await cursoDoPainel(cursoDaUrl(await searchParams));
+  const cursos = await cursosDoPainel();
+  const planos = await listarPlanos(curso?.id);
 
   return (
     <div className="space-y-6">
@@ -20,6 +28,8 @@ export default async function Planos() {
           </p>
         </div>
       </div>
+
+      <SeletorCursoAdmin cursos={cursos} ativo={curso?.id ?? null} base="/admin/planos" />
 
       <FormPlano acao={salvarPlano} />
 

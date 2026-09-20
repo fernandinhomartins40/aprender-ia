@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { prisma } from "@aprender/db";
 import { listarTurmas, listarInstrutores, exigirAdmin } from "@/server/admin";
+import { cursoDaUrl, cursoDoPainel, cursosDoPainel } from "@/server/curso-admin";
+import { SeletorCursoAdmin } from "@/components/seletor-curso-admin";
 import { salvarTurma } from "@/server/turmas";
 import { NovaTurma } from "@/components/painel-turma";
 import { dataCurta, faixaHoraria, proximoEncontro } from "@/lib/datas";
@@ -21,15 +22,20 @@ const ROTULO_MODALIDADE: Record<string, string> = {
   HIBRIDA: "Híbrida",
 };
 
-export default async function Turmas() {
+export default async function Turmas({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await exigirAdmin();
 
+  const curso = await cursoDoPainel(cursoDaUrl(await searchParams));
+
   const [turmas, cursos, instrutores] = await Promise.all([
-    listarTurmas(),
-    prisma.course.findMany({
-      select: { id: true, titulo: true },
-      orderBy: { ordem: "asc" },
-    }),
+    listarTurmas(curso?.id),
+    // Todos os cursos: a lista alimenta o seletor e os formulários de
+    // edição, que precisam poder mover a turma para outro curso.
+    cursosDoPainel(),
     listarInstrutores(),
   ]);
 
@@ -54,6 +60,8 @@ export default async function Turmas() {
           Nova turma
         </Link>
       </div>
+
+      <SeletorCursoAdmin cursos={cursos} ativo={curso?.id ?? null} base="/admin/turmas" />
 
       {turmas.length === 0 ? (
         <div className="card text-center">
