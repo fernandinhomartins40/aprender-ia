@@ -47,6 +47,24 @@ function remetente(): string {
   );
 }
 
+/**
+ * Separa "Nome <email@dominio>" em nome e endereço.
+ *
+ * O SMTP aceita a forma composta do RFC 5322, mas a API da VeloMail
+ * valida `from` como e-mail puro e recusa o envio inteiro com
+ * "Email deve ter formato válido" se o nome vier junto. O nome de
+ * exibição não se perde: vai em `from_name`.
+ */
+function separarRemetente(bruto: string): { email: string; nome?: string } {
+  const comNome = bruto.match(/^\s*(.*?)\s*<\s*([^<>\s]+)\s*>\s*$/);
+  if (comNome) {
+    // Aspas ao redor do nome são sintaxe do RFC, não parte do nome.
+    const nome = comNome[1]!.replace(/^"(.*)"$/, "$1").trim();
+    return { email: comNome[2]!, nome: nome || undefined };
+  }
+  return { email: bruto.trim() };
+}
+
 function apiVeloMail(): string {
   return (
     process.env.ULTRAZEND_API_URL ??
@@ -131,6 +149,8 @@ async function enviarPelaVeloMail(
   opcoes: OpcoesEmail,
   chave: string,
 ): Promise<ResultadoEnvio> {
+  const de = separarRemetente(remetente());
+
   let resposta: Response;
   try {
     resposta = await fetch(`${apiVeloMail()}/emails/send`, {
@@ -140,7 +160,8 @@ async function enviarPelaVeloMail(
         "x-api-key": chave,
       },
       body: JSON.stringify({
-        from: remetente(),
+        from: de.email,
+        ...(de.nome ? { from_name: de.nome } : {}),
         to: opcoes.para,
         subject: opcoes.assunto,
         html: opcoes.html,

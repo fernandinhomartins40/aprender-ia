@@ -213,6 +213,19 @@ export async function testarEnvio(
     };
   }
 
+  // "Validation Error" no campo `from` quase sempre é o remetente não
+  // verificado na VeloMail — a chave já passou, o domínio é que não.
+  const pareceRemetente = /"path"\s*:\s*"from"|from.*formato|remetente/i.test(
+    resultado.motivo ?? "",
+  );
+  if (pareceRemetente) {
+    return {
+      ok: false,
+      mensagem:
+        "A VeloMail recusou o remetente. Confirme que o endereço configurado em ULTRAZEND_FROM pertence a um domínio verificado (SPF/DKIM) na sua conta — a chave em si foi aceita.",
+    };
+  }
+
   return {
     ok: false,
     mensagem: `A VeloMail recusou o envio: ${resultado.motivo ?? "erro desconhecido"}. Se a mensagem citar o remetente ou o domínio, verifique a autenticação do domínio no painel da VeloMail.`,
