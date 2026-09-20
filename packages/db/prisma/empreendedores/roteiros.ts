@@ -1,5 +1,4 @@
-import type { LicaoExtra } from "./modulos-extras";
-import { LICOES_EXTRAS } from "./modulos-extras";
+import { TODAS_EXTRAS, type LicaoExtra } from "./extras-todas";
 import { MODULOS_EMPREENDEDORES } from "./modulos";
 
 /**
@@ -40,9 +39,10 @@ export type RoteiroAula = {
 /** Quais módulos cabem em cada encontro presencial. */
 const ENCONTROS: { n: number; titulo: string; modulos: number[] }[] = [
   { n: 1, titulo: "Encontro 1 — Entender e pedir", modulos: [0, 1] },
-  { n: 2, titulo: "Encontro 2 — Aplicar no dia a dia", modulos: [2, 3] },
-  { n: 3, titulo: "Encontro 3 — Produzir e analisar", modulos: [4, 5, 6, 7] },
-  { n: 4, titulo: "Encontro 4 — Automatizar e delegar", modulos: [8, 9, 10] },
+  { n: 2, titulo: "Encontro 2 — Aplicar no dia a dia", modulos: [2, 3, 4] },
+  { n: 3, titulo: "Encontro 3 — Produzir", modulos: [5, 6] },
+  { n: 4, titulo: "Encontro 4 — Organizar e analisar", modulos: [7, 8, 9] },
+  { n: 5, titulo: "Encontro 5 — Automatizar e delegar", modulos: [10, 11, 12, 13] },
 ];
 
 const escapar = (s: string) =>
@@ -279,7 +279,7 @@ export function roteirosDeEmpreendedores(): RoteiroAula[] {
 
       // A mesma intercalação do seed: as extras entram antes do
       // fechamento, para o CHECKPOINT continuar sendo o último.
-      const extras: LicaoExtra[] = LICOES_EXTRAS.filter((e) => e.modulo === ordem);
+      const extras: LicaoExtra[] = TODAS_EXTRAS.filter((e) => e.modulo === m.titulo);
       const corte = m.licoes.findIndex((l) => l.tipo === "CHECKPOINT");
       const licoes =
         corte === -1

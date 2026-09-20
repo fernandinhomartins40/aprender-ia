@@ -58,10 +58,15 @@ const soma = ls.reduce((s, l) => s + txt(l.conteudo).length, 0);
 console.log(`${ls.length} lições · ${(soma/1000).toFixed(1)}k chars · média ${Math.round(soma/ls.length)}`);
 ```
 
-**Referência (Educadores):** 82 lições, 52,3k caracteres, média 638/lição.
+**Referência (Educadores):** 82 lições, 52,3k caracteres, média 638/lição,
+10,6h de tela, 20% de TEORIA.
 
-**Meta mínima para um curso novo:** igualar a média por lição, e não
-ficar abaixo de 80% do número de lições.
+**Entregue (Empreendedores):** 124 lições, 126,3k caracteres, média
+1.018/lição, 23,6h de tela, 25% de TEORIA.
+
+**Meta mínima para um curso novo:** igualar a média por lição da
+referência e não ficar abaixo de 80% do número de lições. Abaixo disso,
+o curso não está raso por opinião — está raso por medição.
 
 ### 2.2 Componentes visuais do deck — a medição que eu pulei
 
@@ -91,6 +96,9 @@ for f, n in [('<referencia>.html','REF'), ('<novo>.html','NOVO')]:
 | `ia-btn` (botões de IA) | 14 | **0** |
 | `dica` | 18 | **0** |
 | `traduzindo` | 12 | **0** |
+
+**Depois de gerar do banco:** 148 cards, 35 prompt-acoes, 93 dicas — o
+deck passou a superar a referência em quase tudo.
 
 Zero cards é o que produz "duas frases soltas num vazio de 1280×720".
 **Se qualquer linha der zero, o deck não está pronto.**

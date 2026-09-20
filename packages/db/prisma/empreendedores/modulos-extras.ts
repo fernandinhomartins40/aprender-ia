@@ -16,8 +16,12 @@ import { TipoLicao } from "@prisma/client";
  */
 
 export type LicaoExtra = {
-  /** Ordem do módulo a que a lição pertence, como em `modulos.ts`. */
-  modulo: number;
+  /** Título do módulo a que a lição pertence.
+   *
+   * É o título, e não a ordem, porque inserir um módulo no meio da
+   * sequência renumera todos os seguintes — e as extras iriam parar no
+   * módulo errado, silenciosamente. */
+  modulo: string;
   titulo: string;
   tipo: TipoLicao;
   xp: number;
@@ -29,7 +33,7 @@ export type LicaoExtra = {
 export const LICOES_EXTRAS: LicaoExtra[] = [
   /* ===================== MÓDULO 1 — IA sem complicação ===================== */
   {
-    modulo: 0,
+    modulo: "IA sem complicação",
     titulo: "Caso: o orçamento que citou uma norma que não existe",
     tipo: TipoLicao.CASO,
     xp: 25,
@@ -51,7 +55,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 0,
+    modulo: "IA sem complicação",
     titulo: "No celular: sua primeira conversa com uma IA",
     tipo: TipoLicao.NO_CELULAR,
     xp: 20,
@@ -72,7 +76,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 0,
+    modulo: "IA sem complicação",
     titulo: "O que nunca deve ser colado numa IA",
     tipo: TipoLicao.TEORIA,
     xp: 15,
@@ -117,7 +121,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 0,
+    modulo: "IA sem complicação",
     titulo: "Duelo: a mesma pergunta, com e sem contexto",
     tipo: TipoLicao.DUELO,
     xp: 25,
@@ -148,7 +152,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 2 — Como pedir ===================== */
   {
-    modulo: 1,
+    modulo: "Como pedir e receber o que você precisa",
     titulo: "Caça ao erro: o prompt que parece bom",
     tipo: TipoLicao.CACA_ERRO,
     xp: 25,
@@ -181,7 +185,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 1,
+    modulo: "Como pedir e receber o que você precisa",
     titulo: "Como pedir de novo quando a resposta vem ruim",
     tipo: TipoLicao.TEORIA,
     xp: 15,
@@ -226,7 +230,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 1,
+    modulo: "Como pedir e receber o que você precisa",
     titulo: "Dar exemplo em vez de descrever o tom",
     tipo: TipoLicao.PROMPT,
     xp: 25,
@@ -249,7 +253,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 1,
+    modulo: "Como pedir e receber o que você precisa",
     titulo: "No celular: reescreva uma mensagem que você já mandou",
     tipo: TipoLicao.NO_CELULAR,
     xp: 20,
@@ -272,7 +276,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 3 — Dia a dia ===================== */
   {
-    modulo: 2,
+    modulo: "IA no dia a dia da empresa",
     titulo: "Criar orçamento e proposta: antes e depois",
     tipo: TipoLicao.ANTES_DEPOIS,
     xp: 20,
@@ -318,7 +322,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 2,
+    modulo: "IA no dia a dia da empresa",
     titulo: "Caso: o salão que não tinha tempo de postar",
     tipo: TipoLicao.CASO,
     xp: 25,
@@ -340,7 +344,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 2,
+    modulo: "IA no dia a dia da empresa",
     titulo: "Caça ao erro: a resposta automática que não leu o cliente",
     tipo: TipoLicao.CACA_ERRO,
     xp: 25,
@@ -373,7 +377,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 2,
+    modulo: "IA no dia a dia da empresa",
     titulo: "Desafio: dez minutos, uma tarefa da sua semana",
     tipo: TipoLicao.DESAFIO,
     xp: 30,
@@ -395,7 +399,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 4 — Delegar ===================== */
   {
-    modulo: 3,
+    modulo: "Delegar um trabalho, não pedir uma resposta",
     titulo: "Caso: a empresa que delegou sem revisar",
     tipo: TipoLicao.CASO,
     xp: 25,
@@ -417,7 +421,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 3,
+    modulo: "Delegar um trabalho, não pedir uma resposta",
     titulo: "O que a IA precisa ter em mãos para trabalhar bem",
     tipo: TipoLicao.TEORIA,
     xp: 20,
@@ -461,7 +465,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 3,
+    modulo: "Delegar um trabalho, não pedir uma resposta",
     titulo: "Duelo: delegar mal e delegar bem",
     tipo: TipoLicao.DUELO,
     xp: 25,
@@ -490,7 +494,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 3,
+    modulo: "Delegar um trabalho, não pedir uma resposta",
     titulo: "No celular: peça um trabalho, não uma resposta",
     tipo: TipoLicao.NO_CELULAR,
     xp: 20,
@@ -513,7 +517,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 5 — Imagens ===================== */
   {
-    modulo: 4,
+    modulo: "Imagens que vendem",
     titulo: "Duelo: pedido de imagem vago e específico",
     tipo: TipoLicao.DUELO,
     xp: 25,
@@ -541,7 +545,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 4,
+    modulo: "Imagens que vendem",
     titulo: "Caça ao erro: a imagem que não pode ser publicada",
     tipo: TipoLicao.CACA_ERRO,
     xp: 25,
@@ -574,7 +578,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 4,
+    modulo: "Imagens que vendem",
     titulo: "Laboratório: a imagem com fundo transparente",
     tipo: TipoLicao.LABORATORIO,
     xp: 30,
@@ -630,7 +634,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 6 — Vídeo ===================== */
   {
-    modulo: 5,
+    modulo: "Vídeo curto sem equipe",
     titulo: "O que dá e o que não dá para esperar de vídeo por IA",
     tipo: TipoLicao.TEORIA,
     xp: 20,
@@ -679,7 +683,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 5,
+    modulo: "Vídeo curto sem equipe",
     titulo: "Laboratório: seu primeiro vídeo curto",
     tipo: TipoLicao.LABORATORIO,
     xp: 35,
@@ -721,7 +725,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 5,
+    modulo: "Vídeo curto sem equipe",
     titulo: "Caso: a propaganda que prometeu o que o produto não faz",
     tipo: TipoLicao.CASO,
     xp: 25,
@@ -745,7 +749,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 7 — Documentos e planilhas ===================== */
   {
-    modulo: 6,
+    modulo: "Documentos e planilhas com IA",
     titulo: "Fazer a IA ler a sua planilha",
     tipo: TipoLicao.PROMPT,
     xp: 25,
@@ -769,7 +773,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 6,
+    modulo: "Documentos e planilhas com IA",
     titulo: "Caça ao erro: a análise que inventou o que não estava lá",
     tipo: TipoLicao.CACA_ERRO,
     xp: 25,
@@ -802,7 +806,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 6,
+    modulo: "Documentos e planilhas com IA",
     titulo: "No celular: exporte e pergunte",
     tipo: TipoLicao.NO_CELULAR,
     xp: 20,
@@ -823,7 +827,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 6,
+    modulo: "Documentos e planilhas com IA",
     titulo: "Laboratório: a planilha que você não tinha",
     tipo: TipoLicao.LABORATORIO,
     xp: 30,
@@ -866,7 +870,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 8 — NotebookLM ===================== */
   {
-    modulo: 7,
+    modulo: "Seus documentos respondendo por você",
     titulo: "Caso: o funcionário novo que perguntava tudo",
     tipo: TipoLicao.CASO,
     xp: 25,
@@ -888,7 +892,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 7,
+    modulo: "Seus documentos respondendo por você",
     titulo: "Como escrever para uma base que vai ser consultada",
     tipo: TipoLicao.TEORIA,
     xp: 20,
@@ -937,7 +941,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 7,
+    modulo: "Seus documentos respondendo por você",
     titulo: "No celular: pergunte ao seu contrato",
     tipo: TipoLicao.NO_CELULAR,
     xp: 20,
@@ -960,7 +964,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 9 — Automação ===================== */
   {
-    modulo: 8,
+    modulo: "Automação sem programar",
     titulo: "O pedido que chega e vira trabalho",
     tipo: TipoLicao.FLUXO,
     xp: 25,
@@ -991,7 +995,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 8,
+    modulo: "Automação sem programar",
     titulo: "Caso: a empresa que automatizou antes de validar",
     tipo: TipoLicao.CASO,
     xp: 25,
@@ -1013,7 +1017,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 8,
+    modulo: "Automação sem programar",
     titulo: "Caça ao erro: a automação que enviou sozinha",
     tipo: TipoLicao.CACA_ERRO,
     xp: 25,
@@ -1046,7 +1050,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 8,
+    modulo: "Automação sem programar",
     titulo: "No celular: sua primeira automação de verdade",
     tipo: TipoLicao.NO_CELULAR,
     xp: 25,
@@ -1069,7 +1073,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 10 — Agentes ===================== */
   {
-    modulo: 9,
+    modulo: "Agentes sem complicação",
     titulo: "Sete agentes que fazem sentido num negócio pequeno",
     tipo: TipoLicao.TEORIA,
     xp: 20,
@@ -1131,7 +1135,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 9,
+    modulo: "Agentes sem complicação",
     titulo: "Duelo: agente sem limite e agente com limite",
     tipo: TipoLicao.DUELO,
     xp: 25,
@@ -1161,7 +1165,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 9,
+    modulo: "Agentes sem complicação",
     titulo: "Desafio: teste seu agente com as perguntas difíceis",
     tipo: TipoLicao.DESAFIO,
     xp: 35,
@@ -1183,7 +1187,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     },
   },
   {
-    modulo: 9,
+    modulo: "Agentes sem complicação",
     titulo: "Guia de bolso: quando desconfiar da IA",
     tipo: TipoLicao.EMERGENCIA,
     xp: 20,
@@ -1235,7 +1239,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
 
   /* ===================== MÓDULO 11 — Projeto final ===================== */
   {
-    modulo: 10,
+    modulo: "Minha Empresa Aumentada por IA",
     titulo: "Antes de escrever o plano: o que você já mudou",
     tipo: TipoLicao.CHECKPOINT,
     xp: 25,

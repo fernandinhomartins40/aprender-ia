@@ -1,4 +1,8 @@
 import { TipoLicao } from "@prisma/client";
+import { MODULO_CHATGPT, MODULO_DADOS, MODULO_ESCOLHER } from "./modulos-novos";
+import type { Licao, Modulo } from "./tipos";
+
+export type { Licao, Modulo };
 
 /**
  * O conteúdo do curso "IA para Empreendedores".
@@ -23,23 +27,6 @@ import { TipoLicao } from "@prisma/client";
  * genérico.
  */
 
-export type Licao = {
-  titulo: string;
-  tipo: TipoLicao;
-  xp: number;
-  tempo: number;
-  cap?: string;
-  conteudo: Record<string, unknown>;
-};
-
-export type Modulo = {
-  ordem: number;
-  titulo: string;
-  subtitulo: string;
-  cor: string;
-  icone: string;
-  licoes: Licao[];
-};
 
 /* ============================================================
    MÓDULO 1 — IA sem complicação
@@ -1399,16 +1386,36 @@ const MODULO_11: Modulo = {
   ],
 };
 
-export const MODULOS_EMPREENDEDORES: Modulo[] = [
-  MODULO_1,
-  MODULO_2,
-  MODULO_3,
-  MODULO_4,
-  MODULO_5,
-  MODULO_6,
-  MODULO_7,
-  MODULO_8,
-  MODULO_9,
-  MODULO_10,
-  MODULO_11,
+/**
+ * A ordem do curso.
+ *
+ * Os três módulos de `modulos-novos.ts` entram no meio da progressão, e
+ * não no fim: ChatGPT a fundo vem logo depois de aprender a pedir;
+ * analisar dados vem junto de planilhas; e escolher a ferramenta certa
+ * fecha o curso, quando o cursista já conhece as três.
+ *
+ * A `ordem` de cada módulo é recalculada pela posição nesta lista —
+ * assim inserir um módulo no meio não exige renumerar os outros à mão,
+ * que é como se esquece um e o `@@unique([courseId, ordem])` quebra.
+ */
+const SEQUENCIA: Modulo[] = [
+  MODULO_1, //  1 · IA sem complicação
+  MODULO_2, //  2 · Como pedir
+  MODULO_3, //  3 · IA no dia a dia
+  MODULO_CHATGPT, //  4 · ChatGPT além da conversa        (Fase 4)
+  MODULO_4, //  5 · Delegar um trabalho
+  MODULO_5, //  6 · Imagens
+  MODULO_6, //  7 · Vídeo
+  MODULO_7, //  8 · Documentos e planilhas
+  MODULO_DADOS, //  9 · Perguntar aos próprios números   (Fase 9)
+  MODULO_8, // 10 · NotebookLM
+  MODULO_9, // 11 · Automação
+  MODULO_10, // 12 · Agentes
+  MODULO_ESCOLHER, // 13 · Qual IA usar para cada coisa  (Fase 12)
+  MODULO_11, // 14 · Projeto final
 ];
+
+export const MODULOS_EMPREENDEDORES: Modulo[] = SEQUENCIA.map((m, i) => ({
+  ...m,
+  ordem: i,
+}));

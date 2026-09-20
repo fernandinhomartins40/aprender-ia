@@ -11,7 +11,7 @@
  */
 import { PrismaClient, TipoLicao } from "@prisma/client";
 import { MODULOS_EMPREENDEDORES } from "./empreendedores/modulos";
-import { LICOES_EXTRAS } from "./empreendedores/modulos-extras";
+import { TODAS_EXTRAS } from "./empreendedores/extras-todas";
 import { roteirosDeEmpreendedores } from "./empreendedores/roteiros";
 import { TODOS_OS_PROMPTS, titulosDuplicados } from "./empreendedores/prompts-todos";
 import { FERRAMENTAS_EMPREENDEDORES } from "./empreendedores/ferramentas";
@@ -79,7 +79,7 @@ async function main() {
 
     // As lições extras entram antes do fechamento do módulo: o
     // CHECKPOINT resume o que veio antes, então não pode ficar no meio.
-    const extras = LICOES_EXTRAS.filter((e) => e.modulo === m.ordem);
+    const extras = TODAS_EXTRAS.filter((e) => e.modulo === m.titulo);
     const corte = m.licoes.findIndex((l) => l.tipo === TipoLicao.CHECKPOINT);
     const licoes =
       corte === -1

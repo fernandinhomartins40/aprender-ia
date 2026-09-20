@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { chaveVeloMail } from "./credenciais-email";
 
 /**
  * Envio de e-mail da plataforma.
@@ -16,6 +17,8 @@ import nodemailer from "nodemailer";
 export type ResultadoEnvio = {
   entregue: boolean;
   motivo?: string;
+  /** A VeloMail recusou a credencial (401/403): a chave precisa ser trocada. */
+  credencialRecusada?: boolean;
 };
 
 export type OpcoesEmail = {
@@ -35,10 +38,6 @@ function smtpConfigurado(): boolean {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
-function veloMailConfigurado(): boolean {
-  return Boolean(process.env.ULTRAZEND_API_KEY || process.env.VELOMAIL_API_KEY);
-}
-
 function remetente(): string {
   return (
     process.env.ULTRAZEND_FROM ??
@@ -54,10 +53,6 @@ function apiVeloMail(): string {
     process.env.VELOMAIL_API_URL ??
     "https://www.velomail.com.br/api"
   ).replace(/\/$/, "");
-}
-
-function chaveVeloMail(): string | undefined {
-  return process.env.ULTRAZEND_API_KEY ?? process.env.VELOMAIL_API_KEY;
 }
 
 function trackingHabilitado(): boolean {
@@ -87,8 +82,11 @@ function obterTransporte(): nodemailer.Transporter {
 }
 
 export async function enviarEmail(opcoes: OpcoesEmail): Promise<ResultadoEnvio> {
-  if (veloMailConfigurado()) {
-    return enviarPelaVeloMail(opcoes);
+  // A chave pode ter sido trocada no painel há segundos; por isso ela é
+  // resolvida a cada envio, e não uma vez na carga do módulo.
+  const chave = await chaveVeloMail();
+  if (chave) {
+    return enviarPelaVeloMail(opcoes, chave);
   }
 
   if (!smtpConfigurado()) {
@@ -129,43 +127,51 @@ export async function enviarEmail(opcoes: OpcoesEmail): Promise<ResultadoEnvio> 
   }
 }
 
-async function enviarPelaVeloMail(opcoes: OpcoesEmail): Promise<ResultadoEnvio> {
-  const chave = chaveVeloMail();
-  if (!chave) return { entregue: false, motivo: "velomail-nao-configurado" };
-
-  const resposta = await fetch(`${apiVeloMail()}/emails/send`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": chave,
-    },
-    body: JSON.stringify({
-      from: remetente(),
-      to: opcoes.para,
-      subject: opcoes.assunto,
-      html: opcoes.html,
-      text: opcoes.texto,
-      ...(opcoes.templateId ? { template_id: opcoes.templateId } : {}),
-      ...(opcoes.variaveis ? { variables: opcoes.variaveis } : {}),
-      tracking_enabled: opcoes.rastrear ?? trackingHabilitado(),
-    }),
-    signal: AbortSignal.timeout(15_000),
-  }).catch((erro: unknown) => ({
-    ok: false,
-    status: 0,
-    textoErro: erro instanceof Error ? erro.message : "erro de rede",
-  }));
+async function enviarPelaVeloMail(
+  opcoes: OpcoesEmail,
+  chave: string,
+): Promise<ResultadoEnvio> {
+  let resposta: Response;
+  try {
+    resposta = await fetch(`${apiVeloMail()}/emails/send`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": chave,
+      },
+      body: JSON.stringify({
+        from: remetente(),
+        to: opcoes.para,
+        subject: opcoes.assunto,
+        html: opcoes.html,
+        text: opcoes.texto,
+        ...(opcoes.templateId ? { template_id: opcoes.templateId } : {}),
+        ...(opcoes.variaveis ? { variables: opcoes.variaveis } : {}),
+        tracking_enabled: opcoes.rastrear ?? trackingHabilitado(),
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (erro: unknown) {
+    // Rede fora, DNS, timeout: nunca chegou a haver resposta HTTP.
+    const motivo = erro instanceof Error ? erro.message.slice(0, 200) : "erro de rede";
+    console.error("Falha de rede ao falar com a VeloMail:", motivo);
+    return { entregue: false, motivo };
+  }
 
   if (!resposta.ok) {
-    let motivo = "falha ao enviar pela VeloMail";
-    if ("text" in resposta) {
-      const corpo = await resposta.text().catch(() => "");
-      motivo = corpo.slice(0, 200) || `HTTP ${resposta.status}`;
-    } else if ("textoErro" in resposta) {
-      motivo = resposta.textoErro.slice(0, 200);
-    }
-    console.error("Falha ao enviar e-mail pela VeloMail:", motivo);
-    return { entregue: false, motivo };
+    const corpo = await resposta.text().catch(() => "");
+    const motivo = corpo.slice(0, 200) || `HTTP ${resposta.status}`;
+    console.error(
+      `Falha ao enviar e-mail pela VeloMail (HTTP ${resposta.status}):`,
+      motivo,
+    );
+    // 401/403 é chave inválida ou revogada — o caso que deixou a
+    // recuperação de senha muda. O painel usa isto para avisar.
+    return {
+      entregue: false,
+      motivo,
+      credencialRecusada: resposta.status === 401 || resposta.status === 403,
+    };
   }
 
   return { entregue: true };
