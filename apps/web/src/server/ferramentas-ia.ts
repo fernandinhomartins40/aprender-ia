@@ -29,6 +29,10 @@ function urlSegura(valor: string) {
  * gratuito. Quando isso acontece, vale a do curso — ela fala a língua de
  * quem está lendo. Sem este desempate a tela mostrava "ChatGPT" duas
  * vezes, lado a lado, com descrições diferentes.
+ *
+ * Os seeds já não criam mais ferramenta sem curso, então hoje o desempate
+ * raramente age. Ele fica porque o cadastro pelo admin continua aceitando
+ * `courseId` vazio: é o que impede a duplicata de voltar à tela do aluno.
  */
 export async function ferramentasAtivas(courseId?: string) {
   const todas = await prisma.aiTool.findMany({

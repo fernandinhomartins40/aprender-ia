@@ -69,7 +69,10 @@ const cronoAtivo = () => cronos.find(c => c.sl.closest('.slide') === slides[cur]
    o prompt e oferece as quatro IAs: o apresentador clica, cola e mostra
    a resposta ao vivo. */
 
-const LISTA_IAS = [{"id":"gemini","nome":"Gemini","url":"https://gemini.google.com"},{"id":"chatgpt","nome":"ChatGPT","url":"https://chatgpt.com","q":"q"},{"id":"deepseek","nome":"DeepSeek","url":"https://chat.deepseek.com"},{"id":"notebook","nome":"NotebookLM","url":"https://notebooklm.google.com"}];
+/* A lista é trocada pelo gerador, que a monta a partir das ferramentas
+   do curso no banco. O valor abaixo é só o que vale se alguém abrir
+   este arquivo solto, fora do deck. */
+const LISTA_IAS = [{"id":"chatgpt","nome":"ChatGPT","url":"https://chatgpt.com","q":"q"},{"id":"gemini","nome":"Gemini","url":"https://gemini.google.com"}];
 const modal = document.getElementById('prompt-modal');
 const pmTitulo = document.getElementById('pm-titulo');
 const pmTexto = document.getElementById('pm-texto');
@@ -215,7 +218,15 @@ document.querySelectorAll('.prompt-acoes').forEach(cx => {
   bt.onclick = () => copiar(ler(), bt);
   cx.appendChild(bt);
 
-  const links = LISTA_IAS.map(ia => {
+  // Por padrão oferece todas; a lição pode restringir com `data-ias`,
+  // para não sugerir uma ferramenta que não faz o que o prompt pede —
+  // mandar um pedido de imagem para o NotebookLM, por exemplo.
+  const pedidas = (cx.dataset.ias || '').split(',').filter(Boolean);
+  const oferecidas = pedidas.length
+    ? pedidas.map(id => LISTA_IAS.find(ia => ia.id === id)).filter(Boolean)
+    : LISTA_IAS;
+
+  const links = oferecidas.map(ia => {
     const a = document.createElement('a');
     a.className = 'ia-btn mini ' + ia.id;
     a.target = '_blank'; a.rel = 'noopener';

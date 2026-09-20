@@ -1,6 +1,7 @@
 import { LICOES_EXTRAS, type LicaoExtra } from "./modulos-extras";
 import { LICOES_EXTRAS_2 } from "./modulos-extras2";
 import { LICOES_EXTRAS_3 } from "./modulos-extras3";
+import { LICOES_IMAGENS } from "./modulo-imagens";
 
 /**
  * Todas as lições complementares, reunidas.
@@ -15,6 +16,7 @@ export const TODAS_EXTRAS: LicaoExtra[] = [
   ...LICOES_EXTRAS,
   ...LICOES_EXTRAS_2,
   ...LICOES_EXTRAS_3,
+  ...LICOES_IMAGENS,
 ];
 
 export type { LicaoExtra };

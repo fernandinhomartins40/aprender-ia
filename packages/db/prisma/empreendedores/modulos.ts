@@ -747,6 +747,7 @@ const MODULO_5: Modulo = {
       tempo: 10,
       cap: "Cap. 5.1",
       conteudo: {
+        abrirAgora: ["chatgpt-imagens"],
         blocos: [
           {
             tipo: "texto",
@@ -783,6 +784,7 @@ const MODULO_5: Modulo = {
       tempo: 25,
       cap: "Cap. 5.2",
       conteudo: {
+        abrirAgora: ["chatgpt-imagens"],
         titulo: "Uma imagem que você usaria de verdade",
         contexto:
           "Escolha um produto ou serviço seu. Vamos produzir uma imagem pronta para anúncio.",

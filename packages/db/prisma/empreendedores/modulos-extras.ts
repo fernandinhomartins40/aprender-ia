@@ -22,11 +22,34 @@ export type LicaoExtra = {
    * sequência renumera todos os seguintes — e as extras iriam parar no
    * módulo errado, silenciosamente. */
   modulo: string;
+  /**
+   * Onde a lição entra no módulo, quando a ordem importa.
+   *
+   * Sem isto, toda extra vai para o fim — e a ficha da ferramenta, que
+   * precisa vir antes de o aluno usá-la, aparecia depois de sete lições
+   * que já a usavam. O número é a posição desejada, contando de 1.
+   */
+  posicao?: number;
   titulo: string;
   tipo: TipoLicao;
   xp: number;
   tempo: number;
   cap?: string;
+  /**
+   * O conteúdo da lição, cujo formato varia com o `tipo`.
+   *
+   * Uma chave é comum a todos: `abrirAgora`, a lista de chaves de
+   * `AiTool` que a lição opera — ex.: `["chatgpt-imagens", "canva-negocios"]`.
+   * É dela que sai a barra "Abrir agora" no rodapé do slide, a mesma que
+   * o deck de Educadores tem e que aqui não existia.
+   *
+   * Só a chave é gravada. O nome e o endereço vêm do banco na hora de
+   * gerar, senão o HTML congela uma URL que a ferramenta já mudou.
+   *
+   * Não confundir com `ferramentas`, que algumas lições de FLUXO já
+   * usam para listar nomes legíveis na tela — inclusive coisas que não
+   * são software, como "o celular que você já tem".
+   */
   conteudo: Record<string, unknown>;
 };
 
@@ -524,6 +547,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     tempo: 10,
     cap: "Cap. 5.1",
     conteudo: {
+      abrirAgora: ["chatgpt-imagens"],
       situacao: "Uma doceira quer uma foto do seu brigadeiro gourmet para anunciar.",
       ruim: {
         titulo: "Pedido vago",
@@ -552,6 +576,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     tempo: 10,
     cap: "Cap. 5.2",
     conteudo: {
+      abrirAgora: ["chatgpt-imagens"],
       contexto:
         "Uma loja gerou esta imagem para anunciar e ia publicar. Há três problemas que só aparecem quando se olha com atenção.",
       texto:
@@ -585,6 +610,7 @@ export const LICOES_EXTRAS: LicaoExtra[] = [
     tempo: 20,
     cap: "Cap. 5.2",
     conteudo: {
+      abrirAgora: ["chatgpt-imagens"],
       titulo: "Um recorte que serve para qualquer arte",
       contexto:
         "Imagem com fundo transparente é a mais reaproveitável que existe: serve para post, banner, cardápio e catálogo, sempre com fundo diferente. Vamos fazer uma.",

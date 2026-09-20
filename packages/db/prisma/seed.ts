@@ -982,11 +982,16 @@ async function main() {
   });
   console.log(`  curso: ${curso.titulo}`);
 
+  // As ferramentas pertencem a ESTE curso. Sem o `courseId` elas ficavam
+  // valendo para todos, e quem abria Empreendedores — que tem ficha
+  // própria de ChatGPT, Gemini e NotebookLM, com faixa de acesso e limite
+  // conferido — via cada uma duas vezes.
   for (const ferramenta of FERRAMENTAS_IA) {
+    const dados = { ...ferramenta, courseId: curso.id };
     await prisma.aiTool.upsert({
       where: { chave: ferramenta.chave },
-      update: ferramenta,
-      create: ferramenta,
+      update: dados,
+      create: dados,
     });
   }
   console.log(`  ferramentas de IA: ${FERRAMENTAS_IA.length}`);

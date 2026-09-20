@@ -5,6 +5,7 @@ import { CardPrompt } from "./card-prompt";
 import { IconeApp } from "./icone-app";
 import { FeedbackVisual } from "./feedback-visual";
 import { AnalisePtcf, ProximoPasso } from "./analise-ptcf";
+import { FichaFerramenta, type Ficha } from "./ficha-ferramenta";
 import { TextoExplicado, type TermoDetectavel } from "./texto-explicado";
 import type { Analise } from "@/lib/motor-ptcf";
 
@@ -273,6 +274,8 @@ export function PlayerNoCelular({
     tempo?: string;
     passos: string[];
     porque?: string;
+    /** A ficha da ferramenta, quando a lição apresenta uma. */
+    ficha?: Ficha;
   };
   onCompleto: () => void;
   etapas?: number[];
@@ -309,6 +312,8 @@ export function PlayerNoCelular({
           <p className="mt-1 text-sm opacity-90">{conteudo.tempo}</p>
         )}
       </div>
+
+      {conteudo.ficha && <FichaFerramenta ficha={conteudo.ficha} />}
 
       <ol className="space-y-3">
         {conteudo.passos.map((p, i) => (

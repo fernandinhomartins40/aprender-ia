@@ -69,11 +69,27 @@ function topo(badge: string, titulo: string, cor = "") {
   );
 }
 
+/**
+ * A lição sendo desenhada. O prompt precisa saber quais ferramentas ela
+ * opera para oferecer só essas, e ele é montado no fundo da pilha, longe
+ * de quem tem a lição em mãos.
+ */
+let LICAO_ATUAL: any = null;
+
 /** O prompt preenchível: o runtime cria campos e botões a partir dele. */
 function promptEditavel(texto: string) {
+  // As mesmas ferramentas da barra "Abrir agora", pelo id de cor. Sem
+  // isto todo prompt oferecia as quatro de Educadores — inclusive o
+  // NotebookLM, que não gera imagem nenhuma.
+  const ias = (LICAO_ATUAL?.conteudo?.abrirAgora ?? [])
+    .map((k: string) => k.replace(/-(negocios|workspace|imagens)$/, ""))
+    .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
+    .join(",");
   return (
     `<div class="prompt p12">${esc(texto)}</div>` +
-    `<div class="prompt-acoes" data-prompt-txt="${esc(texto)}"></div>`
+    `<div class="prompt-acoes" data-prompt-txt="${esc(texto)}"${
+      ias ? ` data-ias="${esc(ias)}"` : ""
+    }></div>`
   );
 }
 
@@ -377,10 +393,67 @@ function projeto(l: any) {
   );
 }
 
+/**
+ * As ferramentas do curso, por chave. Preenchido em `main()` antes de
+ * desenhar qualquer slide.
+ *
+ * O deck grava nome e endereço no HTML, mas lê os dois do banco: assim
+ * uma ferramenta que muda de endereço é corrigida num lugar só, e o
+ * deck seguinte já sai certo.
+ */
+const CATALOGO = new Map<string, { nome: string; url: string }>();
+
+/**
+ * A faixa "Abrir agora" no rodapé — os botões de IA que o deck de
+ * Educadores tem e este não tinha (eram 14 lá contra 0 aqui).
+ *
+ * A cor do botão vem de uma classe por ferramenta. A chave do banco traz
+ * o sufixo do curso (`chatgpt-negocios`), que não existe no CSS, então o
+ * sufixo sai antes: `chatgpt-negocios` vira `chatgpt`.
+ */
+function barraDeFerramentas(l: any): string {
+  const chaves = (l.conteudo as any)?.abrirAgora;
+  if (!Array.isArray(chaves) || !chaves.length) return "";
+
+  const botoes = chaves
+    .map((k: string) => {
+      const f = CATALOGO.get(k);
+      if (!f) {
+        // Chave errada é erro de conteúdo, não de layout: avisa e segue,
+        // em vez de gerar um botão que não leva a lugar nenhum.
+        console.warn(`  aviso: "${l.titulo}" cita ferramenta desconhecida "${k}"`);
+        return "";
+      }
+      const cor = k.replace(/-(negocios|workspace|imagens)$/, "");
+      return (
+        `<a class="ia-btn ${esc(cor)}" href="${esc(f.url)}" target="_blank"` +
+        ` rel="noopener"><span class="pt"></span>${esc(f.nome)}</a>`
+      );
+    })
+    .filter(Boolean)
+    .join("");
+
+  if (!botoes) return "";
+  return `<div class="ia-barra"><span class="rot">Abrir agora</span><div class="ia-btns">${botoes}</div></div>`;
+}
+
 /** Desenha a lição; algumas rendem dois slides (pergunta e resposta). */
 function slidesDaLicao(l: any): string[] {
-  const env = (html: string) =>
-    `<div class="slide" data-title="${esc(l.titulo)}">${html}</div>`;
+  LICAO_ATUAL = l;
+  const barra = barraDeFerramentas(l);
+
+  // A barra é absoluta, presa ao rodapé. Num slide que já tem prompt ela
+  // caía por cima do texto dele — e repetia botões que o `prompt-acoes`
+  // já oferece logo abaixo. Onde há prompt, a barra não entra.
+  const env = (html: string) => {
+    const temPrompt = html.includes("prompt-acoes");
+    const rodape = temPrompt ? "" : barra;
+    // `com-ia` encurta o corpo do slide na altura da barra; sem ela o
+    // conteúdo passa por baixo dos botões.
+    return `<div class="slide${rodape ? " com-ia" : ""}" data-title="${esc(
+      l.titulo,
+    )}">${html}${rodape}</div>`;
+  };
 
   switch (l.tipo) {
     case "AQUECIMENTO":
@@ -431,6 +504,15 @@ async function main() {
     process.exit(1);
   }
 
+  // Antes dos slides: as lições citam a ferramenta pela chave, e é aqui
+  // que a chave vira nome e endereço.
+  for (const f of await prisma.aiTool.findMany({
+    where: { courseId: curso.id, ativo: true },
+    select: { chave: true, nome: true, url: true },
+  })) {
+    CATALOGO.set(f.chave, { nome: f.nome, url: f.url });
+  }
+
   const modulos = await prisma.module.findMany({
     where: { courseId: curso.id },
     orderBy: { ordem: "asc" },
@@ -469,9 +551,37 @@ async function main() {
     }
   }
 
-  const runtime = readFileSync(
+  let runtime = readFileSync(
     resolve(import.meta.dirname, "runtime-deck.js"),
     "utf8",
+  );
+
+  // O runtime trazia a lista de IAs escrita à mão, herdada de Educadores:
+  // oferecia DeepSeek e NotebookLM em todo prompt, e nunca o Canva ou o
+  // Claude, que são deste curso. Agora ela sai do banco.
+  const listaIas = [...CATALOGO.entries()].map(([chave, f]) => ({
+    id: chave.replace(/-(negocios|workspace|imagens)$/, ""),
+    nome: f.nome,
+    url: f.url,
+    // `q` marca quem aceita o prompt pela URL, abrindo já com o texto
+    // escrito. Nas outras o botão só abre a ferramenta, e o prompt vai
+    // pelo "Copiar" ao lado.
+    ...(chave.startsWith("chatgpt") ? { q: "q" } : {}),
+  }));
+  // Uma chave por id: `chatgpt-negocios` e `chatgpt-imagens` viram o
+  // mesmo `chatgpt`, e dois botões iguais não ajudam ninguém. Entre as
+  // que colidem vence o nome mais curto — o botão diz para onde leva,
+  // e "ChatGPT" leva ao mesmo lugar que "ChatGPT Imagens" com metade da
+  // largura.
+  const unicas = [
+    ...listaIas
+      .sort((a, b) => a.nome.length - b.nome.length)
+      .reduce((m, i) => (m.has(i.id) ? m : m.set(i.id, i)), new Map())
+      .values(),
+  ] as typeof listaIas;
+  runtime = runtime.replace(
+    /^const LISTA_IAS = .*$/m,
+    `const LISTA_IAS = ${JSON.stringify(unicas)};`,
   );
 
   const html = `<!doctype html>
@@ -519,6 +629,45 @@ ${runtime}
 
   console.log(`${modulos.length} módulos · ${slides.length} slides · ${prompts.length} prompts no banco`);
   console.log(`gravado em ${destino}`);
+
+  await paginar(destino);
+}
+
+/**
+ * Quebra os slides que não couberem, medindo no navegador.
+ *
+ * Roda aqui, e não como passo separado, porque um deck sem paginar tem
+ * um terço dos slides transbordando — não é um retoque opcional, é
+ * parte de gerar o deck.
+ *
+ * O Puppeteer não é dependência deste pacote: ele mora na pasta do
+ * curso de Educadores, que é de onde os PDFs sempre foram gerados. Se
+ * não estiver lá, o deck fica pronto do mesmo jeito e o aviso diz o que
+ * rodar à mão.
+ */
+async function paginar(arquivo: string) {
+  const script = resolve(import.meta.dirname, "paginar-deck.js");
+  const ondeMoraOPuppeteer = resolve(
+    import.meta.dirname,
+    "../../../../../cursos/IA Professores",
+  );
+
+  const { spawnSync } = await import("node:child_process");
+  const r = spawnSync(process.execPath, [script, arquivo], {
+    cwd: ondeMoraOPuppeteer,
+    encoding: "utf8",
+  });
+
+  if (r.status === 0) {
+    process.stdout.write(r.stdout);
+    return;
+  }
+  console.warn(
+    "\naviso: não deu para paginar (o Puppeteer não foi encontrado?).\n" +
+      "O deck está gerado, mas com slides que transbordam. Para corrigir:\n" +
+      `  cd "${ondeMoraOPuppeteer}" && node "${script}" "${arquivo}"`,
+  );
+  if (r.stderr) console.warn(r.stderr.split("\n").slice(0, 3).join("\n"));
 }
 
 main()

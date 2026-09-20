@@ -81,10 +81,23 @@ async function main() {
     // CHECKPOINT resume o que veio antes, então não pode ficar no meio.
     const extras = TODAS_EXTRAS.filter((e) => e.modulo === m.titulo);
     const corte = m.licoes.findIndex((l) => l.tipo === TipoLicao.CHECKPOINT);
-    const licoes =
+
+    // As extras sem posição entram antes do fechamento: o CHECKPOINT
+    // resume o que veio antes, então não pode ficar no meio.
+    const soltas = extras.filter((e) => e.posicao == null);
+    let licoes: typeof m.licoes =
       corte === -1
-        ? [...m.licoes, ...extras]
-        : [...m.licoes.slice(0, corte), ...extras, ...m.licoes.slice(corte)];
+        ? [...m.licoes, ...soltas]
+        : [...m.licoes.slice(0, corte), ...soltas, ...m.licoes.slice(corte)];
+
+    // As que declaram posição são inseridas onde pedem, da menor para a
+    // maior — senão uma inserção anterior desloca as seguintes.
+    for (const e of extras
+      .filter((x) => x.posicao != null)
+      .sort((a, b) => a.posicao! - b.posicao!)) {
+      const i = Math.min(Math.max(e.posicao! - 1, 0), licoes.length);
+      licoes = [...licoes.slice(0, i), e, ...licoes.slice(i)];
+    }
 
     for (const [i, l] of licoes.entries()) {
       await prisma.lesson.upsert({
