@@ -362,7 +362,7 @@ export default async function VisaoGeral({
           { href: "/admin/cobrancas", icone: "marketplace" as const, titulo: "Cobranças", texto: "Lançamentos, baixas e atrasos" },
           { href: "/admin/cursos", icone: "cursos" as const, titulo: "Cursos", texto: "Módulos, lições e publicação" },
           { href: "/admin/configuracoes", icone: "configuracoes" as const, titulo: "Configurações", texto: "Regras de acesso e parâmetros" },
-          { href: "/admin/email", icone: "configuracoes" as const, titulo: "E-mail", texto: "Chave de envio e teste de entrega" },
+          { href: "/admin/email", icone: "integracoes" as const, titulo: "E-mail", texto: "Chave de envio e teste de entrega" },
         ].map((c) => (
           <Link key={c.href} href={c.href} className="card transition-shadow hover:shadow-lg">
             <IconeApp nome={c.icone} tamanho={40} />

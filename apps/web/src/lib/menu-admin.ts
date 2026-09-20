@@ -88,6 +88,10 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     titulo: "Sistema",
     itens: [
       { href: "/admin/configuracoes", rotulo: "Configurações", icone: "configuracoes" },
+      // Separado de Configurações porque é uma credencial, não um
+      // parâmetro: quando ela falha, nenhum e-mail da plataforma sai —
+      // inclusive a recuperação de senha.
+      { href: "/admin/email", rotulo: "E-mail", icone: "integracoes" },
       { href: "/admin/auditoria", rotulo: "Histórico", icone: "historico" },
     ],
   },
