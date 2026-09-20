@@ -4,10 +4,18 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import {
   CHAVE_API_VELOMAIL,
+  CHAVE_REMETENTE_EMAIL,
+  CHAVE_REMETENTE_NOME,
+  CHAVE_TRACKING,
+  TIPOS_TEMPLATE,
   esquecerCredenciaisEmail,
   mascarar,
   origemDaChave,
   chaveVeloMail,
+  remetenteConfigurado,
+  trackingConfigurado,
+  templateDe,
+  type ChaveTemplate,
 } from "@aprender/auth/credenciais-email";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
@@ -230,4 +238,177 @@ export async function testarEnvio(
     ok: false,
     mensagem: `A VeloMail recusou o envio: ${resultado.motivo ?? "erro desconhecido"}. Se a mensagem citar o remetente ou o domínio, verifique a autenticação do domínio no painel da VeloMail.`,
   };
+}
+
+
+/* ============================================================
+   REMETENTE E TRACKING
+   ============================================================ */
+
+export type EstadoEnvio = {
+  remetenteEmail: string;
+  remetenteNome: string;
+  /** Sem nada salvo, a tela mostra o que o ambiente está usando hoje. */
+  remetenteDoAmbiente: boolean;
+  tracking: boolean;
+};
+
+export async function lerEstadoEnvio(): Promise<EstadoEnvio> {
+  await exigirAdmin();
+
+  const doPainel = await remetenteConfigurado();
+  const bruto =
+    process.env.ULTRAZEND_FROM ?? process.env.VELOMAIL_FROM ?? process.env.SMTP_FROM ?? "";
+  const doAmbiente = bruto.match(/^\s*(.*?)\s*<\s*([^<>\s]+)\s*>\s*$/);
+
+  return {
+    remetenteEmail: doPainel?.email ?? (doAmbiente ? doAmbiente[2]! : bruto.trim()),
+    remetenteNome: doPainel?.nome ?? (doAmbiente ? doAmbiente[1]!.replace(/^"(.*)"$/, "$1") : ""),
+    remetenteDoAmbiente: !doPainel,
+    tracking: (await trackingConfigurado()) ?? true,
+  };
+}
+
+export async function salvarEnvio(
+  _anterior: ResultadoChave | null,
+  dados: FormData,
+): Promise<ResultadoChave> {
+  const admin = await exigirAdmin();
+
+  const email = String(dados.get("remetente_email") ?? "").trim();
+  const nome = String(dados.get("remetente_nome") ?? "").trim();
+  const tracking = String(dados.get("tracking") ?? "") === "on";
+
+  // A API da VeloMail valida `from` como endereço puro: aceitar aqui a
+  // forma "Nome <email>" faria o envio falhar inteiro mais tarde.
+  if (!/^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/.test(email)) {
+    return {
+      ok: false,
+      mensagem:
+        "Informe apenas o endereço no campo de e-mail (ex.: nao-responda@aprenderia.site). O nome de exibição vai no campo ao lado.",
+    };
+  }
+
+  await gravar(CHAVE_REMETENTE_EMAIL, email, "E-mail do remetente", admin.nome);
+  await gravar(CHAVE_REMETENTE_NOME, nome, "Nome do remetente", admin.nome);
+  await gravar(CHAVE_TRACKING, tracking ? "true" : "false", "Tracking de e-mail", admin.nome);
+
+  await registrarAcao({
+    acao: "email.envio_alterado",
+    entidade: "PlatformSetting",
+    resumo: `Remetente: ${nome ? `${nome} <${email}>` : email} · tracking ${tracking ? "ligado" : "desligado"}`,
+  });
+
+  esquecerCredenciaisEmail();
+  revalidatePath("/admin/email");
+  return { ok: true, mensagem: "Remetente e tracking salvos." };
+}
+
+/* ============================================================
+   TEMPLATES
+   ============================================================ */
+
+export type EstadoTemplate = {
+  chave: string;
+  rotulo: string;
+  descricao: string;
+  /** Vazio quando nenhum template está definido: vale o HTML da aplicação. */
+  valor: string;
+};
+
+export async function lerTemplates(): Promise<EstadoTemplate[]> {
+  await exigirAdmin();
+
+  return Promise.all(
+    TIPOS_TEMPLATE.map(async (t) => ({
+      chave: t.chave,
+      rotulo: t.rotulo,
+      descricao: t.descricao,
+      valor: String((await templateDe(t.chave)) ?? ""),
+    })),
+  );
+}
+
+export async function salvarTemplates(
+  _anterior: ResultadoChave | null,
+  dados: FormData,
+): Promise<ResultadoChave> {
+  const admin = await exigirAdmin();
+
+  for (const t of TIPOS_TEMPLATE) {
+    const bruto = String(dados.get(t.chave) ?? "").trim();
+    if (bruto && !/^\d+$/.test(bruto)) {
+      return {
+        ok: false,
+        mensagem: `"${t.rotulo}": informe apenas o número do template, ou deixe vazio para usar o modelo da plataforma.`,
+      };
+    }
+    await gravar(t.chave, bruto, `Template: ${t.rotulo}`, admin.nome);
+  }
+
+  await registrarAcao({
+    acao: "email.templates_alterados",
+    entidade: "PlatformSetting",
+    resumo: "IDs de template da VeloMail atualizados",
+  });
+
+  esquecerCredenciaisEmail();
+  revalidatePath("/admin/email");
+  return { ok: true, mensagem: "Templates salvos." };
+}
+
+/**
+ * Grava (ou apaga) uma chave.
+ *
+ * Valor vazio remove a linha em vez de gravar "": assim a origem
+ * secundária — variável de ambiente ou o HTML da aplicação — volta a
+ * responder, que é o que "deixar em branco" significa na tela.
+ */
+async function gravar(
+  chave: string,
+  valor: string,
+  rotulo: string,
+  por: string,
+): Promise<void> {
+  if (!valor) {
+    await prisma.platformSetting.deleteMany({ where: { chave } });
+    return;
+  }
+  await prisma.platformSetting.upsert({
+    where: { chave },
+    create: { chave, valor, tipo: "TEXTO", grupo: "email", rotulo, atualizadoPor: por },
+    update: { valor, atualizadoPor: por },
+  });
+}
+
+/* ============================================================
+   HISTÓRICO
+   ============================================================ */
+
+export type LinhaHistorico = {
+  id: string;
+  quando: Date;
+  quem: string;
+  resumo: string;
+};
+
+/** Os últimos eventos de e-mail, lidos da auditoria que já gravamos. */
+export async function lerHistorico(): Promise<LinhaHistorico[]> {
+  await exigirAdmin();
+
+  const linhas = await prisma.adminAuditLog
+    .findMany({
+      where: { acao: { startsWith: "email." } },
+      orderBy: { criadoEm: "desc" },
+      take: 15,
+      select: { id: true, criadoEm: true, atorNome: true, resumo: true },
+    })
+    .catch(() => []);
+
+  return linhas.map((l) => ({
+    id: l.id,
+    quando: l.criadoEm,
+    quem: l.atorNome,
+    resumo: l.resumo,
+  }));
 }

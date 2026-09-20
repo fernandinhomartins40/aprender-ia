@@ -1,7 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import type { EstadoChave, ResultadoChave } from "@/server/credenciais-email";
+import type {
+  EstadoChave,
+  EstadoEnvio,
+  EstadoTemplate,
+  LinhaHistorico,
+  ResultadoChave,
+} from "@/server/credenciais-email";
 
 type Acao = (
   anterior: ResultadoChave | null,
@@ -34,19 +40,31 @@ function Recado({ estado }: { estado: ResultadoChave | null }) {
  */
 export function FormChaveEmail({
   estadoAtual,
+  estadoEnvio,
+  templates,
+  historico,
   acaoSalvar,
   acaoTestar,
   acaoRemover,
+  acaoSalvarEnvio,
+  acaoSalvarTemplates,
   emailDoAdmin,
 }: {
   estadoAtual: EstadoChave;
+  estadoEnvio: EstadoEnvio;
+  templates: EstadoTemplate[];
+  historico: LinhaHistorico[];
   acaoSalvar: Acao;
   acaoTestar: Acao;
   acaoRemover: () => Promise<ResultadoChave>;
+  acaoSalvarEnvio: Acao;
+  acaoSalvarTemplates: Acao;
   emailDoAdmin: string;
 }) {
   const [salvou, salvar, salvando] = useActionState(acaoSalvar, null);
   const [testou, testar, testando] = useActionState(acaoTestar, null);
+  const [salvouEnvio, salvarEnvio, salvandoEnvio] = useActionState(acaoSalvarEnvio, null);
+  const [salvouTpl, salvarTpl, salvandoTpl] = useActionState(acaoSalvarTemplates, null);
   const [visivel, setVisivel] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [removeu, setRemoveu] = useState<ResultadoChave | null>(null);

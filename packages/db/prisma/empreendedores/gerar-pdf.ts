@@ -22,55 +22,33 @@ import { resolve } from "node:path";
 
 const prisma = new PrismaClient();
 
-const ESTILO = `
-  @page { size: A4; margin: 18mm 16mm; }
-  * { box-sizing: border-box; }
-  body {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 11.5pt; line-height: 1.55; color: #1a1a2e;
-    max-width: 780px; margin: 0 auto; padding: 24px;
-  }
-  h1 { font-family: system-ui, sans-serif; font-size: 26pt; margin: 0 0 4px; }
-  h2 {
-    font-family: system-ui, sans-serif; font-size: 16pt;
-    margin: 28px 0 8px; padding-bottom: 5px;
-    border-bottom: 2px solid #6366F1; break-after: avoid;
-  }
-  h3 {
-    font-family: system-ui, sans-serif; font-size: 12.5pt;
-    margin: 18px 0 6px; color: #4338CA; break-after: avoid;
-  }
-  p { margin: 0 0 10px; }
-  ul, ol { margin: 0 0 12px; padding-left: 22px; }
-  li { margin-bottom: 5px; }
-  strong { color: #111; }
-  .capa { text-align: center; padding: 60px 0 40px; break-after: page; }
-  .capa .sub { font-size: 13pt; color: #555; margin-top: 8px; }
-  .capa .nota {
-    margin-top: 40px; font-size: 10pt; color: #666;
-    border-top: 1px solid #ddd; padding-top: 16px;
-  }
-  .sumario { break-after: page; }
-  .sumario li { font-family: system-ui, sans-serif; font-size: 11pt; }
-  .cap { break-before: page; }
-  .abertura { color: #444; font-style: italic; }
-  .rodape {
-    margin-top: 40px; padding-top: 14px; border-top: 1px solid #ddd;
-    font-size: 9.5pt; color: #666;
-  }
-  /* Na tela, um aviso de como salvar em PDF; no papel, ele some. */
+/**
+ * O visual vem dos mesmos CSS da apostila de Educadores.
+ *
+ * Antes havia um bloco de estilo escrito à mão aqui, e o resultado era um
+ * material parecido com um documento de texto — sem os `.dica`, `.atencao`,
+ * `.prompt` e `.selo` que dão a cara do material impresso do curso. Os três
+ * arquivos ficam na pasta de cada curso, ao lado do HTML gerado.
+ */
+const CSS_DO_CURSO = `
+<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="componentes_novos.css">
+<link rel="stylesheet" href="componentes_ferramentas.css">
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  .quebra { break-before: page; }
   .como-imprimir {
     background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px;
-    padding: 14px; font-family: system-ui, sans-serif; font-size: 10pt;
+    padding: 14px; font-family: var(--titulo, system-ui); font-size: 10pt;
     margin-bottom: 24px;
   }
   @media print { .como-imprimir { display: none; } }
-`;
+</style>`;
 
 async function main() {
   const curso = await prisma.course.findUnique({
     where: { slug: "ia-para-empreendedores" },
-    select: { id: true, titulo: true, subtitulo: true, descricao: true },
+    select: { id: true, titulo: true, subtitulo: true, descricao: true, cargaHoraria: true },
   });
   if (!curso) {
     console.error(
@@ -92,25 +70,37 @@ async function main() {
 
   const hoje = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date());
 
+  // O sumário usa `.sumario-item`, como o de Educadores: uma linha por
+  // capítulo, com as seções abaixo em texto menor.
   const sumario = capitulos
     .map(
       (c) =>
-        `<li>${c.numero ? `${c.numero}. ` : ""}${c.titulo}${
+        `<div class="sumario-item"><b>${
+          c.numero ? `Capítulo ${c.numero}` : "Guia de bolso"
+        }</b> — ${c.titulo}${
           c.secoes.length
-            ? `<ul>${c.secoes.map((s) => `<li>${s.numero} ${s.titulo}</li>`).join("")}</ul>`
+            ? `<br><span style="font-size:.9em;color:var(--cinza,#667)">${c.secoes
+                .map((s) => `${s.numero} ${s.titulo}`)
+                .join(" · ")}</span>`
             : ""
-        }</li>`,
+        }</div>`,
     )
     .join("");
 
   const corpo = capitulos
     .map(
       (c) => `
-    <section class="cap">
-      <h2>${c.icone ? `${c.icone} ` : ""}${c.numero ? `${c.numero}. ` : ""}${c.titulo}</h2>
-      ${c.aberturaHtml ? `<div class="abertura">${c.aberturaHtml}</div>` : ""}
+    <section>
+      <div class="quebra"></div>
+      <div class="faixa-encontro">${
+        c.numero ? `Capítulo ${c.numero}` : "Anexo"
+      }</div>
+      <h1 class="cap"><span class="ic">${c.icone}</span>${
+        c.numero ? `Capítulo ${c.numero}: ` : ""
+      }${c.titulo}</h1>
+      ${c.aberturaHtml}
       ${c.secoes
-        .map((s) => `<h3>${s.numero} ${s.titulo}</h3>${s.html}`)
+        .map((s) => `<h2>${s.numero} ${s.titulo}</h2>${s.html}`)
         .join("\n")}
     </section>`,
     )
@@ -121,7 +111,7 @@ async function main() {
 <head>
 <meta charset="utf-8">
 <title>${curso.titulo} — Apostila</title>
-<style>${ESTILO}</style>
+${CSS_DO_CURSO}
 </head>
 <body>
 
@@ -131,19 +121,20 @@ async function main() {
 </div>
 
 <div class="capa">
-  <h1>${curso.titulo}</h1>
+  <div class="capa-selo">MATERIAL DE CONSULTA · ${curso.cargaHoraria} HORAS</div>
+  <div class="capa-icone">💼</div>
+  <h1>Inteligência Artificial<span class="destaque">para Empreendedores</span></h1>
   <p class="sub">${curso.subtitulo ?? ""}</p>
   <p class="nota">
-    Material de consulta · gerado em ${hoje}<br>
+    Gerado em ${hoje} · a partir do conteúdo do curso.<br>
     As aulas não repetem esta apostila: elas explicam, demonstram e fazem
     produzir. Isto aqui é onde se procura a referência depois.
   </p>
 </div>
 
-<section class="sumario">
-  <h2>Sumário</h2>
-  <ol>${sumario}</ol>
-</section>
+<div class="quebra"></div>
+<h1 class="cap"><span class="ic">📑</span>Sumário da apostila</h1>
+${sumario}
 
 ${corpo}
 
@@ -156,19 +147,42 @@ ${corpo}
 </body>
 </html>`;
 
-  const destino = resolve(
-    import.meta.dirname,
-    "../../../../apps/web/public/curso",
-  );
-  mkdirSync(destino, { recursive: true });
-  const arquivo = resolve(destino, "Apostila_IA_Empreendedores_2026.html");
-  writeFileSync(arquivo, html, "utf8");
+  // Dois destinos, porque o material vive em dois lugares: a pasta do
+  // curso, onde os PDFs são gerados e o instrutor trabalha, e o `public`
+  // da aplicação, de onde o aluno baixa. Gravar num só foi o que deixou
+  // a apostila da pasta `cursos` com o conteúdo antigo enquanto a da
+  // aplicação já vinha do banco.
+  const destinos = [
+    {
+      pasta: resolve(
+        import.meta.dirname,
+        "../../../../../cursos/Curso_IA_Empreendedores_2026",
+      ),
+      arquivo: "Apostila_IA_para_Empreendedores_2026.html",
+    },
+    {
+      pasta: resolve(import.meta.dirname, "../../../../apps/web/public/curso"),
+      arquivo: "Apostila_IA_Empreendedores_2026.html",
+    },
+  ];
+
+  for (const d of destinos) {
+    mkdirSync(d.pasta, { recursive: true });
+    const caminho = resolve(d.pasta, d.arquivo);
+    writeFileSync(caminho, html, "utf8");
+    console.log(`  gravado em ${caminho}`);
+  }
 
   const secoes = capitulos.reduce((n, c) => n + c.secoes.length, 0);
-  console.log(`${capitulos.length} capítulos · ${secoes} seções`);
-  console.log(`gravado em ${arquivo}`);
+  const chars = capitulos.reduce(
+    (n, c) => n + c.aberturaHtml.length + c.secoes.reduce((a, s) => a + s.html.length, 0),
+    0,
+  );
   console.log(
-    "\nPara o PDF: abra no navegador e salve como PDF, ou rode o script de PDF da pasta cursos/.",
+    `${capitulos.length} capítulos · ${secoes} seções · ${(chars / 1000).toFixed(1)}k caracteres`,
+  );
+  console.log(
+    "\nPara o PDF: rode `node gerar_pdfs.js` na pasta do curso.",
   );
 }
 

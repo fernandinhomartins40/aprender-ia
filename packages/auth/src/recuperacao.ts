@@ -2,6 +2,7 @@ import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { prisma } from "@aprender/db";
 import { gerarHashSenha } from "./index";
 import { enviarEmail, montarEmailRecuperacao } from "./email";
+import { templateDe } from "./credenciais-email";
 
 /**
  * Recuperação de senha.
@@ -96,15 +97,12 @@ export async function pedirRecuperacao(
     validadeMinutos: VALIDADE_MINUTOS,
   });
 
-  const templateId = Number(
-    process.env.ULTRAZEND_TEMPLATE_PASSWORD_RESET_ID ??
-      process.env.VELOMAIL_TEMPLATE_PASSWORD_RESET_ID ??
-      0,
-  );
+  // O template agora vem do painel, com o .env como origem secundária.
+  const templateId = await templateDe("email.template.recuperacao");
   const envio = await enviarEmail({
     para: usuario.email,
     ...conteudo,
-    ...(Number.isInteger(templateId) && templateId > 0
+    ...(templateId
       ? {
           templateId,
           variaveis: {

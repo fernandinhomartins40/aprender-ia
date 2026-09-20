@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@aprender/db";
 import { auth } from "@aprender/auth";
+import { templateDe } from "@aprender/auth/credenciais-email";
 import {
   enviarEmail,
   montarEmailAcessoAprovado,
@@ -369,14 +370,18 @@ export async function aprovarSolicitacao(
   if (ehEmailInterno(pedido.user.email)) {
     aviso = " O aluno entra por telefone e não tem e-mail: avise por WhatsApp.";
   } else if (novoPrazo) {
+    const link = `${await baseUrl()}/app`;
+    const ate = dataBR(novoPrazo);
+    const template = await templateDe("email.template.acesso_aprovado");
     const envio = await enviarEmail({
       para: pedido.user.email,
-      ...montarEmailAcessoAprovado({
-        nome: pedido.user.nome,
-        dias,
-        ate: dataBR(novoPrazo),
-        link: `${await baseUrl()}/app`,
-      }),
+      ...montarEmailAcessoAprovado({ nome: pedido.user.nome, dias, ate, link }),
+      ...(template
+        ? {
+            templateId: template,
+            variaveis: { nome: pedido.user.nome.split(" ")[0] ?? "", dias, ate, link },
+          }
+        : {}),
     });
     if (!envio.entregue) aviso = " O e-mail de aviso não saiu (verifique o SMTP).";
   }
@@ -426,12 +431,20 @@ export async function recusarSolicitacao(
 
   let aviso = "";
   if (!ehEmailInterno(pedido.user.email)) {
+    const contato = (await lerTexto("plataforma.whatsapp_suporte")) || null;
+    const template = await templateDe("email.template.acesso_recusado");
     const envio = await enviarEmail({
       para: pedido.user.email,
-      ...montarEmailAcessoRecusado({
-        nome: pedido.user.nome,
-        contato: (await lerTexto("plataforma.whatsapp_suporte")) || null,
-      }),
+      ...montarEmailAcessoRecusado({ nome: pedido.user.nome, contato }),
+      ...(template
+        ? {
+            templateId: template,
+            variaveis: {
+              nome: pedido.user.nome.split(" ")[0] ?? "",
+              contato: contato ?? "",
+            },
+          }
+        : {}),
     });
     if (!envio.entregue) aviso = " O e-mail de aviso não saiu.";
   } else {

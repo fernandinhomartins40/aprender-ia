@@ -2,14 +2,21 @@
  * A apostila do curso de Empreendedores.
  *
  * Material de CONSULTA, e não o conteúdo das aulas. A diferença é de
- * propósito: a lição explica, demonstra e faz produzir; a apostila é onde
- * se procura uma referência depois, quando a dúvida aparece no meio do
- * expediente.
+ * propósito: a lição explica, demonstra e faz produzir; a apostila é
+ * onde se procura a referência depois, quando a dúvida aparece no meio
+ * do expediente.
  *
- * Por isso ela não repete o texto das lições. Ela guarda o que se
- * consulta: as listas, as fórmulas, os limites das ferramentas, o
- * vocabulário. E é daqui que sai o PDF — apostila na tela e apostila
- * impressa precisam dizer a mesma coisa.
+ * Um capítulo por módulo do curso, na mesma ordem — quem terminou a
+ * lição 3 do módulo 5 sabe onde procurar. O texto é diferente do da
+ * lição: aqui é referência para reler, lá é experiência para fazer.
+ *
+ * O HTML usa as classes de `estilo.css` e `componentes_novos.css`, os
+ * mesmos da apostila de Educadores: `.prompt`, `.dica`, `.atencao`,
+ * `.traduzindo`, `.etiqueta`, `.selo`, `.checklist`. É o que faz o
+ * material impresso ter a mesma cara nos dois cursos.
+ *
+ * Referência de densidade (Educadores): 18 capítulos, 78 seções,
+ * 207,5k caracteres — média de 2.660 por seção.
  */
 
 type Secao = { numero: string; titulo: string; html: string };
@@ -23,146 +30,1062 @@ type Capitulo = {
 };
 
 export const APOSTILA_EMPREENDEDORES: Capitulo[] = [
+  /* ============================================================
+     1 — IA sem complicação
+     ============================================================ */
   {
     chave: "emp-cap-1",
     numero: 1,
     titulo: "O que a IA faz e o que ela não faz",
     icone: "🤖",
     aberturaHtml:
-      "<p>Resumo de consulta rápida. A explicação completa está nas lições do Módulo 1.</p>",
+      '<p class="abertura">Este capítulo responde a pergunta que trava quase todo mundo no começo: <em>afinal, dá para confiar?</em> A resposta honesta é "depende do que você está pedindo" — e este capítulo explica exatamente de que depende.</p>',
     secoes: [
       {
         numero: "1.1",
-        titulo: "O que esperar",
-        html: "<p><strong>Faz bem:</strong> escrever, reescrever, resumir, organizar informação, dar ideias, explicar algo complicado em linguagem simples, transformar anotação em documento.</p><p><strong>Não faz:</strong> saber o que aconteceu no seu negócio, garantir que um número está certo, decidir preço ou crédito, conhecer seus clientes e contratos — a menos que você mostre.</p>",
+        titulo: "O que é IA generativa, sem jargão",
+        html: `<p>Quando se fala em Inteligência Artificial, muita gente imagina um robô de filme. A realidade é mais simples e mais útil. A IA generativa é um programa treinado para identificar padrões em texto e prever o que vem a seguir.</p>
+
+<p>Você já usa uma forma simples disso todo dia. Quando digita "bom d" no WhatsApp e o teclado sugere "dia", ele não sabe que dia é hoje nem se o seu dia está bom. Ele aprendeu que, depois de "bom", a maioria das pessoas escreve "dia". É previsão de padrão, não compreensão.</p>
+
+<p>Agora multiplique isso por bilhões. Os modelos como ChatGPT, Gemini e Claude leram uma quantidade enorme de texto: livros, sites, manuais, artigos, conversas. Aprenderam como as pessoas escrevem, estruturam ideias e resolvem problemas com palavras. Por isso, quando você pede uma resposta para um cliente, sai um texto coerente — ela "viu" milhões de respostas parecidas.</p>
+
+<div class="traduzindo">
+  <div class="t">📖 Traduzindo: modelo de linguagem</div>
+  <p>É o nome técnico desse tipo de programa. Você vai ouvir também "LLM", sigla em inglês para modelo de linguagem grande. Saber o nome não muda o uso — serve para você reconhecer quando alguém falar, e para não se intimidar.</p>
+</div>
+
+<p>Entender esse funcionamento explica as duas coisas que mais confundem quem começa: <strong>por que ela escreve tão bem</strong> e <strong>por que ela erra com tanta segurança</strong>. Ela não consulta uma verdade — monta o texto mais provável. Quando o provável coincide com o correto, o resultado é ótimo. Quando não coincide, o texto continua bem escrito e fica errado.</p>`,
       },
       {
         numero: "1.2",
-        titulo: "Alucinação: quando ela inventa com segurança",
-        html: "<p>A IA monta o texto mais provável. Quando não tem o dado, ela completa mesmo assim — e com a mesma confiança de quando acerta.</p><p><strong>Onde ela mais inventa:</strong> preço, prazo, medida, telefone, endereço, CNPJ, lei e número de norma, dados do seu negócio, fontes de pesquisa (inclusive links que não abrem).</p><p><strong>Regra:</strong> nada que tenha número, nome ou consequência sai sem conferência.</p>",
+        titulo: "O que ela faz bem e o que não faz",
+        html: `<p>A lista abaixo vale para qualquer uma das ferramentas grandes. As diferenças entre elas existem, mas são pequenas perto desta separação.</p>
+
+<div class="dica">
+  <div class="t">✅ Faz bem, e economiza tempo de verdade</div>
+  <p><strong>Escrever, reescrever e resumir</strong> — responder cliente, transformar anotação em documento, encurtar um texto longo.<br>
+  <strong>Organizar informação bagunçada</strong> — anotações soltas viram plano de ação; lista desordenada vira tabela.<br>
+  <strong>Dar variações</strong> — três versões do mesmo texto, para você escolher a que soa como você.<br>
+  <strong>Explicar em linguagem simples</strong> — um contrato, uma norma, um termo técnico.<br>
+  <strong>Estruturar o que você já sabe</strong> — você conhece o processo; ela transforma em procedimento escrito.</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⛔ Não faz — e não adianta insistir</div>
+  <p><strong>Saber o que aconteceu no seu negócio</strong> — ela não tem acesso às suas vendas, ao seu estoque nem ao seu caixa, a menos que você mostre.<br>
+  <strong>Garantir que um número está certo</strong> — ela produz números plausíveis, não conferidos.<br>
+  <strong>Decidir por você</strong> — preço, crédito, contratação e exceção de cliente envolvem o que só você sabe.<br>
+  <strong>Conhecer seus clientes e contratos</strong> — nada do que é seu está nela.</p>
+</div>
+
+<p>Repare no padrão: ela é boa com <em>palavras</em> e ruim com <em>fatos do seu negócio</em>. Toda vez que o pedido depender de um fato que só você tem, o fato precisa vir de você.</p>`,
       },
       {
         numero: "1.3",
-        titulo: "O que não colar na IA",
-        html: "<p>Nome completo, CPF, RG, telefone, endereço, dado bancário, número de cartão, prontuário, informação sob sigilo contratual.</p><p><strong>O que fazer:</strong> trocar por marcadores — CLIENTE A, VALOR X, FORNECEDOR 1. O resultado é o mesmo e o dado não sai da sua casa.</p>",
+        titulo: "Alucinação: quando ela inventa com segurança",
+        html: `<p>Peça a uma IA o telefone de um fornecedor que ela não conhece. Muitas vezes ela devolve um número — bem formatado, com DDD plausível, escrito com total convicção. E inventado.</p>
+
+<div class="traduzindo">
+  <div class="t">📖 Traduzindo: alucinação</div>
+  <p>É o nome que se dá a isso: quando a IA produz uma informação que parece certa e não é. Não é mentira, porque não há intenção de enganar. É o programa completando o que costuma vir depois, mesmo sem ter o dado.</p>
+</div>
+
+<p>O perigo não está no erro, e sim na confiança com que ele vem. Um texto hesitante a gente confere. Um texto seguro, bem escrito e com número específico a gente copia e envia ao cliente.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ Onde ela mais inventa</div>
+  <p>• Preço, prazo e medida de produto<br>
+  • Telefone, endereço e CNPJ<br>
+  • Lei, artigo e número de norma técnica<br>
+  • Dados do seu próprio negócio, que ela não tem<br>
+  • Fontes de pesquisa — inclusive links que abrem em página de erro</p>
+</div>
+
+<p>Repare que a lista tem uma coisa em comum: são informações <strong>específicas e verificáveis</strong>. É justamente onde ela mais erra e onde o erro mais custa.</p>
+
+<div class="dica">
+  <div class="t">💡 A regra que resolve</div>
+  <p>Nada que tenha <strong>número, nome ou consequência</strong> sai sem você conferir na fonte. Para o resto — texto, ideia, estrutura, organização — ela é uma excelente primeira versão.</p>
+</div>
+
+<p>E uma restrição que cabe em qualquer pedido e evita a maior parte disso: <em>"use somente as informações que eu forneci; onde faltar dado, escreva [CONFIRMAR] em vez de completar"</em>.</p>`,
+      },
+      {
+        numero: "1.4",
+        titulo: "O que nunca deve ser colado numa IA",
+        html: `<p>Quando você cola um texto, ele sai do seu computador e vai para o servidor de uma empresa. Na maioria dos serviços gratuitos, esse texto pode ser usado para melhorar o sistema. Isso muda o que faz sentido colar.</p>
+
+<div class="atencao">
+  <div class="t">🔒 Não cole</div>
+  <p>• Nome completo, CPF, RG de cliente ou funcionário<br>
+  • Telefone, endereço, e-mail pessoal<br>
+  • Dado bancário, número de cartão, senha<br>
+  • Informação de saúde de alguém<br>
+  • Documento com cláusula de sigilo</p>
+</div>
+
+<p><strong>O que fazer em vez disso:</strong> troque por marcadores. CLIENTE A, VALOR X, FORNECEDOR 1. A IA escreve exatamente igual — ela não precisa saber que o cliente se chama João para redigir a resposta.</p>
+
+<p>Isso não é excesso de zelo. É o mesmo cuidado de não deixar a ficha de um cliente aberta no balcão: o dado é dele, não seu, e você responde por ele.</p>
+
+<div class="dica">
+  <div class="t">💡 Um atalho que vira hábito</div>
+  <p>Antes de colar algo longo, peça à própria IA: <em>"aponte o que eu deveria remover deste texto antes de enviar a uma IA"</em>. Em duas semanas você já identifica sozinho.</p>
+</div>`,
       },
     ],
   },
+
+  /* ============================================================
+     2 — C.O.F.R.E.
+     ============================================================ */
   {
     chave: "emp-cap-2",
     numero: 2,
     titulo: "C.O.F.R.E. — a estrutura de um bom pedido",
     icone: "🔐",
     aberturaHtml:
-      "<p>As cinco partes, para consultar na hora de escrever.</p>",
+      '<p class="abertura">Resposta genérica quase sempre é resposta a um pedido genérico. Este capítulo é a referência para consultar na hora de escrever — as cinco partes, as restrições que valem para quase tudo, e o que fazer quando a resposta vem ruim.</p>',
     secoes: [
       {
         numero: "2.1",
         titulo: "As cinco partes",
-        html: "<p><strong>C — Contexto:</strong> quem é você e qual é a situação.</p><p><strong>O — Objetivo:</strong> o que você quer conseguir.</p><p><strong>F — Formato:</strong> como a resposta deve chegar.</p><p><strong>R — Restrições:</strong> o que não pode. A parte mais esquecida e a que mais muda o resultado.</p><p><strong>E — Entrada:</strong> o material com que ela deve trabalhar, sem dado pessoal.</p>",
+        html: `<p>Um pedido que funciona tem cinco partes. A palavra C.O.F.R.E. ajuda a lembrar — e também a ideia: é onde você guarda o que tem valor.</p>
+
+<div class="etiqueta">C — Contexto</div>
+<p>Quem é você e qual é a situação. Não "tenho uma loja", mas "tenho uma loja de roupa feminina de bairro; minhas clientes têm entre 35 e 55 anos e compram quando avisamos por WhatsApp".</p>
+
+<div class="etiqueta">O — Objetivo</div>
+<p>O que você quer conseguir. Não "fale sobre promoções", mas "quero trazer de volta clientes que não aparecem há três meses".</p>
+
+<div class="etiqueta">F — Formato</div>
+<p>Como a resposta deve chegar. Mensagem de WhatsApp de até 4 linhas? Tabela? Lista de cinco itens? Sem isso você recebe um texto corrido que vai ter de reformatar.</p>
+
+<div class="etiqueta">R — Restrições</div>
+<p>O que não pode. É a parte que quase ninguém escreve e a que mais muda o resultado: "não prometa desconto", "não invente prazo", "no máximo 4 linhas", "sem emoji em excesso".</p>
+
+<div class="etiqueta">E — Entrada</div>
+<p>O material com que ela deve trabalhar: a mensagem do cliente, a lista de produtos, suas anotações. Sem dado pessoal.</p>
+
+<div class="dica">
+  <div class="t">💡 Não precisa das cinco toda vez</div>
+  <p>Mas quando a resposta vier ruim, olhe para esta lista: quase sempre falta uma delas — e quase sempre é a <strong>R</strong>.</p>
+</div>`,
       },
       {
         numero: "2.2",
         titulo: "Restrições que valem para quase tudo",
-        html: "<ul><li>Não invente preço, prazo ou medida — deixe [VALOR] onde eu devo preencher</li><li>Não prometa o que depende de mim confirmar</li><li>Não use promessa absoluta ('o melhor', 'garantido')</li><li>Onde faltar informação, escreva [CONFIRMAR] em vez de supor</li><li>Separe o que é fato do que é hipótese</li></ul>",
+        html: `<p>Estas cinco cabem em quase qualquer pedido e evitam a maior parte dos problemas. Vale copiar e colar.</p>
+
+<div class="prompt">Não invente preço, prazo ou medida — deixe [VALOR] onde eu devo preencher.
+Não prometa o que depende de eu confirmar.
+Não use promessa absoluta ("o melhor", "garantido", "o mais barato").
+Onde faltar informação, escreva [CONFIRMAR] em vez de supor.
+Separe o que é fato do que é interpretação sua.</div>
+
+<p>A primeira evita o orçamento com preço inventado. A segunda evita o compromisso que você não pode cumprir. A terceira evita problema com o consumidor. A quarta transforma o buraco em pergunta, em vez de em invenção. A quinta é para quando houver análise de dados.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ A restrição é a parte que protege o negócio</div>
+  <p>Pedido sem restrição produz texto que promete o que você não vai cumprir — e quem responde pela promessa é você, não a ferramenta.</p>
+</div>`,
+      },
+      {
+        numero: "2.3",
+        titulo: "Como pedir de novo quando a resposta vem ruim",
+        html: `<p>A primeira resposta quase nunca é a que se usa. Isso não é defeito: é como a ferramenta funciona. O que separa quem tira proveito de quem desiste é saber pedir de novo.</p>
+
+<p><strong>Continue a conversa</strong>, não abra outra. Ela lembra do que já foi dito, e ajustar é mais rápido que reexplicar tudo.</p>
+
+<div class="etiqueta">Frases que funcionam</div>
+<div class="prompt">"Está longo demais. Reduza pela metade mantendo o essencial."
+"O tom está formal demais. Escreva como eu falaria com um cliente antigo."
+"Você inventou o prazo. Use [CONFIRMAR] onde eu não informei."
+"Me dê três versões diferentes em vez de uma."
+"O que faltou no meu pedido para você ter acertado de primeira?"</div>
+
+<div class="dica">
+  <div class="t">💡 A última é a mais útil</div>
+  <p>Perguntar o que faltou no seu pedido é a forma mais rápida de aprender a pedir. Em um mês, você para de precisar dela.</p>
+</div>
+
+<p><strong>Uma coisa por vez.</strong> Quem pede três ajustes juntos recebe um texto diferente, não um texto corrigido — e perde a referência do que funcionou.</p>`,
+      },
+      {
+        numero: "2.4",
+        titulo: "Dar exemplo em vez de descrever o tom",
+        html: `<p>Descrever o tom que você quer quase nunca funciona. "Informal mas profissional" significa coisas diferentes para cada pessoa — inclusive para a IA.</p>
+
+<p>Mostrar funciona sempre. Cole algo que <em>você</em> escreveu e peça para seguir aquele jeito.</p>
+
+<div class="prompt">Contexto: sou de [NEGÓCIO]. Abaixo está um texto que EU escrevi, no meu jeito de falar com cliente.
+Objetivo: escrever [O QUE] seguindo exatamente esse jeito.
+Formato: [FORMATO].
+Restrições: mantenha o meu vocabulário, o tamanho das minhas frases e o meu nível de formalidade.
+Meu texto de referência: [COLE AQUI]</div>
+
+<div class="dica">
+  <div class="t">💡 Guarde dois ou três textos seus</div>
+  <p>Uma resposta que você gostou, um anúncio que funcionou, uma mensagem que soa como você. Eles viram a referência de tudo o que você pedir daqui para a frente.</p>
+</div>`,
       },
     ],
   },
+
+  /* ============================================================
+     3 — IA no dia a dia
+     ============================================================ */
   {
     chave: "emp-cap-3",
     numero: 3,
-    titulo: "Prompt visual: pedir imagem",
-    icone: "🖼️",
-    aberturaHtml: "<p>As oito partes de um pedido de imagem.</p>",
+    titulo: "IA no dia a dia da empresa",
+    icone: "🏪",
+    aberturaHtml:
+      '<p class="abertura">Os prompts das tarefas que se repetem toda semana. Cada um já traz as restrições que evitam o problema mais comum daquele caso.</p>',
     secoes: [
       {
         numero: "3.1",
-        titulo: "As oito partes",
-        html: "<ol><li><strong>Assunto</strong> — o que aparece, com detalhe</li><li><strong>Ambiente</strong> — onde está</li><li><strong>Composição</strong> — de onde se vê</li><li><strong>Iluminação</strong> — que luz</li><li><strong>Estilo</strong> — fotografia realista, ilustração</li><li><strong>Cores</strong> — a paleta da sua marca</li><li><strong>Formato</strong> — quadrado, deitado</li><li><strong>Restrições</strong> — sem texto, sem marca de terceiros, sem pessoas</li></ol>",
+        titulo: "Atendimento: responder, recusar, cobrar",
+        html: `<div class="etiqueta">Responder cliente insatisfeito</div>
+<div class="prompt">Contexto: sou dono de [NEGÓCIO]. Um cliente enviou a mensagem abaixo e está insatisfeito. O que realmente aconteceu, pelo que eu sei: [SUA VERSÃO].
+Objetivo: escrever uma resposta que reconheça o problema e proponha um próximo passo concreto.
+Formato: mensagem de até 6 linhas, tom [TOM], pronta para enviar.
+Restrições: não admita culpa sobre o que ainda não foi verificado, não prometa prazo que eu não confirmei, não ofereça desconto por conta própria.
+Mensagem do cliente: [COLE AQUI]</div>
+
+<div class="etiqueta">Dizer não sem perder o cliente</div>
+<div class="prompt">Contexto: um cliente pediu [PEDIDO] e eu não posso atender porque [MOTIVO].
+Objetivo: recusar mantendo a relação.
+Formato: mensagem curta com a recusa clara na primeira linha, o motivo em uma linha e uma alternativa se existir.
+Restrições: não enrole nem deixe ambíguo — um "vou ver" que nunca vira nada é pior que um não. Não invente alternativa que eu não ofereço.</div>
+
+<div class="etiqueta">Cobrar sem constranger</div>
+<div class="prompt">Contexto: um cliente está com [VALOR] em aberto desde [DATA]. A relação é [RELAÇÃO].
+Objetivo: cobrar sem desgastar.
+Formato: três mensagens em sequência — lembrete, cobrança e último aviso —, cada uma para um momento.
+Restrições: nada de ameaça, constrangimento ou menção a terceiros. Em todas, ofereça um caminho para resolver.</div>
+
+<div class="atencao">
+  <div class="t">⚠️ Quando não usar texto gerado</div>
+  <p>Reclamação que envolve saúde, segurança ou dano grave não se responde por mensagem. Ligue. A IA ajuda a preparar o que dizer, não a evitar a conversa.</p>
+</div>`,
       },
       {
         numero: "3.2",
-        titulo: "Por que pedir sem texto",
-        html: "<p>Letra gerada por IA costuma sair torta ou com erro de grafia. Gere a imagem limpa e escreva o texto depois, no Canva: fica melhor e dá para corrigir quando quiser.</p>",
+        titulo: "Vendas: orçamento, proposta e follow-up",
+        html: `<div class="etiqueta">Orçamento que o cliente entende sozinho</div>
+<div class="prompt">Contexto: vou orçar [SERVIÇO]. Os itens e valores são: [ITENS].
+Objetivo: um orçamento que ele leia sem me ligar.
+Formato: cada item com o que é, por que é necessário e o valor; total; validade; forma de pagamento; e o que acontece se ele quiser tirar algum item.
+Restrições: use SOMENTE os valores que eu dei. Não some nada que eu não listei.</div>
+
+<p>O "por que é necessário" ao lado de cada item reduz pela metade as perguntas de volta.</p>
+
+<div class="etiqueta">Proposta a partir de uma conversa</div>
+<div class="prompt">Contexto: conversei com um cliente que precisa de [NECESSIDADE]. Meu negócio é [NEGÓCIO].
+Objetivo: transformar a conversa em proposta.
+Formato: escopo, o que NÃO está incluso, premissas, prazo, forma de pagamento e próximo passo.
+Restrições: não invente preço — deixe [VALOR]. Não prometa resultado que dependa do cliente.
+O que foi conversado: [COLE AQUI]</div>
+
+<div class="dica">
+  <div class="t">💡 O "não incluso" é o que evita discussão</div>
+  <p>É a parte que quase ninguém escreve e a que mais previne conflito três semanas depois.</p>
+</div>
+
+<div class="etiqueta">Retomar proposta sem resposta</div>
+<div class="prompt">Contexto: enviei uma proposta de [OFERTA] em [DATA] e não tive retorno.
+Objetivo: retomar sem parecer insistente.
+Formato: três mensagens para momentos diferentes; a última oferecendo encerrar o assunto.
+Restrições: nada de "passando para saber"; cada mensagem traz algo novo. Nada de urgência inventada.</div>`,
+      },
+      {
+        numero: "3.3",
+        titulo: "Administrativo: procedimento, reunião, e-mail difícil",
+        html: `<div class="etiqueta">Transformar o jeito de fazer em procedimento</div>
+<div class="prompt">Contexto: no meu [NEGÓCIO], [PROCESSO] é feito assim: [COMO É HOJE].
+Objetivo: transformar num procedimento de uma página que uma pessoa nova consiga seguir.
+Formato: passo a passo numerado, responsável por passo, o que fazer quando der errado e um checklist final.
+Restrições: linguagem simples, sem jargão; cada passo começando com um verbo; máximo de uma página.</div>
+
+<div class="etiqueta">Reunião em plano de ação</div>
+<div class="prompt">Contexto: seguem as anotações de uma reunião: [NOTAS].
+Objetivo: transformar em plano de ação.
+Formato: tabela com decisão, ação, responsável, prazo e dependência. Depois, uma lista do que ficou sem resposta.
+Restrições: não invente responsável nem prazo — onde não foi dito, escreva [DEFINIR]. Não transforme em decisão o que ficou como dúvida.</div>
+
+<p>A lista do que ficou sem resposta costuma ser a parte mais útil — é por onde a próxima reunião começa.</p>
+
+<div class="etiqueta">E-mail difícil de escrever</div>
+<div class="prompt">Contexto: preciso escrever para [DESTINATÁRIO] sobre [ASSUNTO]. A situação real é: [SITUAÇÃO]. O que quero que aconteça depois: [OBJETIVO].
+Objetivo: um e-mail que resolva sem queimar a relação.
+Formato: três versões — mais direta, intermediária e mais diplomática.
+Restrições: nada de passivo-agressivo; não ameace; não peça desculpa por algo que não é meu erro; não use "venho por meio desta".</div>
+
+<div class="dica">
+  <div class="t">💡 Descreva a situação com honestidade</div>
+  <p>Inclusive a parte que te incomoda. A IA escreve melhor quando sabe o que está em jogo; omitir a parte difícil produz texto morno.</p>
+</div>`,
       },
     ],
   },
+
+  /* ============================================================
+     4 — ChatGPT a fundo
+     ============================================================ */
   {
     chave: "emp-cap-4",
     numero: 4,
-    titulo: "Ferramentas e o que é gratuito de verdade",
-    icone: "🧰",
+    titulo: "ChatGPT além da conversa",
+    icone: "💬",
     aberturaHtml:
-      "<p>Faixas conferidas na documentação oficial em setembro de 2026. Isto envelhece: confirme na própria ferramenta antes de decidir.</p>",
+      '<p class="abertura">A maioria usa uma fração do que a ferramenta faz — e justamente a fração que menos economiza tempo. Este capítulo reúne os recursos que resolvem trabalho de verdade.</p>',
     secoes: [
       {
         numero: "4.1",
-        titulo: "Assistentes de texto",
-        html: "<p><strong>ChatGPT</strong> — gratuito com limites. Conversa de texto sem limite fixo; imagem, upload e voz têm cota. Plano Go a US$ 8/mês amplia 10×.</p><p><strong>Gemini</strong> — gratuito com conta Google, com cota diária nos modelos melhores.</p><p><strong>Claude</strong> — gratuito com cota. Delegar trabalho sobre pastas de arquivos é dos planos pagos.</p>",
+        titulo: "Anexar arquivo: pare de copiar e colar",
+        html: `<p>Copiar e colar funciona para um parágrafo. Para um contrato de 20 páginas, uma planilha de vendas ou uma nota fiscal, não funciona — e nem precisa. O botão de anexo aceita PDF, imagem, planilha e documento.</p>
+
+<div class="dica">
+  <div class="t">💡 Usos que resolvem hoje</div>
+  <p>• Foto do cardápio do concorrente → comparar com o seu<br>
+  • PDF do contrato → "quais são minhas obrigações?"<br>
+  • Planilha de vendas → "o que mudou no último trimestre?"<br>
+  • Foto de documento manuscrito → transformar em texto digitado<br>
+  • Print de uma conversa → "me ajude a responder isso"</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ O que ainda falha</div>
+  <p>Foto tremida ou com sombra forte erra número. Planilha com várias abas sem explicação confunde. PDF que é imagem escaneada de baixa qualidade não é lido direito.</p>
+</div>
+
+<p><strong>A pergunta certa muda tudo.</strong> Não peça "analise esta planilha". Peça: <em>"nesta planilha, a coluna D é o valor da venda e a E é o custo. Quais produtos têm margem abaixo de 20%?"</em>. Explicar as colunas leva 20 segundos e é o que mais melhora a resposta.</p>
+
+<div class="atencao">
+  <div class="t">🔒 Antes de anexar</div>
+  <p>O arquivo <strong>inteiro</strong> vai para o servidor, não só a parte que interessa. Uma nota fiscal tem CNPJ e endereço; uma planilha de clientes tem nome e telefone. Apague, tampe, ou mande só o trecho.</p>
+</div>`,
       },
       {
         numero: "4.2",
-        titulo: "Documentos, planilhas e base de conhecimento",
-        html: "<p><strong>Gemini no Documentos e Planilhas</strong> — depende do plano. Montar planilha inteira por descrição exige Google AI Pro ou Ultra. O caminho gratuito é exportar CSV e analisar no chat.</p><p><strong>NotebookLM (Gemini Notebook)</strong> — gratuito com limites: até 50 fontes por caderno, cada uma com até 500 mil palavras ou 200 MB.</p>",
+        titulo: "Delegar um trabalho, não pedir uma resposta",
+        html: `<p>Existe uma diferença grande entre perguntar a um funcionário "como se escreve uma proposta?" e dizer "monte a proposta deste cliente, com base nestes arquivos, e me mostre antes de enviar".</p>
+
+<p>A primeira é uma pergunta. A segunda é um trabalho: tem material, tem etapas, tem um ponto em que você confere. É nessa segunda forma que está o ganho de tempo real.</p>
+
+<div class="traduzindo">
+  <div class="t">📖 Traduzindo: trabalho agêntico</div>
+  <p>É como as ferramentas chamam quando a IA executa várias etapas seguidas, abrindo arquivos e organizando resultados, em vez de só responder. No ChatGPT aparece como Work e nos recursos de projeto; no Claude, o que já se chamou Cowork e hoje está no próprio Claude.</p>
+</div>
+
+<div class="etiqueta">Um pedido de trabalho tem quatro partes</div>
+<div class="prompt">Contexto: meu negócio é [NEGÓCIO]. Anexei [MATERIAL], já sem dado pessoal.
+Objetivo: [O QUE PRECISO NO FIM].
+Formato: [COMO DEVE CHEGAR].
+Restrições: use somente o material anexado; não invente número, prazo ou nome; onde faltar informação, escreva [CONFIRMAR].
+Pare e me mostre [O PONTO DE PARADA] antes de finalizar.</div>
+
+<p>Repare: três das quatro partes não falam do que fazer — falam do que entregar, do que não fazer e de quando parar. É aí que quase todo mundo erra.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ Quanto maior o trabalho, mais importante a revisão</div>
+  <p>Numa resposta curta você percebe o erro lendo. Num relatório de dez páginas montado sozinho, o erro se esconde no meio — e sai com o seu nome. Delegar não transfere a responsabilidade.</p>
+</div>`,
       },
       {
         numero: "4.3",
-        titulo: "Imagem, vídeo e automação",
-        html: "<p><strong>ChatGPT Imagens</strong> — gratuito com limites; poucas imagens por dia.</p><p><strong>Google Veo</strong> — cerca de 10 gerações por mês em conta comum.</p><p><strong>Pika</strong> — gratuito com uso comercial permitido, limitado a 480p.</p><p><strong>Make</strong> — 1.000 operações por mês e 2 automações ativas no gratuito.</p><p><em>Nota: o Sora foi encerrado pela OpenAI em março de 2026 e não consta deste material.</em></p>",
+        titulo: "Instruções personalizadas e memória",
+        html: `<p>Se você repete o mesmo contexto em toda conversa, está gastando tempo com algo que a ferramenta pode guardar. Nas configurações há um campo para dizer quem você é e como quer as respostas — vale para todas as conversas.</p>
+
+<div class="dica">
+  <div class="t">💡 O que vale escrever lá</div>
+  <p>• Seu negócio, seu público e sua região<br>
+  • O tom que você usa com cliente<br>
+  • O que você nunca promete (desconto, prazo curto, exclusividade)<br>
+  • O formato que prefere: mensagens curtas, listas, sem emoji<br>
+  • Que ela deve escrever [CONFIRMAR] em vez de inventar dado</p>
+</div>
+
+<div class="atencao">
+  <div class="t">🔒 Não escreva dado de cliente nas instruções</div>
+  <p>Elas valem para sempre e entram em toda conversa. Nome ou informação de cliente ali dentro é dado exposto em todo pedido que você fizer, para sempre.</p>
+</div>
+
+<p>A <strong>memória</strong> é diferente: guarda coisas que aparecem nas conversas, automaticamente. Útil, e vale conferir de vez em quando — ela pode ter guardado algo de um teste que não vale mais.</p>`,
       },
     ],
   },
+
+  /* ============================================================
+     5 — Imagens
+     ============================================================ */
   {
     chave: "emp-cap-5",
     numero: 5,
-    titulo: "Automação e agentes",
-    icone: "⚙️",
-    aberturaHtml: "<p>As definições e as regras de segurança.</p>",
+    titulo: "Imagens que vendem",
+    icone: "🖼️",
+    aberturaHtml:
+      '<p class="abertura">Pedir imagem é como explicar a um fotógrafo o que você quer. "Uma foto bonita do meu produto" não basta — nem para o fotógrafo, nem para a IA. Este capítulo tem a estrutura que basta.</p>',
     secoes: [
       {
         numero: "5.1",
-        titulo: "Chatbot, automação e agente",
-        html: "<p><strong>Chatbot</strong> responde perguntas.</p><p><strong>Automação</strong> executa passos fixos, sempre na mesma ordem.</p><p><strong>Agente</strong> recebe um objetivo e decide os passos.</p>",
+        titulo: "As oito partes de um pedido de imagem",
+        html: `<div class="prompt">Assunto: [O QUE APARECE, COM DETALHE].
+Ambiente: [ONDE ESTÁ].
+Composição: [DE ONDE SE VÊ].
+Iluminação: [QUE LUZ].
+Estilo: [FOTOGRAFIA REALISTA / ILUSTRAÇÃO].
+Cores: [A PALETA DA SUA MARCA].
+Formato: [QUADRADO / VERTICAL / DEITADO].
+Restrições: sem texto na imagem, sem marca de terceiros, sem rosto identificável, fundo limpo.</div>
+
+<p>Um exemplo preenchido, para ver o nível de detalhe esperado:</p>
+
+<div class="prompt">Assunto: três brigadeiros gourmet em forminhas escuras, cobertos de granulado, em primeiro plano.
+Ambiente: mesa de mármore branco, pano de linho bege desfocado ao fundo.
+Composição: câmera levemente acima, aproximação, os três em triângulo.
+Iluminação: luz natural lateral suave, sombra curta.
+Estilo: fotografia de produto realista.
+Cores: contraste entre o escuro do doce e o claro da mesa.
+Formato: quadrado, alta resolução.
+Restrições: sem texto, sem marca de outra empresa, sem mão ou pessoa, sem exagero de brilho que não corresponda ao doce real.</div>
+
+<div class="dica">
+  <div class="t">💡 Peça espaço vazio para o texto</div>
+  <p>Acrescente "espaço vazio na parte superior para o texto entrar depois". Sem isso você recebe uma imagem bonita e cheia, sem onde escrever.</p>
+</div>`,
       },
       {
         numero: "5.2",
-        titulo: "Regras que não se negociam",
-        html: "<ul><li>Automação gera rascunho; quem envia ao cliente é uma pessoa</li><li>O agente nunca decide preço, desconto, crédito, cancelamento ou questão jurídica</li><li>Quando não souber, ele diz que vai confirmar — nunca inventa</li><li>Todo processo tem de ter um jeito de desligar</li></ul>",
+        titulo: "As três restrições que evitam problema",
+        html: `<p>Estas três cabem em toda imagem e evitam os erros que mais custam:</p>
+
+<div class="atencao">
+  <div class="t">⚠️ Sempre inclua</div>
+  <p><strong>Sem texto na imagem</strong> — letra gerada por IA sai torta ou com erro de grafia. Gere limpa e escreva no Canva; fica melhor e você troca o preço no mês seguinte sem gerar de novo.<br><br>
+  <strong>Sem marca de terceiros</strong> — a IA reproduz elementos de marcas conhecidas quando não se proíbe. Publicar isso é problema que não compensa.<br><br>
+  <strong>Sem rosto identificável</strong> — além do resultado às vezes estranho, publicar um rosto que parece uma pessoa real é risco desnecessário.</p>
+</div>
+
+<p>E uma quarta, específica de quem vende produto:</p>
+
+<div class="atencao">
+  <div class="t">⚠️ Sem exagero que não corresponda ao produto real</div>
+  <p>Foto embelezada além do produto é o caminho mais curto para devolução e reclamação. Corrija luz e fundo; não corrija o que o cliente vai receber.</p>
+</div>`,
       },
       {
         numero: "5.3",
-        titulo: "Antes de ligar uma automação",
-        html: "<p>Teste: dado faltando, dado errado, execução em duplicidade, pico de volume e desligamento no meio. Se não houver resposta para 'como eu desligo isso numa sexta às duas da tarde', não ligue.</p>",
+        titulo: "Editar, usar referência e manter consistência",
+        html: `<p><strong>Editar é diferente de gerar.</strong> Quando a imagem sai quase boa, gerar de novo costuma piorar: vem outra, diferente em tudo. Editar aponta o que mudar e o resto fica igual.</p>
+
+<div class="dica">
+  <div class="t">💡 Uma coisa por vez</div>
+  <p>Peça um ajuste, veja o resultado, peça o próximo. Três mudanças juntas produzem uma imagem diferente, não uma imagem corrigida.</p>
+</div>
+
+<p><strong>Referência vale mais que adjetivo.</strong> "Moderno e clean" significa coisas diferentes para cada um. Anexe uma imagem e diga exatamente o que copiar dela:</p>
+
+<div class="prompt">Use a mesma iluminação lateral e a mesma paleta de cores desta imagem de referência, mas com o meu produto. Mantenha o tipo de enquadramento. Mude apenas o produto.</div>
+
+<p><strong>Consistência é o que faz parecer marca.</strong> Dez imagens bonitas e diferentes entre si não formam uma marca; cinco parecidas, sim.</p>
+
+<div class="dica">
+  <div class="t">💡 Fixe três decisões e repita sempre</div>
+  <p>A mesma paleta de cores, o mesmo tipo de iluminação e o mesmo tipo de fundo. Escreva essas três linhas num papel e cole em todo pedido de imagem. Gere as variações de uma vez, não uma por semana.</p>
+</div>`,
       },
     ],
   },
+
+  /* ============================================================
+     6 — Vídeo
+     ============================================================ */
+  {
+    chave: "emp-cap-6",
+    numero: 6,
+    titulo: "Vídeo curto sem equipe",
+    icone: "🎬",
+    aberturaHtml:
+      '<p class="abertura">Vídeo não começa na ferramenta de vídeo. Começa no roteiro — e é por isso que tanta gente trava: abre a ferramenta sem saber o que quer dizer.</p>',
+    secoes: [
+      {
+        numero: "6.1",
+        titulo: "O caminho, do começo ao fim",
+        html: `<p><strong>Ideia → Roteiro → Imagens ou gravação → Narração → Legenda → Revisão → Publicação.</strong></p>
+
+<p>A IA ajuda no roteiro, nas imagens de apoio e na legenda. Quem decide o que a empresa promete é você — e isso não se delega.</p>
+
+<div class="dica">
+  <div class="t">💡 Os seis tipos que um negócio pequeno usa</div>
+  <p><strong>1. Propaganda de produto</strong> — mostra funcionando, 15 a 30 segundos.<br>
+  <strong>2. Conteúdo para rede social</strong> — ensina ou responde dúvida, não vende diretamente.<br>
+  <strong>3. Apresentação de serviço</strong> — explica como funciona; economiza a explicação repetida.<br>
+  <strong>4. Demonstração</strong> — antes e depois, ou produto em uso. O mais fácil de gravar.<br>
+  <strong>5. Institucional</strong> — quem você é. Um por ano basta.<br>
+  <strong>6. Depoimento</strong> — o cliente conta. Convence mais que qualquer coisa que você diga.</p>
+</div>
+
+<p><strong>Por onde começar:</strong> demonstração e conteúdo. São os dois mais fáceis com celular e os que mais alcançam quem ainda não te conhece.</p>`,
+      },
+      {
+        numero: "6.2",
+        titulo: "Gravar com o celular sem parecer amador",
+        html: `<div class="dica">
+  <div class="t">💡 As três que mais importam</div>
+  <p><strong>Luz na sua frente, nunca atrás</strong> — janela de frente, não de costas.<br>
+  <strong>Celular apoiado</strong>, nunca na mão solta.<br>
+  <strong>Som limpo</strong> — lugar silencioso, ou fone com microfone.</p>
+</div>
+
+<p><strong>O som importa mais que a imagem.</strong> Imagem tremida a pessoa tolera; áudio ruim ela não escuta.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ Sua voz convence mais que voz sintética</div>
+  <p>Para negócio local, a voz gerada soa distante. Quem compra de você quer reconhecer a pessoa. Grave você mesmo, com os tropeços — eles ajudam.</p>
+</div>
+
+<div class="etiqueta">Prompt do roteiro</div>
+<div class="prompt">Contexto: meu negócio é [NEGÓCIO] e quero um vídeo de [DURAÇÃO] sobre [ASSUNTO].
+Objetivo: um roteiro que eu grave sozinho, com o celular.
+Formato: tópicos, não texto corrido; a primeira e a última frase por extenso.
+Restrições: nada que exija equipe ou iluminação especial; a primeira frase tem de prender em 3 segundos; no máximo 5 tópicos.</div>
+
+<p>Tópicos, não texto: quem lê parece que está lendo. E <strong>legenda não é opcional</strong> — a maioria assiste sem som.</p>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     7 — Documentos e planilhas
+     ============================================================ */
+  {
+    chave: "emp-cap-7",
+    numero: 7,
+    titulo: "Documentos e planilhas com IA",
+    icone: "📊",
+    aberturaHtml:
+      '<p class="abertura">Este capítulo diz o que a propaganda não diz: quais recursos dependem de assinatura, e qual é o caminho gratuito que dá quase o mesmo resultado.</p>',
+    secoes: [
+      {
+        numero: "7.1",
+        titulo: "O caminho gratuito e o caminho pago",
+        html: `<p>O Google mostra a IA montando planilhas inteiras por descrição, criando painéis e cruzando dados dos seus arquivos. Funciona bem — e é preciso dizer uma coisa.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ A parte que depende de assinatura</div>
+  <p>Os recursos mais fortes do Gemini dentro do Documentos e do Planilhas estão em versão de testes para assinantes do <strong>Google AI Pro e Ultra</strong>. Sem assinatura, você não tem esses botões.</p>
+</div>
+
+<p>O que não impede nada. O caminho gratuito dá quase o mesmo resultado com um passo a mais: <strong>exporte em CSV e cole no chat de IA</strong>. A análise é a mesma; só não acontece dentro da planilha.</p>
+
+<div class="dica">
+  <div class="t">💡 Gratuito, funciona hoje</div>
+  <p>• Exportar CSV e pedir análise no ChatGPT, Gemini ou Claude<br>
+  • Pedir a fórmula pronta e colar na planilha<br>
+  • Pedir para explicar uma fórmula que você herdou<br>
+  • Descrever a planilha que você precisa e receber a estrutura</p>
+</div>`,
+      },
+      {
+        numero: "7.2",
+        titulo: "Fazer a IA ler a sua planilha",
+        html: `<p>A parte mais esquecida ao colar uma planilha é explicar o que cada coluna significa. Sem isso, a IA supõe — e uma coluna "valor" pode ser preço, custo ou desconto.</p>
+
+<div class="prompt">Contexto: vou colar uma tabela do meu [NEGÓCIO], já sem nome de cliente. As colunas são: [O QUE É CADA UMA].
+Objetivo: [O QUE QUERO SABER].
+Formato: [COMO A RESPOSTA DEVE CHEGAR].
+Restrições: use somente os dados colados; não preencha célula vazia com estimativa — marque como [SEM DADO]. Separe o que os dados mostram do que é interpretação.
+Dados: [COLE AQUI]</div>
+
+<div class="etiqueta">Fórmula explicada</div>
+<div class="prompt">Contexto: preciso que a planilha faça isto: [O QUE PRECISO]. Minhas colunas são: [COLUNAS].
+Objetivo: a fórmula pronta e o entendimento dela.
+Formato: a fórmula para colar, o que cada parte faz, e o que acontece se a coluna estiver vazia ou com texto no lugar de número.
+Restrições: use funções que existam no Google Planilhas gratuito; nada de macro nem script.</div>
+
+<div class="dica">
+  <div class="t">💡 Peça sempre o que acontece com célula vazia</div>
+  <p>É onde a planilha quebra — e sempre no dia em que você precisa dela.</p>
+</div>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     8 — Dados do negócio
+     ============================================================ */
+  {
+    chave: "emp-cap-8",
+    numero: 8,
+    titulo: "Perguntar aos próprios números",
+    icone: "📈",
+    aberturaHtml:
+      '<p class="abertura">O objetivo não é virar analista. É fazer perguntas melhores sobre o próprio negócio — e saber separar o que os dados mostram do que é chute bem escrito.</p>',
+    secoes: [
+      {
+        numero: "8.1",
+        titulo: "O teste da decisão",
+        html: `<p>Antes de perguntar qualquer coisa aos seus dados, responda: <strong>se a resposta vier, o que eu faço diferente?</strong> Se não houver resposta para isso, a pergunta é curiosidade — e curiosidade pode esperar.</p>
+
+<div class="dica">
+  <div class="t">✅ Perguntas que mudam alguma coisa</div>
+  <p>• Quais produtos são comprados juntos? → muda a vitrine e o combo<br>
+  • Que dia e hora concentram as vendas? → muda a escala da equipe<br>
+  • Quem comprava sempre e parou? → vira uma lista de contatos para hoje<br>
+  • Onde a despesa cresceu mais que o faturamento? → vira corte ou renegociação<br>
+  • Que produto dá margem alta e vende pouco? → vira destaque no atendimento</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⛔ Perguntas que não mudam nada</div>
+  <p>• Quanto vendi no total? — você já sabe<br>
+  • Qual o produto mais vendido? — você já sabe<br>
+  • Qual a média de vendas? — não indica ação nenhuma sozinha</p>
+</div>
+
+<p><strong>Comece pedindo as perguntas.</strong> O melhor primeiro pedido não é uma análise:</p>
+
+<div class="prompt">Contexto: tenho dados de [O QUÊ] de [PERÍODO], já sem identificação de pessoa. As colunas são: [COLUNAS].
+Objetivo: descobrir o que eu deveria estar perguntando.
+Formato: 10 perguntas que estes dados conseguem responder, cada uma com a decisão que ela ajudaria a tomar.
+Restrições: nenhuma pergunta que exija dado que eu não tenho; sem termo técnico de estatística; não responda ainda, só liste.</div>`,
+      },
+      {
+        numero: "8.2",
+        titulo: "As duas listas que mais rendem",
+        html: `<p><strong>Estoque parado é dinheiro preso.</strong> Cada item que não gira é dinheiro que não está comprando o que vende. A conta é simples e quase ninguém faz: quanto do meu capital está em produto que não sai há mais de 90 dias?</p>
+
+<div class="prompt">Contexto: seguem meus itens com quantidade e data da última venda: [DADOS].
+Objetivo: saber o que está parado e o que preciso repor.
+Formato: três listas — parado há mais tempo, perto de acabar, e giro saudável. Em cada uma, o critério que você usou.
+Restrições: use apenas os dados que eu dei; não estime demanda futura sem dizer que é estimativa.</div>
+
+<p><strong>Cliente que some raramente avisa.</strong> Ele não reclama, não cancela — simplesmente para de aparecer. Quem olha só o faturamento total não percebe, porque clientes novos cobrem o buraco.</p>
+
+<div class="prompt">Contexto: seguem compras por cliente, identificados por código (sem nome): [DADOS].
+Objetivo: descobrir quem comprava com frequência e parou.
+Formato: lista por código, com quando comprava, quando parou e há quanto tempo. Depois, sugestão de abordagem por grupo.
+Restrições: não invente motivo do sumiço; trate como hipótese a ser confirmada com o cliente.</div>
+
+<div class="dica">
+  <div class="t">💡 Código no lugar do nome</div>
+  <p>Troque o nome por CLIENTE 1, CLIENTE 2. A análise sai idêntica e o dado do seu cliente não vai para servidor nenhum.</p>
+</div>`,
+      },
+      {
+        numero: "8.3",
+        titulo: "Os três erros que a análise costuma trazer",
+        html: `<p>Toda análise gerada por IA tende a trazer estes três problemas. Reconhecê-los é o que separa decisão informada de decisão errada.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ 1. Causa inventada</div>
+  <p><em>"As vendas caíram 18% em março, provavelmente por causa das férias escolares."</em> Os dados mostram a queda; o motivo não está neles. Pode ser chuva, obra na rua, concorrente novo ou férias do funcionário.</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ 2. Média de mercado sem fonte</div>
+  <p><em>"Seu ticket de R$ 87 está abaixo do padrão do setor, que gira em torno de R$ 120."</em> Esse número não veio dos seus dados e a fonte não existe. É alucinação com cara de referência — e das mais perigosas, porque faz você achar que está mal.</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ 3. Decisão no lugar de análise</div>
+  <p><em>"Recomendo criar um pacote com 20% de desconto."</em> Isso é decisão de preço, sugerida sem conhecer custo, capacidade nem margem. Análise informa; quem decide é você.</p>
+</div>
+
+<div class="dica">
+  <div class="t">💡 As três restrições que evitam tudo isso</div>
+  <p>"Separe o que os dados mostram do que é interpretação."<br>
+  "Não compare com médias de mercado sem citar a fonte."<br>
+  "Não decida por mim — aponte o que eu precisaria checar."</p>
+</div>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     9 — NotebookLM
+     ============================================================ */
+  {
+    chave: "emp-cap-9",
+    numero: 9,
+    titulo: "Seus documentos respondendo por você",
+    icone: "📚",
+    aberturaHtml:
+      '<p class="abertura">Todas as IAs deste curso respondem com o que aprenderam na internet. Existe uma que faz o contrário: responde só com o que você entregou — e mostra de onde tirou.</p>',
+    secoes: [
+      {
+        numero: "9.1",
+        titulo: "O que muda quando a resposta tem citação",
+        html: `<p>Você sobe seus contratos, manuais e procedimentos. Ela responde perguntas sobre eles e aponta o trecho de onde tirou cada resposta. Isso muda tudo: <strong>dá para conferir</strong>.</p>
+
+<div class="traduzindo">
+  <div class="t">📖 Sobre o nome</div>
+  <p>Chama-se NotebookLM. O Google está renomeando para <strong>Gemini Notebook</strong>, então você pode encontrar os dois nomes. É a mesma ferramenta.</p>
+</div>
+
+<div class="dica">
+  <div class="t">💡 Sete usos que resolvem problema real</div>
+  <p><strong>1.</strong> Funcionário novo pergunta ao manual, em vez de interromper quem produz<br>
+  <strong>2.</strong> Achar a cláusula do contrato sem reler 40 páginas<br>
+  <strong>3.</strong> Entender uma norma e saber o que perguntar a quem entende<br>
+  <strong>4.</strong> Consultar manual de equipamento pelo celular, ao lado da máquina<br>
+  <strong>5.</strong> Preparar reunião a partir dos documentos do assunto<br>
+  <strong>6.</strong> Montar a central de conhecimento do negócio<br>
+  <strong>7.</strong> Pesquisar sem sair dos seus próprios dados</p>
+</div>
+
+<div class="selo verde">Gratuito com limites: até 50 fontes por caderno, cada uma com até 500 mil palavras ou 200 MB. Para um negócio pequeno, sobra.</div>`,
+      },
+      {
+        numero: "9.2",
+        titulo: "Como escrever para uma base que vai ser consultada",
+        html: `<p>Subir os arquivos que você já tem funciona. Mas alguns documentos rendem muito mais que outros — e a diferença está em como foram escritos.</p>
+
+<div class="dica">
+  <div class="t">✅ Rende bem</div>
+  <p>• Texto dividido em títulos curtos e específicos<br>
+  • Uma informação por parágrafo<br>
+  • Números e prazos escritos por extenso, <strong>com data de validade</strong><br>
+  • Perguntas reais como título de seção</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⛔ Rende mal</div>
+  <p>• Foto de documento sem texto reconhecível<br>
+  • Planilha com dado espalhado e sem cabeçalho<br>
+  • Texto corrido de muitas páginas sem divisão<br>
+  • <strong>Versões diferentes do mesmo documento, sem data</strong></p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ O erro mais caro</div>
+  <p>Subir duas versões do mesmo documento sem data. A base responde com as duas, e quem consulta não sabe qual vale. Mantenha <strong>uma versão por assunto</strong>, com a data no nome do arquivo.</p>
+</div>
+
+<div class="dica">
+  <div class="t">💡 Use as perguntas da equipe como títulos</div>
+  <p>"Quanto tempo dura a garantia?" funciona melhor que "Política de garantia" — porque é assim que a pergunta vai chegar.</p>
+</div>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     10 — Automação
+     ============================================================ */
+  {
+    chave: "emp-cap-10",
+    numero: 10,
+    titulo: "Automação sem programar",
+    icone: "⚙️",
+    aberturaHtml:
+      '<p class="abertura">Automatizar é ensinar um sistema a fazer sozinho o que você faria na mão. A parte que as pessoas pulam — e que decide se vai funcionar — é desenhar o processo antes de abrir qualquer ferramenta.</p>',
+    secoes: [
+      {
+        numero: "10.1",
+        titulo: "A lógica antes da ferramenta",
+        html: `<p>Você já usa automação: o alarme do celular é uma. Chegou a hora, toca. Um gatilho e uma ação.</p>
+
+<p>Num negócio funciona igual. O lead que chega pelo site:</p>
+
+<div class="prompt">ENTROU UM LEAD
+   ↓ REGISTRAR na planilha, com data e origem
+   ↓ CLASSIFICAR por tipo de pedido ou região
+   ↓ GERAR RASCUNHO de resposta
+   ↓ [UMA PESSOA LÊ E ENVIA]  ← a automação para aqui
+   ↓ AVISAR o responsável
+   ↓ MARCAR prazo de retorno</div>
+
+<div class="atencao">
+  <div class="t">⚠️ A regra de ouro</div>
+  <p><strong>Automação gera rascunho; ela não envia sozinha nada que chegue ao cliente.</strong> Quem confere é uma pessoa. Essa é a diferença entre economizar tempo e pedir desculpa depois.</p>
+</div>
+
+<p>Repare que o primeiro passo não é automatizar nada: é ter <strong>um lugar só para registrar</strong>. Processo espalhado por três lugares não se automatiza — se organiza primeiro.</p>
+
+<div class="etiqueta">Prompt do desenho</div>
+<div class="prompt">Contexto: no meu [NEGÓCIO], quando [GATILHO], hoje eu faço manualmente: [PASSOS].
+Objetivo: desenhar como isso poderia funcionar sozinho.
+Formato: gatilho, passos em ordem, dados que circulam, onde uma pessoa aprova, o que fazer em caso de erro e como desligar.
+Restrições: a automação gera rascunho e nunca envia sozinha nada que chegue ao cliente. Liste o que NÃO deve ser automatizado neste processo.</div>`,
+      },
+      {
+        numero: "10.2",
+        titulo: "Antes de ligar, e como desligar",
+        html: `<div class="dica">
+  <div class="t">💡 Teste isto antes de ligar para valer</div>
+  <p>• Dado faltando<br>
+  • Dado errado<br>
+  • Execução em duplicidade<br>
+  • Pico de volume<br>
+  • Desligamento no meio da execução</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ A pergunta que decide</div>
+  <p><em>"Como eu desligo isso numa sexta-feira às duas da tarde?"</em> Se não houver resposta — ou se a resposta depender de uma pessoa só —, não ligue. A automação vira risco, não economia.</p>
+</div>
+
+<p><strong>O que não automatizar:</strong> decisão de preço, crédito, exceção de cliente, reclamação séria, e qualquer coisa que envolva saúde ou segurança. E tudo que tenha exceção demais — automatizar um processo cheio de exceção só acelera a confusão.</p>
+
+<div class="selo amarelo">Make: 1.000 operações por mês e 2 automações ativas no plano gratuito. É o free tier mais utilizável entre os grandes para o primeiro processo de um negócio pequeno.</div>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     11 — Agentes
+     ============================================================ */
+  {
+    chave: "emp-cap-11",
+    numero: 11,
+    titulo: "Agentes sem complicação",
+    icone: "🤝",
+    aberturaHtml:
+      '<p class="abertura">Três palavras que aparecem juntas e significam coisas diferentes. A diferença está em quem decide os passos — e é dela que sai toda a regra de segurança.</p>',
+    secoes: [
+      {
+        numero: "11.1",
+        titulo: "Chatbot, automação e agente",
+        html: `<div class="etiqueta">Chatbot</div>
+<p>Responde perguntas. Você pergunta, ele responde. Não faz nada além disso.</p>
+
+<div class="etiqueta">Automação</div>
+<p>Executa passos fixos, sempre na mesma ordem. Aconteceu isto, faça aquilo. Não decide nada — e é por isso que é previsível.</p>
+
+<div class="etiqueta">Agente</div>
+<p>Recebe um objetivo e decide os passos. "Descubra quais clientes não compram há 6 meses e prepare uma mensagem para cada um." Ele escolhe como chegar lá.</p>
+
+<div class="traduzindo">
+  <div class="t">📖 Em linguagem simples</div>
+  <p>Um agente de IA é como um assistente digital a quem você entrega um objetivo e algumas regras. Em vez de só responder uma pergunta, ele executa várias etapas de um trabalho.</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ Porque ele decide, as proibições importam mais</div>
+  <p>As regras do que ele <strong>NÃO</strong> pode fazer valem mais que as do que pode. Escreva-as primeiro.</p>
+</div>`,
+      },
+      {
+        numero: "11.2",
+        titulo: "As regras que não se negociam",
+        html: `<div class="prompt">Contexto: quero um assistente digital que cuide de [TAREFA] no meu [NEGÓCIO].
+Objetivo: escrever as instruções dele.
+Formato: objetivo em uma frase, o que pode fazer, o que NUNCA pode, tom, o que fazer quando não souber, e quando chamar uma pessoa.
+Restrições: ele nunca decide preço, desconto, crédito, cancelamento ou questão jurídica. Nunca inventa informação: quando não souber, diz que vai confirmar.</div>
+
+<div class="atencao">
+  <div class="t">⛔ O que ele nunca pode fazer</div>
+  <p>• Decidir preço ou oferecer desconto<br>
+  • Aprovar crédito ou parcelamento<br>
+  • Confirmar cancelamento ou exceção<br>
+  • Opinar sobre questão jurídica, saúde ou segurança<br>
+  • Prometer prazo que depende de terceiros<br>
+  • Inventar informação que não tem</p>
+</div>
+
+<div class="dica">
+  <div class="t">💡 Quando ele chama uma pessoa</div>
+  <p>Cliente irritado · pedido de exceção · assunto de dinheiro · menção a problema de saúde ou segurança · e sempre que não souber.</p>
+</div>
+
+<p><strong>Teste com as perguntas difíceis antes de soltar.</strong> Peça desconto com insistência três vezes. Apresente uma reclamação grave. Pergunte algo que ele não tem como saber. Se ele cedeu ou inventou, a instrução está frouxa — e é bom ter descoberto agora.</p>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     12 — Escolher a ferramenta
+     ============================================================ */
+  {
+    chave: "emp-cap-12",
+    numero: 12,
+    titulo: "Qual IA usar para cada coisa",
+    icone: "🧰",
+    aberturaHtml:
+      '<p class="abertura">"Qual é a melhor" não tem resposta útil — é como perguntar qual ferramenta é melhor numa caixa de ferramentas. Este capítulo responde a pergunta que resolve: qual serve para o que você precisa agora.</p>',
+    secoes: [
+      {
+        numero: "12.1",
+        titulo: "Escolhendo pela tarefa",
+        html: `<div class="dica">
+  <div class="t">💡 Qual abrir para cada coisa</div>
+  <p><strong>Responder cliente, escrever post, criar imagem</strong> → ChatGPT<br>
+  <strong>Mexer em planilha, documento e e-mail do Google</strong> → Gemini<br>
+  <strong>Ler contrato longo, escrever relatório</strong> → Claude<br>
+  <strong>Perguntar aos seus próprios arquivos, com citação</strong> → NotebookLM<br>
+  <strong>Gerar vídeo curto</strong> → Veo, pelo Google AI Studio</p>
+</div>
+
+<p>A lista é por tarefa, não por qualidade. Nenhuma dessas escolhas significa que as outras fariam mal — significa que uma tem menos atrito para aquele caso.</p>
+
+<div class="atencao">
+  <div class="t">⚠️ Nenhuma delas conhece o seu negócio</div>
+  <p>A diferença entre as três é pequena perto da diferença entre um pedido vago e um pedido com contexto. <strong>Trocar de ferramenta não resolve resposta ruim — melhorar o pedido resolve.</strong></p>
+</div>
+
+<div class="dica">
+  <div class="t">💡 Use uma só por duas semanas</div>
+  <p>Trocar toda semana faz você aprender o botão de cada uma e o ofício de nenhuma.</p>
+</div>`,
+      },
+      {
+        numero: "12.2",
+        titulo: "Faixas de acesso — conferido em 19/09/2026",
+        html: `<p>Quase nada é simplesmente "grátis". O comum é gratuito com limite: você usa até certo ponto e depois espera ou paga.</p>
+
+<div class="selo verde">ChatGPT — gratuito com limites. Conversa de texto sem limite fixo; imagem, upload e voz com cota diária. Plano Go a US$ 8/mês multiplica a cota por 10. Business a US$ 25 por usuário/mês, mínimo de 2.</div>
+
+<div class="selo verde">Gemini — gratuito com conta Google, com cota diária nos modelos melhores.</div>
+
+<div class="selo verde">Claude — gratuito com cota por período. Delegar trabalho sobre pastas de arquivos é dos planos pagos.</div>
+
+<div class="selo amarelo">Gemini no Documentos e Planilhas — <strong>depende do plano</strong>. Montar planilha por descrição exige Google AI Pro ou Ultra. Caminho gratuito: exportar CSV e analisar no chat.</div>
+
+<div class="selo verde">NotebookLM (Gemini Notebook) — até 50 fontes por caderno, cada uma até 500 mil palavras ou 200 MB.</div>
+
+<div class="selo amarelo">Google Veo — cerca de 10 gerações por mês em conta comum. Pika — gratuito com uso comercial permitido, limitado a 480p.</div>
+
+<div class="selo amarelo">Make — 1.000 operações por mês e 2 automações ativas.</div>
+
+<div class="atencao">
+  <div class="t">⚠️ Sobre o Sora</div>
+  <p>A OpenAI concluiu o encerramento em 24/03/2026. Ele não consta deste curso. Se encontrar material que ainda o ensine, o material está desatualizado.</p>
+</div>
+
+<p><em>Ferramenta de IA muda rápido. Confirme na própria ferramenta antes de decidir assinar.</em></p>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     13 — Projeto final
+     ============================================================ */
+  {
+    chave: "emp-cap-13",
+    numero: 13,
+    titulo: "Minha Empresa Aumentada por IA",
+    icone: "🚀",
+    aberturaHtml:
+      '<p class="abertura">O projeto que atravessa o curso. As perguntas estão aqui para você consultar fora da plataforma — e o plano que sai delas precisa fazer sentido para quem nunca fez este curso.</p>',
+    secoes: [
+      {
+        numero: "13.1",
+        titulo: "As oito perguntas do plano",
+        html: `<div class="etiqueta">1. Tarefas que se repetem toda semana</div>
+<p>Quais três tarefas você refaz quase igual toda semana? São as candidatas naturais: repetem, consomem tempo e já têm um jeito certo de fazer.</p>
+
+<div class="etiqueta">2. Onde a IA ajuda primeiro</div>
+<p>Em quais três delas a IA pode fazer uma primeira versão? Primeira versão, não versão final: alguém do negócio revisa antes de o cliente ver.</p>
+
+<div class="etiqueta">3. O processo a automatizar</div>
+<p>Qual processo pequeno vale automatizar primeiro? Pequeno de propósito: dá para testar, corrigir e desligar sem parar o negócio.</p>
+
+<div class="etiqueta">4. Um uso para divulgação</div>
+<p>Que peça de divulgação a IA pode ajudar a produzir? Uma peça concreta, com data para sair.</p>
+
+<div class="etiqueta">5. Uma pergunta sobre os números</div>
+<p>Que pergunta sobre seus números você ainda não consegue responder? O valor não está no gráfico, e sim na decisão que ele muda.</p>
+
+<div class="etiqueta">6. Um agente possível</div>
+<p>Que trabalho você delegaria a um assistente digital com regras claras? Com um limite explícito: onde ele para e chama uma pessoa.</p>
+
+<div class="etiqueta">7. Onde a IA não entra</div>
+<p>Que decisões continuam sendo só suas? Preço final, crédito, contratação, questão jurídica, saúde e exceção de cliente.</p>
+
+<div class="etiqueta">8. O primeiro passo, com data</div>
+<p>O que você vai fazer nos próximos 30 dias, e quando? Plano sem data é intenção.</p>`,
+      },
+      {
+        numero: "13.2",
+        titulo: "O que faz um plano acontecer",
+        html: `<p>A maior parte dos planos morre na gaveta. Não por serem ruins: por não terem a primeira coisa a fazer numa segunda-feira.</p>
+
+<div class="checklist">
+  <div class="cki">Uma única frente por vez, não cinco simultâneas</div>
+  <div class="cki">Uma data concreta para o primeiro passo — dia e hora</div>
+  <div class="cki">Um jeito de saber se deu certo, escrito</div>
+  <div class="cki">Uma data para revisar, daqui a 30 dias</div>
+  <div class="cki">O que você faz se não der certo</div>
+</div>
+
+<p>Repare que quatro dos cinco itens não falam do que fazer, e sim de como acompanhar. Planos falham na segunda semana, quando a novidade passa e ninguém está olhando.</p>
+
+<div class="dica">
+  <div class="t">💡 A revisão de 30 dias</div>
+  <p>Marque hoje na agenda. O que funcionou continua, o que não funcionou sai, e uma tarefa nova entra. Em três revisões você terá mudado mais do que qualquer plano anual prometeria.</p>
+</div>
+
+<div class="atencao">
+  <div class="t">⚠️ Não delegue o que você não sabe fazer</div>
+  <p>Antes de automatizar ou entregar a um agente, faça na mão pelo menos uma vez. Quem não conhece o processo não percebe quando ele sai errado.</p>
+</div>`,
+      },
+    ],
+  },
+
+  /* ============================================================
+     Guia de bolso
+     ============================================================ */
   {
     chave: "emp-anexo-a",
     numero: null,
     titulo: "Guia de bolso",
     icone: "🆘",
     aberturaHtml:
-      "<p>Para consultar no meio do expediente, quando não há tempo de procurar a lição.</p>",
+      '<p class="abertura">Para consultar no meio do expediente, quando não há tempo de procurar o capítulo.</p>',
     secoes: [
       {
         numero: "A.1",
-        titulo: "A resposta veio genérica",
-        html: "<p>Falta uma das cinco partes — quase sempre a restrição. Acrescente o que NÃO pode e peça de novo.</p>",
+        titulo: "Quando algo dá errado",
+        html: `<div class="etiqueta">A resposta veio genérica</div>
+<p>Falta uma das cinco partes — quase sempre a restrição. Acrescente o que NÃO pode e peça de novo.</p>
+
+<div class="etiqueta">Ela citou um dado que eu não dei</div>
+<p>É alucinação. Acrescente: <em>"use somente as informações que eu forneci; onde faltar dado, escreva [FALTA]"</em>.</p>
+
+<div class="etiqueta">Ela citou uma lei, norma ou fonte</div>
+<p>Procure a fonte antes de usar. Norma com número é o formato clássico da invenção. Se não achar, tire a citação.</p>
+
+<div class="etiqueta">O texto não parece meu</div>
+<p>Cole um texto que você escreveu e peça para seguir aquele jeito. Mostrar funciona melhor que descrever.</p>
+
+<div class="etiqueta">Preciso colar algo com dado de cliente</div>
+<p>Troque por CLIENTE A, VALOR X. Se for muito texto, peça primeiro que ela aponte o que remover.</p>
+
+<div class="etiqueta">Vou enviar ao cliente o que ela escreveu</div>
+<p>Leia em voz alta antes. Confira todo número, prazo e promessa. O que sai com o seu nome é sua responsabilidade.</p>
+
+<div class="etiqueta">A automação fez algo errado</div>
+<p>Desligue primeiro, investigue depois. Avise quem foi afetado antes que eles percebam sozinhos.</p>
+
+<div class="etiqueta">A IA errou e o erro chegou ao cliente</div>
+<p>Não culpe a ferramenta na mensagem de correção — soa como quem não controla o próprio processo. Corrija, diga o que foi feito, e mude o processo para não repetir.</p>`,
       },
       {
         numero: "A.2",
-        titulo: "A IA citou um dado que eu não dei",
-        html: "<p>É alucinação. Acrescente: 'use somente as informações que eu forneci; onde faltar dado, escreva [FALTA]'.</p>",
-      },
-      {
-        numero: "A.3",
-        titulo: "Preciso colar algo com dado de cliente",
-        html: "<p>Troque por marcadores antes: CLIENTE A, VALOR X. Se for muito texto, peça primeiro à IA que aponte o que deve ser removido — e cole só o texto limpo.</p>",
-      },
-      {
-        numero: "A.4",
-        titulo: "O texto não parece meu",
-        html: "<p>Dê um exemplo de algo que você escreveu e peça para seguir aquele tom. Descrever o tom funciona menos que mostrar.</p>",
+        titulo: "As restrições que você deveria escrever sempre",
+        html: `<div class="prompt">Não invente preço, prazo ou medida — deixe [VALOR] onde eu devo preencher.
+Não prometa o que depende de eu confirmar.
+Onde faltar informação, escreva [CONFIRMAR] em vez de supor.
+Separe o que é fato do que é interpretação.
+Não decida por mim — aponte o que eu precisaria checar.</div>
+
+<p>E, em pedido de imagem:</p>
+
+<div class="prompt">Sem texto na imagem.
+Sem marca de outra empresa.
+Sem rosto identificável.
+Sem exagero que não corresponda ao produto real.</div>
+
+<p>E, em agente ou automação:</p>
+
+<div class="prompt">Nunca decide preço, desconto, crédito, cancelamento ou questão jurídica.
+Quando não souber, diz que vai confirmar — nunca inventa.
+Gera rascunho; quem envia ao cliente é uma pessoa.</div>`,
       },
     ],
   },

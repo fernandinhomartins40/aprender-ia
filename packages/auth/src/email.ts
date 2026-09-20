@@ -1,5 +1,10 @@
 import nodemailer from "nodemailer";
-import { chaveVeloMail } from "./credenciais-email";
+import {
+  chaveVeloMail,
+  remetenteConfigurado,
+  trackingConfigurado,
+  type Remetente,
+} from "./credenciais-email";
 
 /**
  * Envio de e-mail da plataforma.
@@ -47,6 +52,16 @@ function remetente(): string {
   );
 }
 
+/** O remetente em vigor: o do painel vence o do ambiente. */
+async function remetenteEmVigor(): Promise<Remetente> {
+  return (await remetenteConfigurado()) ?? separarRemetente(remetente());
+}
+
+/** Forma composta do RFC, que o SMTP entende. */
+function comoRfc(de: Remetente): string {
+  return de.nome ? `${de.nome} <${de.email}>` : de.email;
+}
+
 /**
  * Separa "Nome <email@dominio>" em nome e endereço.
  *
@@ -73,7 +88,9 @@ function apiVeloMail(): string {
   ).replace(/\/$/, "");
 }
 
-function trackingHabilitado(): boolean {
+async function trackingHabilitado(): Promise<boolean> {
+  const doPainel = await trackingConfigurado();
+  if (doPainel !== null) return doPainel;
   const valor = process.env.ULTRAZEND_TRACKING_ENABLED ?? process.env.VELOMAIL_TRACKING_ENABLED;
   return valor?.toLowerCase() !== "false";
 }
@@ -127,7 +144,7 @@ export async function enviarEmail(opcoes: OpcoesEmail): Promise<ResultadoEnvio> 
 
   try {
     await obterTransporte().sendMail({
-      from: remetente(),
+      from: comoRfc(await remetenteEmVigor()),
       to: opcoes.para,
       subject: opcoes.assunto,
       text: opcoes.texto,
@@ -149,7 +166,7 @@ async function enviarPelaVeloMail(
   opcoes: OpcoesEmail,
   chave: string,
 ): Promise<ResultadoEnvio> {
-  const de = separarRemetente(remetente());
+  const de = await remetenteEmVigor();
 
   let resposta: Response;
   try {
@@ -168,7 +185,7 @@ async function enviarPelaVeloMail(
         text: opcoes.texto,
         ...(opcoes.templateId ? { template_id: opcoes.templateId } : {}),
         ...(opcoes.variaveis ? { variables: opcoes.variaveis } : {}),
-        tracking_enabled: opcoes.rastrear ?? trackingHabilitado(),
+        tracking_enabled: opcoes.rastrear ?? (await trackingHabilitado()),
       }),
       signal: AbortSignal.timeout(15_000),
     });

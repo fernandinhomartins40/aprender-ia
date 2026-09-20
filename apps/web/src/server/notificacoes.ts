@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma, type CanalNotificacao } from "@aprender/db";
 import { auth } from "@aprender/auth";
 import { enviarEmail, montarEmailNotificacao } from "@aprender/auth/email";
+import { templateDe } from "@aprender/auth/credenciais-email";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
 import { lerTexto } from "./configuracoes";
@@ -177,6 +178,7 @@ export async function notificar(
       return { registrada: true, emailEntregue: false };
     }
 
+    const template = await templateDe("email.template.notificacao");
     const envio = await enviarEmail({
       para: alvo.email,
       assunto: entrada.titulo,
@@ -186,6 +188,16 @@ export async function notificar(
         corpo: entrada.corpo,
         link: entrada.link ?? null,
       }),
+      ...(template
+        ? {
+            templateId: template,
+            variaveis: {
+              titulo: entrada.titulo,
+              corpo: entrada.corpo,
+              link: entrada.link ?? "",
+            },
+          }
+        : {}),
     });
 
     await prisma.notification.update({
