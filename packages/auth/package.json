@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./recuperacao": "./src/recuperacao.ts",
-    "./email": "./src/email.ts"
+    "./email": "./src/email.ts",
+    "./credenciais-email": "./src/credenciais-email.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
