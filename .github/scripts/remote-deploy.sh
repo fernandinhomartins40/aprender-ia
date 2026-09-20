@@ -277,8 +277,16 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE"   run --rm --en
     # exemplo.
     if [ -f seed.mjs ]; then
       echo "    usando seed.mjs (compilado)"
-      node seed.mjs
-      exit $?
+      node seed.mjs || exit $?
+      # Conteúdo de cada curso vem em seu próprio seed. Ele nasce
+      # despublicado de propósito: o curso só aparece para o aluno depois
+      # de conferido e publicado em /admin/cursos.
+      if [ -f seed-empreendedores.mjs ]; then
+        echo "    semeando curso de Empreendedores"
+        node seed-empreendedores.mjs \
+          || echo "    AVISO: seed de Empreendedores não concluiu." >&2
+      fi
+      exit 0
     fi
     TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.mjs 2>/dev/null | head -1)
     [ -z "$TSX" ] && TSX=$(ls -d node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.cjs 2>/dev/null | head -1)

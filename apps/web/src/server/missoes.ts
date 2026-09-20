@@ -6,6 +6,7 @@ import { exigirAluno } from "./trilha";
 import { exigirAdmin } from "./admin";
 import { registrarAcao } from "./auditoria";
 import { notificar } from "./notificacoes";
+import { doCursoAdmin, type CursoAdmin } from "./curso-admin";
 
 function limites(tipo: TipoMissao) {
   const agora = new Date();
@@ -125,12 +126,25 @@ export async function minhasRecompensas() {
   return prisma.userReward.findMany({ where: { userId: user.id }, orderBy: { recebidoEm: "desc" } });
 }
 
-export async function dadosGamificacaoAdmin() {
+export async function dadosGamificacaoAdmin(curso?: CursoAdmin | null) {
   await exigirAdmin();
   const [missoes, conquistas, licoes] = await Promise.all([
-    prisma.mission.findMany({ orderBy: { criadoEm: "desc" } }),
-    prisma.achievement.findMany({ orderBy: { ordem: "asc" } }),
-    prisma.lesson.findMany({ orderBy: [{ module: { ordem: "asc" } }, { ordem: "asc" }], select: { id: true, titulo: true, xpRecompensa: true, tipo: true, module: { select: { titulo: true } } } }),
+    prisma.mission.findMany({
+      where: doCursoAdmin(curso ?? null),
+      orderBy: { criadoEm: "desc" },
+    }),
+    prisma.achievement.findMany({
+      where: doCursoAdmin(curso ?? null),
+      orderBy: { ordem: "asc" },
+    }),
+    // A lição pertence a um módulo, que pertence a um curso: sem este
+    // filtro o seletor de "atividade específica" ofereceria lições de
+    // outro curso, criando missão que o aluno nunca cumpriria.
+    prisma.lesson.findMany({
+      where: curso ? { module: { courseId: curso.id } } : {},
+      orderBy: [{ module: { ordem: "asc" } }, { ordem: "asc" }],
+      select: { id: true, titulo: true, xpRecompensa: true, tipo: true, module: { select: { titulo: true } } },
+    }),
   ]);
   return { missoes, conquistas, licoes };
 }

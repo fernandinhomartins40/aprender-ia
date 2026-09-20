@@ -2,6 +2,7 @@
 
 import { prisma } from "@aprender/db";
 import { exigirAdmin } from "./admin";
+import type { CursoAdmin } from "./curso-admin";
 import type { Analise } from "@/lib/motor-ptcf";
 
 /**
@@ -56,10 +57,17 @@ function letrasFaltando(bruto: unknown): string[] {
     .filter(Boolean);
 }
 
-export async function listarPraticas(limite = 60): Promise<ResumoPraticas> {
+export async function listarPraticas(
+  limite = 60,
+  curso?: CursoAdmin | null,
+): Promise<ResumoPraticas> {
   await exigirAdmin();
 
   const linhas = await prisma.respostaAberta.findMany({
+    // A resposta chega ao curso pela matrícula de quem a escreveu. Aqui o
+    // filtro é exato: uma prática sempre nasce dentro de um curso, então
+    // não existe o "acervo comum" que vale para prompts e ferramentas.
+    where: curso ? { progress: { enrollment: { courseId: curso.id } } } : {},
     orderBy: { atualizadoEm: "desc" },
     take: limite,
     select: {

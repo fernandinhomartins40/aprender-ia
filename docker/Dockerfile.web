@@ -93,7 +93,12 @@ RUN set -e; \
       --bundle --platform=node --format=esm --target=node22 \
       --external:@prisma/client \
       --outfile=/app/seed.mjs; \
-    echo "seed compilado: $(wc -c < /app/seed.mjs) bytes"
+    echo "seed compilado: $(wc -c < /app/seed.mjs) bytes"; \
+    node "$esb" packages/db/prisma/seed-empreendedores.ts \
+      --bundle --platform=node --format=esm --target=node22 \
+      --external:@prisma/client \
+      --outfile=/app/seed-empreendedores.mjs; \
+    echo "seed empreendedores: $(wc -c < /app/seed-empreendedores.mjs) bytes"
 
 # ------------------------------------------------------------
 # 2b) Prisma para runtime
@@ -187,6 +192,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages/db/prisma ./packages/db/
 # Seed já em JavaScript: o deploy o executa com `node`, sem precisar de
 # transpilador na imagem de runtime.
 COPY --from=builder --chown=nextjs:nodejs /app/seed.mjs ./seed.mjs
+# O conteúdo de cada curso tem seu próprio seed: são dezenas de milhares
+# de linhas que não fazem sentido no seed base, e um curso novo não deve
+# exigir tocar no que já está no ar.
+COPY --from=builder --chown=nextjs:nodejs /app/seed-empreendedores.mjs ./seed-empreendedores.mjs
 
 # O bundle carrega o caminho do pnpm COM HASH gravado em tempo de build
 # ("node_modules/.pnpm/@prisma+client@6.19.3_.../.prisma/client"), que não

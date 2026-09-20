@@ -2,6 +2,13 @@ import { prisma } from "@aprender/db";
 import { CATEGORIAS_CONHECIMENTO } from "@aprender/db";
 import { exigirAdmin } from "@/server/admin";
 import {
+  cursoDaUrl,
+  cursoDoPainel,
+  cursosDoPainel,
+  doCursoAdmin,
+} from "@/server/curso-admin";
+import { SeletorCursoAdmin } from "@/components/seletor-curso-admin";
+import {
   alternarPublicacaoVerbete,
   excluirVerbete,
   salvarVerbete,
@@ -231,9 +238,19 @@ function Formulario({ verbete }: { verbete?: Verbete }) {
   );
 }
 
-export default async function ConhecimentoAdmin() {
+export default async function ConhecimentoAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await exigirAdmin();
+
+  const curso = await cursoDoPainel(cursoDaUrl(await searchParams));
+  const cursos = await cursosDoPainel();
+
   const verbetes = await prisma.knowledgeEntry.findMany({
+    // `courseId` nulo é acervo comum: aparece em qualquer curso escolhido.
+    where: doCursoAdmin(curso),
     orderBy: [{ categoria: "asc" }, { termo: "asc" }],
   });
 
@@ -246,6 +263,12 @@ export default async function ConhecimentoAdmin() {
       <TituloPagina
         titulo="Base de Conhecimento"
         descricao="As explicações que aparecem nos ícones ⓘ de toda a aplicação e na Central de Conhecimento. Editar aqui muda em todas as telas de uma vez."
+      />
+
+      <SeletorCursoAdmin
+        cursos={cursos}
+        ativo={curso?.id ?? null}
+        base="/admin/conhecimento"
       />
 
       <GradeIndicadores>

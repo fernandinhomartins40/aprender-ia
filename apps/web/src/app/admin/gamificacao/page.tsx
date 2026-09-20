@@ -1,14 +1,28 @@
 import { TituloPagina, Secao } from "@/components/pagina-admin";
 import { dadosGamificacaoAdmin, salvarMissao, alternarMissao, salvarXpLicao, salvarConquista } from "@/server/missoes";
 import { iconeGamificacao } from "@/lib/icones-gamificacao";
+import { cursoDaUrl, cursoDoPainel, cursosDoPainel } from "@/server/curso-admin";
+import { SeletorCursoAdmin } from "@/components/seletor-curso-admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function GamificacaoAdmin() {
-  const { missoes, conquistas, licoes } = await dadosGamificacaoAdmin();
+export default async function GamificacaoAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const curso = await cursoDoPainel(cursoDaUrl(await searchParams));
+  const cursos = await cursosDoPainel();
+  const { missoes, conquistas, licoes } = await dadosGamificacaoAdmin(curso);
   return (
     <div>
       <TituloPagina titulo="Gamificação" descricao="Missões, recompensas e XP ligados ao progresso real do curso." />
+
+      <SeletorCursoAdmin
+        cursos={cursos}
+        ativo={curso?.id ?? null}
+        base="/admin/gamificacao"
+      />
 
       <Secao titulo="Nova missão" descricao="O progresso é calculado pelos registros do aluno; não pode ser preenchido manualmente.">
         <form action={salvarMissao} className="grid gap-3 md:grid-cols-2">

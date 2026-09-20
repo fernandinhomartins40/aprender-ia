@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { listarPraticas } from "@/server/praticas";
+import { cursoDaUrl, cursoDoPainel, cursosDoPainel } from "@/server/curso-admin";
+import { SeletorCursoAdmin } from "@/components/seletor-curso-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +17,14 @@ export const dynamic = "force-dynamic";
  * formação precisa insistir, não classificar quem escreve melhor: uma
  * lista ordenada por desempenho mudaria o que as pessoas escrevem.
  */
-export default async function Praticas() {
-  const { respostas, total, lacunas, completas } = await listarPraticas();
+export default async function Praticas({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const curso = await cursoDoPainel(cursoDaUrl(await searchParams));
+  const cursos = await cursosDoPainel();
+  const { respostas, total, lacunas, completas } = await listarPraticas(60, curso);
 
   return (
     <div>
@@ -27,6 +35,12 @@ export default async function Praticas() {
           análise que cada um recebeu na hora.
         </p>
       </div>
+
+      <SeletorCursoAdmin
+        cursos={cursos}
+        ativo={curso?.id ?? null}
+        base="/admin/praticas"
+      />
 
       {respostas.length === 0 ? (
         <div className="card text-center">

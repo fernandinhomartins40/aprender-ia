@@ -61,6 +61,9 @@ export async function salvarFerramenta(dados: FormData) {
     categoria: texto(dados, "categoria") || "Outras ferramentas",
     ordem: Math.max(0, Number(texto(dados, "ordem")) || 0),
     ativo: dados.get("ativo") === "on",
+    // Vazio vira null de propósito: é o "vale para todos os cursos" que o
+    // acervo antigo já usa. String vazia quebraria a relação.
+    courseId: texto(dados, "courseId") || null,
   };
   if (id) await prisma.aiTool.update({ where: { id }, data });
   else await prisma.aiTool.create({ data });
